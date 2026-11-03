@@ -11,6 +11,8 @@ import { AnimatedOutlet } from "@/components/AnimatedOutlet";
 import { ChangePasswordButton } from "@/components/ChangePassword";
 import { SinoNotificacoesNomeacoes } from "@/components/nominations/NotificacoesNomeacoes";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { MobileNavigation } from "@/components/MobileNavigation";
 
 export const Route = createFileRoute("/admin")({ component: AdminLayout });
 
@@ -126,7 +128,8 @@ function AdminLayout() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="flex min-h-screen flex-col bg-gradient-to-br from-slate-50 to-slate-100/60"
+      data-app-shell
+      className="flex min-h-dvh min-w-0 max-w-full flex-col bg-gradient-to-br from-slate-50 to-slate-100/60"
     >
 
       {/* ── Top navbar ──
@@ -135,10 +138,13 @@ function AdminLayout() {
           (em vez de rolar por baixo do pano, que é o que gerava a barra de rolagem
           horizontal) — sem largura fixa em nenhum elemento, então nada ultrapassa a viewport. */}
       <header className="sticky top-0 z-10 w-full max-w-full bg-[#0f2744]/90 backdrop-blur-md border-b border-white/10 px-3 py-3 sm:px-4 lg:px-6">
-        <div className="flex w-full max-w-full flex-wrap items-center gap-x-4 gap-y-2">
-          <BrandLogo className="h-9 w-auto shrink-0 sm:h-10 lg:h-11" />
+        <div className="grid w-full max-w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 lg:flex lg:flex-wrap lg:gap-x-4">
+          <div className="flex min-w-0 items-center gap-1">
+            <MobileNavigation items={visibleNavFinal} pathname={pathname} />
+            <BrandLogo className="h-8 w-auto shrink-0 sm:h-10 lg:h-11" />
+          </div>
 
-          <nav className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
+          <nav className="hidden min-w-0 flex-1 flex-wrap items-center gap-1 lg:flex">
             {visibleNavFinal.map((n) => {
               const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);
               return (
@@ -166,14 +172,15 @@ function AdminLayout() {
             })}
           </nav>
 
+          <div className="flex shrink-0 items-center gap-2 lg:gap-3">
           {viewAsLabel && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={() => setViewAsRole(null)}
               title="Voltar ao seu acesso normal"
-              className="flex shrink-0 items-center gap-1 rounded-md border border-amber-300/40 bg-amber-400/10 px-2 py-1 text-xs font-medium text-amber-200 hover:bg-amber-400/20"
+              className="hidden shrink-0 items-center gap-1 border border-warning/40 bg-warning/10 px-2 py-1 text-xs font-medium text-warning hover:bg-warning/20 sm:flex"
             >
               Vendo como: {viewAsLabel}<X className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           )}
 
           {/* Sininho das solicitações de nomeação — só pra Logística de Pessoal (o componente
@@ -182,17 +189,18 @@ function AdminLayout() {
 
           <ChangePasswordButton className="h-auto w-auto shrink-0 p-0 text-white/50 hover:bg-transparent hover:text-white/85" />
 
-          <button
+          <Button variant="ghost" size="icon" aria-label="Sair"
             onClick={async () => { await signOut(); navigate({ to: "/auth" }); }}
             title={`Sair (${[profile?.full_name || profile?.email, profile?.perfil].filter(Boolean).join(" - ")})`}
-            className="shrink-0 text-white/50 hover:text-red-300 transition-colors"
+            className="h-11 w-11 shrink-0 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-destructive"
           >
             <LogOut className="h-5 w-5" />
-          </button>
+          </Button>
+          </div>
         </div>
       </header>
 
-      <main className="flex-1 overflow-auto p-4 lg:p-8">
+      <main className="w-full min-w-0 max-w-full flex-1 overflow-x-auto p-3 sm:p-4 lg:p-8">
         <AnimatedOutlet />
       </main>
     </motion.div>

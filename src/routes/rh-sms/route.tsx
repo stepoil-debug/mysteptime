@@ -40,19 +40,20 @@ function RhSmsLayout() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100/60"
+      data-app-shell
+      className="min-h-dvh min-w-0 max-w-full bg-gradient-to-br from-slate-50 to-slate-100/60"
     >
       <header className="sticky top-0 z-10 border-b bg-[#0f2744]/90 backdrop-blur-md border-white/10">
-        <div className="flex items-center justify-between px-3 py-4 sm:px-4 lg:px-6">
-          <div className="flex items-center gap-4">
-            <BrandLogo className="h-11 w-auto" />
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-3 py-3 sm:flex sm:justify-between sm:px-4 lg:px-6">
+          <div className="flex min-w-0 items-center gap-4">
+            <BrandLogo className="h-9 w-auto shrink-0 sm:h-11" />
             <div className="hidden items-center gap-2 sm:flex">
               <p className="text-base font-semibold text-white/90">My Step Time</p>
               <span className="text-white/30">|</span>
               <p className="text-sm text-white/70">{SUBTITLE[role ?? ""] ?? "Validação de Nomeações"}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-3">
             <span className="hidden sm:flex sm:flex-col sm:items-end leading-tight">
               <span className="text-sm text-white/80">{profile?.full_name ?? profile?.email}</span>
               {profile?.perfil && <span className="text-xs text-white/50">{profile.perfil}</span>}
@@ -73,7 +74,7 @@ function RhSmsLayout() {
         </div>
       </header>
 
-      <main className="p-4 lg:p-8">
+      <main className="w-full min-w-0 max-w-full overflow-x-auto p-3 sm:p-4 lg:p-8">
         <AnimatedOutlet />
       </main>
     </motion.div>
