@@ -40,6 +40,8 @@ import { HistogramaOffshoreNovo } from "@/components/histograma/HistogramaOffsho
 import { NominationsPage, EnviarParaLogisticaButton } from "@/components/nominations/NominationsPage";
 import { EditGroupDialog, baixarEscopoDocumento } from "@/components/nominations/EditarSolicitacaoDialog";
 import { NominationObservations } from "@/components/nominations/NominationObservations";
+import { ReturnReasonDialog } from "@/components/nominations/ReturnReasonDialog";
+import { requireReturnReason } from "@/lib/nomination-return";
 import { ListaIes, SeletorIes } from "@/components/nominations/DocumentosIes";
 import {
   CreateNominationDialog, useNominationFormData, uploadScopeDocument, currentAuthUserId,
@@ -102,6 +104,7 @@ function AprovacaoPmChecklist({ nomination, onDone }: { nomination: Nomination; 
   // — não em cima de todo mundo que já passou pela Simulação como candidato.
   const ativos = nominees.filter((n) => n.is_active && n.technical_selected_at);
   const [draft, setDraft] = useState<Record<string, PmDecision>>({});
+  const [showReturn, setShowReturn] = useState(false);
 
   const decisionFor = (n: NominationNominee): PmDecision => draft[n.id] ?? n.pm_decision;
   const todosDecididos = ativos.length > 0 && ativos.every((n) => decisionFor(n) !== "pendente");
@@ -166,7 +169,8 @@ function AprovacaoPmChecklist({ nomination, onDone }: { nomination: Nomination; 
   // no retrocesso do quadro do operador (apaga os nomeados atuais — Simulação não tem campo
   // próprio, o "marcado" dela é a própria existência deles).
   const retroceder = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (reason: string) => {
+      requireReturnReason(nomination.current_status, "simulacao", reason);
       const clearing = computeRevertClearing(nomination.current_status, "simulacao");
       // Precisa apagar os nomeados ANTES de trocar o current_status: a policy de DELETE do
       // Solicitante em nomination_nominees só libera enquanto a solicitação ainda está em
@@ -179,7 +183,7 @@ function AprovacaoPmChecklist({ nomination, onDone }: { nomination: Nomination; 
       if (error) throw error;
       await supabase.from("nomination_status_history").insert({
         nomination_id: nomination.id, status: "simulacao",
-        changed_by_name: profile?.full_name ?? profile?.email ?? "Solicitante", notes: "PM reprovou todos os nomeados — retrocedido para nova indicação",
+        changed_by_name: profile?.full_name ?? profile?.email ?? "Solicitante", notes: `PM devolveu para Simulação — Motivo / o que corrigir: ${reason.trim()}`,
       });
       notifyStageAdvance({ ...nomination, current_status: "simulacao" }, "simulacao").catch(() => {});
     },
@@ -247,11 +251,19 @@ function AprovacaoPmChecklist({ nomination, onDone }: { nomination: Nomination; 
           Confirmar decisões
         </Button>
         {todosReprovados && (
-          <Button size="sm" variant="outline" loading={retroceder.isPending} onClick={() => retroceder.mutate()}>
+          <Button size="sm" variant="outline" loading={retroceder.isPending} onClick={() => setShowReturn(true)}>
             Retroceder para Nomeação (Simulação)
           </Button>
         )}
       </div>
+      {showReturn && (
+        <ReturnReasonDialog
+          targetLabel={STATUS_LABELS.simulacao}
+          pending={retroceder.isPending}
+          onClose={() => setShowReturn(false)}
+          onConfirm={(reason) => retroceder.mutate(reason)}
+        />
+      )}
       {!todosDecididos && <p className="text-xs text-muted-foreground">Decida todos os nomeados (✓ ou ✗) para poder confirmar.</p>}
       {todosReprovados && (
         <p className="text-xs text-muted-foreground">Todos os nomeados foram reprovados — retroceda para indicar outro(s) candidato(s) na Simulação.</p>
