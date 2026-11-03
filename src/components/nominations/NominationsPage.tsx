@@ -59,6 +59,8 @@ import { nomeacoesRetrocedidas } from "@/lib/nominationIndicadores";
 import { NominationObservations } from "@/components/nominations/NominationObservations";
 import { useRegistrarLog } from "@/hooks/useActivityLog";
 import { RejectionReasonPrompt } from "@/components/nominations/RejectionReasonPrompt";
+import { ReturnReasonDialog, ReturnReasonField } from "@/components/nominations/ReturnReasonDialog";
+import { requireReturnReason, validateReturnReason } from "@/lib/nomination-return";
 import {
   REJECTION_REASON_MAX_CHARS,
   normalizeRejectionReason,
@@ -261,12 +263,15 @@ function useAdvanceStage() {
       target,
       extraPatch,
       note,
+      returnReason,
     }: {
       nomination: Nomination;
       target: NominationStatus;
       extraPatch?: Record<string, unknown>;
       note?: string;
+      returnReason?: string;
     }) => {
+      requireReturnReason(nomination.current_status, target, returnReason);
       // Retrocesso (drag-and-drop pra trás ou o botão "Retroceder etapa") desfaz o que já foi
       // marcado nas etapas puladas — senão o card volta mas continua com tudo preenchido como
       // se nada tivesse mudado (colaboradores da Simulação, seleção da Aprovação Técnica,
@@ -308,7 +313,9 @@ function useAdvanceStage() {
         nomination_id: nomination.id,
         status: target,
         changed_by_name: profile?.full_name ?? profile?.email ?? "Sistema",
-        notes: note ?? null,
+        notes: clearing
+          ? `Devolvida de ${STATUS_LABELS[nomination.current_status]} para ${STATUS_LABELS[target]} — Motivo / o que corrigir: ${returnReason?.trim()}`
+          : note ?? null,
       });
       registrarLog(
         `Moveu ${nomination.funcao} (${nomination.unidade ?? "—"}) para ${STATUS_LABELS[target] ?? target}${note ? `: ${note}` : ""}`,
@@ -319,7 +326,8 @@ function useAdvanceStage() {
       // mover, o que é exatamente a lentidão reportada no drag-and-drop.
       notifyStageAdvance({ ...nomination, current_status: target }, target).catch(() => {});
     },
-    onMutate: async ({ nomination, target }) => {
+    onMutate: async ({ nomination, target, returnReason }) => {
+      requireReturnReason(nomination.current_status, target, returnReason);
       // Move o card na hora, sem esperar a resposta do servidor — desfaz sozinho em onError se
       // o update falhar. A reconciliação de verdade (histórico, nomeados etc.) vem do
       // invalidateQueries em onSettled, mas isso já roda em background, sem travar a UI.
@@ -725,6 +733,7 @@ function ValidacaoQualidadeSection({
   const canAct = useCanActOnStage(nomination.current_status);
   const advance = useAdvanceStage();
   const [showReject, setShowReject] = useState(false);
+  const [showQualityReturn, setShowQualityReturn] = useState(false);
   const [reasonDraft, setReasonDraft] = useState("");
   const rascunhoMotivo = useRascunho(
     `nomeacao:${nomination.id}:qualidade-motivo`,
@@ -993,17 +1002,23 @@ function ValidacaoQualidadeSection({
         <Button
           size="sm"
           variant="outline"
-          onClick={() =>
-            advance.mutate({
-              nomination,
-              target: "simulacao",
-              note: "Qualidade reprovou — retrocedido para nova indicação",
-            })
-          }
+          onClick={() => setShowQualityReturn(true)}
           loading={advance.isPending}
         >
           <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Retroceder para Nomeação (Simulação)
         </Button>
+      )}
+      {showQualityReturn && (
+        <ReturnReasonDialog
+          targetLabel={STATUS_LABELS.simulacao}
+          initialReason={nomination.quality_rejection_reason ?? ""}
+          pending={advance.isPending}
+          onClose={() => setShowQualityReturn(false)}
+          onConfirm={(returnReason) => advance.mutate(
+            { nomination, target: "simulacao", returnReason },
+            { onSuccess: () => setShowQualityReturn(false) },
+          )}
+        />
       )}
     </div>
   );
@@ -1959,6 +1974,7 @@ function ManageDialog({
 
   const [showRevert, setShowRevert] = useState(false);
   const [revertTarget, setRevertTarget] = useState<NominationStatus | "">("");
+  const [revertReason, setRevertReason] = useState("");
   const currentIdx = ALL_STATUSES.indexOf(nomination.current_status);
   const earlierStages = ALL_STATUSES.slice(0, currentIdx);
   const laterStages = ALL_STATUSES.slice(currentIdx + 1);
@@ -2489,24 +2505,26 @@ function ManageDialog({
                         ))}
                       </SelectContent>
                     </Select>
+                    <ReturnReasonField value={revertReason} onChange={setRevertReason} />
                     <div className="flex gap-2">
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={!revertTarget}
+                        disabled={!revertTarget || !!validateReturnReason(revertReason)}
                         loading={advance.isPending}
                         onClick={() => {
-                          if (!revertTarget) return;
+                          if (!revertTarget || validateReturnReason(revertReason)) return;
                           advance.mutate(
                             {
                               nomination,
                               target: revertTarget,
-                              note: `Retrocedida para ${STATUS_LABELS[revertTarget]}`,
+                              returnReason: revertReason.trim(),
                             },
                             {
                               onSuccess: () => {
                                 setShowRevert(false);
                                 setRevertTarget("");
+                                setRevertReason("");
                               },
                             },
                           );
@@ -2520,6 +2538,7 @@ function ManageDialog({
                         onClick={() => {
                           setShowRevert(false);
                           setRevertTarget("");
+                          setRevertReason("");
                         }}
                       >
                         Voltar
@@ -3322,6 +3341,9 @@ function KanbanBoard({
     return m;
   }, [groupsByColumn]);
 
+  const [pendingReturn, setPendingReturn] = useState<{ group: Nomination[]; target: NominationStatus } | null>(null);
+  const [returning, setReturning] = useState(false);
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) return;
@@ -3357,12 +3379,36 @@ function KanbanBoard({
         return;
       }
     }
+    if (computeRevertClearing(current, target)) {
+      setPendingReturn({ group, target });
+      return;
+    }
     group.forEach((nomination) => advance.mutate({ nomination, target }));
   };
 
   return (
     <ReprovacoesContext.Provider value={nomineesByNomination}>
     <RetrocedidasContext.Provider value={retrocedidas}>
+      {pendingReturn && (
+        <ReturnReasonDialog
+          targetLabel={STATUS_LABELS[pendingReturn.target]}
+          pending={returning}
+          onClose={() => setPendingReturn(null)}
+          onConfirm={async (returnReason) => {
+            setReturning(true);
+            try {
+              for (const nomination of pendingReturn.group) {
+                await advance.mutateAsync({ nomination, target: pendingReturn.target, returnReason });
+              }
+              setPendingReturn(null);
+            } catch {
+              // Mutation already reports the error; retain the reason for retry.
+            } finally {
+              setReturning(false);
+            }
+          }}
+        />
+      )}
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       {/* Board com N colunas de min-w-[300px]+ facilmente passa de 1500px — sem isso a página
           estourava horizontalmente em telas mais estreitas. Kanban com rolagem horizontal é
