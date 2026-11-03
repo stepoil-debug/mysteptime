@@ -61,6 +61,7 @@ import { useRegistrarLog } from "@/hooks/useActivityLog";
 import { RejectionReasonPrompt } from "@/components/nominations/RejectionReasonPrompt";
 import { ReturnReasonDialog, ReturnReasonField } from "@/components/nominations/ReturnReasonDialog";
 import { requireReturnReason, validateReturnReason } from "@/lib/nomination-return";
+import { dpReturnRequest } from "@/lib/nomination-dp-return";
 import {
   REJECTION_REASON_MAX_CHARS,
   normalizeRejectionReason,
@@ -1531,37 +1532,8 @@ function ValidacaoRhSection({
     mutationFn: async (nominee: NominationNominee) => {
       const text = divergenceDraft[nominee.id]?.trim();
       if (!text) throw new Error("Descreva a divergência.");
-      // Pedido dela, 2026-10-27: divergência sinalizada devolve SÓ esta função (esta nomeação;
-      // as outras funções da solicitação ficam onde estão) pra Simulação, pra simular um
-      // substituto. Quem divergiu sai do fluxo (is_active=false, a divergência fica registrada);
-      // os demais nomeados continuam com o que já foi validado (Técnica/SMS/DP) — não passa por
-      // computeRevertClearing, que apagaria todos os nomeados ao voltar pra Simulação. Assim,
-      // ao avançar de novo, só o substituto precisa passar pelas validações.
-      // Ordem importa por causa do RLS do DP: o nomeado só pode ser alterado enquanto a
-      // nomeação ainda está em validacao_rh, então ele vem antes da mudança de status.
-      const { error } = await supabase
-        .from("nomination_nominees")
-        .update({
-          aptidao_divergence: true,
-          aptidao_divergence_text: text,
-          aptidao_divergence_flagged_at: new Date().toISOString(),
-          rh_validated: false,
-          is_active: false,
-        })
-        .eq("id", nominee.id);
+      const { error } = await supabase.rpc("nomination_dp_return", dpReturnRequest(nomination.id, nominee.id, text));
       if (error) throw error;
-      const { error: statusErr } = await supabase
-        .from("nominations")
-        .update({ current_status: "simulacao" })
-        .eq("id", nomination.id);
-      if (statusErr) throw statusErr;
-      await supabase.from("nomination_status_history").insert({
-        nomination_id: nomination.id,
-        nominee_id: nominee.id,
-        status: "simulacao",
-        changed_by_name: profile?.full_name ?? profile?.email ?? "Sistema",
-        notes: `Divergência em ${nominee.colaborador_nome}: ${text} — devolvida pra Simulação pra substituição`,
-      });
       await notifyAptitudeDivergence(nomination, nominee.colaborador_nome, text, false);
     },
     onSuccess: (_d, nominee) => {
@@ -1569,7 +1541,7 @@ function ValidacaoRhSection({
       qc.invalidateQueries({ queryKey: ["nomination-nominees-all"] });
       qc.invalidateQueries({ queryKey: ["nominations", nomination.id, "nominees"] });
       setDivergenceDraft((prev) => ({ ...prev, [nominee.id]: "" }));
-      notify.success(`${nomination.funcao} voltou para Simulação — simule um substituto para ${nominee.colaborador_nome}.`);
+      notify.success(`${nominee.colaborador_nome} devolvido para substituição; os demais permanecem no DP.`);
     },
     onError: (err: Error) => notify.error(err.message),
   });
@@ -1677,9 +1649,10 @@ function ValidacaoRhSection({
                       variant="destructive"
                       className="h-6 shrink-0 text-xs"
                       loading={flagDivergence.isPending}
+                      disabled={!!validateReturnReason(divergenceDraft[n.id])}
                       onClick={() => flagDivergence.mutate(n)}
                     >
-                      Sinalizar
+                      Devolver colaborador
                     </Button>
                   </div>
                 </div>
