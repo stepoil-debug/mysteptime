@@ -4280,6 +4280,15 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      nomination_dp_return: {
+        Args: {
+          p_id: string
+          p_nominee_id: string
+          p_reason: string
+          p_restore?: boolean
+        }
+        Returns: string
+      }
       nomination_etapa_nome: { Args: { p_status: string }; Returns: string }
       nomination_etapa_ordem: { Args: { p_status: string }; Returns: number }
       nomination_funcoes_planejamento: {
