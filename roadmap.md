@@ -1,3 +1,4 @@
+- [ ] Investigar devoluções do DP, restaurar casos identificáveis e permitir devolução parcial por função/colaborador com motivo obrigatório, preservando os demais.
 - [x] Exigir motivo descritivo ao devolver cartão de Nomeações para atualização, em botões, Qualidade, portal PM e arraste; 10 testes passaram, bloqueio vazio/espaços e devolução com histórico conferidos na tela autenticada, cartão temporário removido; aguarda publicação.
 - [x] Estruturar o acesso pelo celular no mesmo sistema; menu compacto preserva perfis, navegação autenticada confirmada, Nomeações/Transporte/Histograma/Hospedagem/Passagens verificados a 390px, formulário e largura de 320px conferidos, desktop preservado; alterações aguardam publicação.
 - [x] Permitir ao solicitante e à administração editar observações em qualquer etapa; 13 testes passaram e salvamento autenticado na Qualidade retornou sucesso, preservando conteúdo existente e confirmado após reabrir.
