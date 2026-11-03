@@ -1,4 +1,4 @@
-- [ ] Estruturar o acesso pelo celular no mesmo sistema e fornecer o link; verificar navegação e telas principais em largura de celular.
+- [x] Estruturar o acesso pelo celular no mesmo sistema; menu compacto preserva perfis, navegação autenticada confirmada, Nomeações/Transporte/Histograma/Hospedagem/Passagens verificados a 390px, formulário e largura de 320px conferidos, desktop preservado; alterações aguardam publicação.
 - [x] Permitir ao solicitante e à administração editar observações em qualquer etapa; 13 testes passaram e salvamento autenticado na Qualidade retornou sucesso, preservando conteúdo existente e confirmado após reabrir.
 - [x] Corrigir retirada de candidatos não aprovados antes da troca de etapa; cinco testes passaram e Nomeações abriu com sessão autenticada sem erros.
 - [x] Corrigir vínculos ativos indevidos nas solicitações já avançadas, preservando histórico; dois corrigidos e nenhum indevido restante.
