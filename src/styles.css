@@ -190,6 +190,24 @@
   :focus-visible { outline-color: var(--ring); }
 }
 
+/* Shared mobile shell: dense tables stay scrollable inside the content, while
+   tabs and form controls remain reachable without enlarging the viewport. */
+@media screen and (max-width: 639.98px) {
+  [data-app-shell] main > * { min-width: 0; max-width: 100%; }
+  [data-app-shell] [role="tablist"] {
+    max-width: 100%;
+    overflow-x: auto;
+    justify-content: flex-start;
+  }
+  [data-app-shell] [role="tab"] { flex-shrink: 0; min-height: 44px; }
+  [data-app-shell] input,
+  [data-app-shell] textarea,
+  [data-app-shell] select,
+  [data-app-shell] [role="combobox"],
+  form input { font-size: 16px; }
+  [data-app-shell] [role="combobox"] { min-height: 40px; }
+}
+
 /* Reflexo/brilho sutil que passa uma vez pelo card, pra pontos de destaque premium (ex.: KPI
    em foco). Opt-in via classe — nunca aplicado por padrão em card nenhum. Usa ::after pra não
    interferir no conteúdo/eventos do card (pointer-events-none + overflow-hidden no pai). */

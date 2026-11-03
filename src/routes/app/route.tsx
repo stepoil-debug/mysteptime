@@ -49,22 +49,23 @@ function AppLayout() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="flex min-h-screen flex-col bg-gradient-to-b from-background to-muted/40 pb-20"
+      data-app-shell
+      className="flex min-h-dvh min-w-0 max-w-full flex-col bg-gradient-to-b from-background to-muted/40 pb-20"
     >
-      <header className="sticky top-0 z-10 flex items-center justify-between bg-[#0f2744]/90 backdrop-blur-md border-b border-white/10 px-4 py-4 text-sidebar-foreground">
-        <div className="flex items-center gap-3">
-          <BrandLogo className="h-9 w-auto" />
-          <div className="leading-tight">
+      <header className="sticky top-0 z-10 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 bg-[#0f2744]/90 backdrop-blur-md border-b border-white/10 px-3 py-3 text-sidebar-foreground sm:flex sm:justify-between sm:px-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <BrandLogo className="h-9 w-auto shrink-0" />
+          <div className="min-w-0 leading-tight">
             <div className="text-sm text-sidebar-foreground/80 truncate max-w-[180px]">{profile?.full_name ?? profile?.email}</div>
             {profile?.perfil && <div className="text-xs text-sidebar-foreground/50 truncate max-w-[180px]">{profile.perfil}</div>}
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           <ChangePasswordButton className="h-auto w-auto p-0 hover:bg-transparent hover:opacity-70" />
           <button onClick={async () => { await signOut(); navigate({ to: "/auth" }); }}><LogOut className="h-5 w-5" /></button>
         </div>
       </header>
-      <main className="flex-1 p-4"><AnimatedOutlet /></main>
+      <main className="w-full min-w-0 max-w-full flex-1 overflow-x-auto p-3 sm:p-4"><AnimatedOutlet /></main>
       <nav className="fixed bottom-0 left-0 right-0 z-20 grid grid-cols-6 border-t border-white/20 bg-white/70 backdrop-blur-md dark:bg-zinc-900/70">
         {tabs.map((t) => {
           const active = t.exact ? pathname === t.to : pathname.startsWith(t.to);

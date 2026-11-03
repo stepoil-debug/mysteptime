@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Keep mobile access in the existing role-based app shells, with a permission-filtered drawer for admin navigation and locally scrollable dense content; preserve desktop workflows and authorization.
+
 - Nomination observations use a shared editor and a notes-only authenticated database RPC with ownership/admin checks and atomic history; never widen stage update policies to edit notes.
 
 - Centralize system-admin and operator capabilities in access-roles.ts, mirrored by database is_operator; keep actual stored roles unchanged so access expansion never alters email routing or identity.

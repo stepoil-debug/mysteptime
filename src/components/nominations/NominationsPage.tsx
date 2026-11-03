@@ -7304,7 +7304,7 @@ export function NominationsPage({
 
       <Tabs value={tab} onValueChange={setTab}>
         {!onlyKanban && (
-          <TabsList>
+          <TabsList className="max-w-full justify-start overflow-x-auto">
             <TabsTrigger value="nomeacoes">Nomeações</TabsTrigger>
             <TabsTrigger value="linha-solicitacoes">Linha do Tempo</TabsTrigger>
             <TabsTrigger value="dashboard">
