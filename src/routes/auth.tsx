@@ -38,6 +38,28 @@ function AuthPage() {
     }
   }, [user, role, roleLoaded, loading, navigate]);
 
+  // Activate ONLY after the deployed SSO exchange has passed end-to-end tests.
+  // Removing the password form before the new Supabase users are restored would
+  // lock out the company. This flag is disabled unless explicitly configured.
+  if (import.meta.env.VITE_MYSTEPTIME_SSO_ONLY === "true") {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#0e1c38] px-6 text-white">
+        <section className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-8 text-center shadow-xl">
+          <h1 className="text-2xl font-bold">STEP TIME HUB</h1>
+          <p className="mt-4 text-sm text-slate-300">
+            O acesso ao Mysteptime é realizado pela Intranet STEP One, com a identidade corporativa.
+          </p>
+          <a
+            href="https://intranet.step-og.com/intranet/offshore"
+            className="mt-7 inline-flex rounded-xl bg-blue-600 px-6 py-3 font-semibold hover:bg-blue-500"
+          >
+            Acessar pela Intranet
+          </a>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, filter: "blur(14px)" }}
