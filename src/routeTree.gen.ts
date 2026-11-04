@@ -41,9 +41,11 @@ import { Route as AppFinancialRouteImport } from './routes/app/financial'
 import { Route as AppScheduleRouteImport } from './routes/app/schedule'
 import { Route as AppTimesheetRouteImport } from './routes/app/timesheet'
 import { Route as AppTransportRouteImport } from './routes/app/transport'
+import { Route as AuthIntranetRouteImport } from './routes/auth_.intranet'
 import { Route as PmIndexRouteImport } from './routes/pm/index'
 import { Route as PmBmsRouteImport } from './routes/pm/bms'
 import { Route as RhSmsIndexRouteImport } from './routes/rh-sms/index'
+import { Route as ApiAuthIntranetRouteImport } from './routes/api/auth/intranet'
 import { Route as ApiPublicFlowTrackDemandasSyncRouteImport } from './routes/api/public/flow-track-demandas-sync'
 import { Route as ApiPublicLgpFlowMonitoringRouteImport } from './routes/api/public/lgp-flow-monitoring'
 import { Route as ApiPublicMontadoresAndaimeHabitatRouteImport } from './routes/api/public/montadores-andaime-habitat'
@@ -215,6 +217,11 @@ const AppTransportRoute = AppTransportRouteImport.update({
   path: '/transport',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AuthIntranetRoute = AuthIntranetRouteImport.update({
+  id: '/auth_/intranet',
+  path: '/auth/intranet',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PmIndexRoute = PmIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -229,6 +236,11 @@ const RhSmsIndexRoute = RhSmsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => RhSmsRouteRoute,
+} as any)
+const ApiAuthIntranetRoute = ApiAuthIntranetRouteImport.update({
+  id: '/api/auth/intranet',
+  path: '/api/auth/intranet',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicFlowTrackDemandasSyncRoute =
   ApiPublicFlowTrackDemandasSyncRouteImport.update({
@@ -317,10 +329,12 @@ export interface FileRoutesByFullPath {
   '/app/schedule': typeof AppScheduleRoute
   '/app/timesheet': typeof AppTimesheetRoute
   '/app/transport': typeof AppTransportRoute
+  '/auth/intranet': typeof AuthIntranetRoute
   '/pm/bms': typeof PmBmsRoute
   '/app/': typeof AppIndexRoute
   '/pm/': typeof PmIndexRoute
   '/rh-sms/': typeof RhSmsIndexRoute
+  '/api/auth/intranet': typeof ApiAuthIntranetRoute
   '/api/public/flow-track-demandas-sync': typeof ApiPublicFlowTrackDemandasSyncRoute
   '/api/public/lgp-flow-monitoring': typeof ApiPublicLgpFlowMonitoringRoute
   '/api/public/montadores-andaime-habitat': typeof ApiPublicMontadoresAndaimeHabitatRoute
@@ -360,10 +374,12 @@ export interface FileRoutesByTo {
   '/app/schedule': typeof AppScheduleRoute
   '/app/timesheet': typeof AppTimesheetRoute
   '/app/transport': typeof AppTransportRoute
+  '/auth/intranet': typeof AuthIntranetRoute
   '/pm/bms': typeof PmBmsRoute
   '/app': typeof AppIndexRoute
   '/pm': typeof PmIndexRoute
   '/rh-sms': typeof RhSmsIndexRoute
+  '/api/auth/intranet': typeof ApiAuthIntranetRoute
   '/api/public/flow-track-demandas-sync': typeof ApiPublicFlowTrackDemandasSyncRoute
   '/api/public/lgp-flow-monitoring': typeof ApiPublicLgpFlowMonitoringRoute
   '/api/public/montadores-andaime-habitat': typeof ApiPublicMontadoresAndaimeHabitatRoute
@@ -407,10 +423,12 @@ export interface FileRoutesById {
   '/app/schedule': typeof AppScheduleRoute
   '/app/timesheet': typeof AppTimesheetRoute
   '/app/transport': typeof AppTransportRoute
+  '/auth_/intranet': typeof AuthIntranetRoute
   '/pm/bms': typeof PmBmsRoute
   '/app/': typeof AppIndexRoute
   '/pm/': typeof PmIndexRoute
   '/rh-sms/': typeof RhSmsIndexRoute
+  '/api/auth/intranet': typeof ApiAuthIntranetRoute
   '/api/public/flow-track-demandas-sync': typeof ApiPublicFlowTrackDemandasSyncRoute
   '/api/public/lgp-flow-monitoring': typeof ApiPublicLgpFlowMonitoringRoute
   '/api/public/montadores-andaime-habitat': typeof ApiPublicMontadoresAndaimeHabitatRoute
@@ -455,10 +473,12 @@ export interface FileRouteTypes {
     | '/app/schedule'
     | '/app/timesheet'
     | '/app/transport'
+    | '/auth/intranet'
     | '/pm/bms'
     | '/app/'
     | '/pm/'
     | '/rh-sms/'
+    | '/api/auth/intranet'
     | '/api/public/flow-track-demandas-sync'
     | '/api/public/lgp-flow-monitoring'
     | '/api/public/montadores-andaime-habitat'
@@ -498,10 +518,12 @@ export interface FileRouteTypes {
     | '/app/schedule'
     | '/app/timesheet'
     | '/app/transport'
+    | '/auth/intranet'
     | '/pm/bms'
     | '/app'
     | '/pm'
     | '/rh-sms'
+    | '/api/auth/intranet'
     | '/api/public/flow-track-demandas-sync'
     | '/api/public/lgp-flow-monitoring'
     | '/api/public/montadores-andaime-habitat'
@@ -544,10 +566,12 @@ export interface FileRouteTypes {
     | '/app/schedule'
     | '/app/timesheet'
     | '/app/transport'
+    | '/auth_/intranet'
     | '/pm/bms'
     | '/app/'
     | '/pm/'
     | '/rh-sms/'
+    | '/api/auth/intranet'
     | '/api/public/flow-track-demandas-sync'
     | '/api/public/lgp-flow-monitoring'
     | '/api/public/montadores-andaime-habitat'
@@ -567,6 +591,8 @@ export interface RootRouteChildren {
   RhSmsRouteRoute: typeof RhSmsRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   PendingRoute: typeof PendingRoute
+  AuthIntranetRoute: typeof AuthIntranetRoute
+  ApiAuthIntranetRoute: typeof ApiAuthIntranetRoute
   ApiPublicFlowTrackDemandasSyncRoute: typeof ApiPublicFlowTrackDemandasSyncRoute
   ApiPublicLgpFlowMonitoringRoute: typeof ApiPublicLgpFlowMonitoringRoute
   ApiPublicMontadoresAndaimeHabitatRoute: typeof ApiPublicMontadoresAndaimeHabitatRoute
@@ -804,6 +830,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTransportRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/auth_/intranet': {
+      id: '/auth_/intranet'
+      path: '/auth/intranet'
+      fullPath: '/auth/intranet'
+      preLoaderRoute: typeof AuthIntranetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pm/': {
       id: '/pm/'
       path: '/'
@@ -824,6 +857,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/rh-sms/'
       preLoaderRoute: typeof RhSmsIndexRouteImport
       parentRoute: typeof RhSmsRouteRoute
+    }
+    '/api/auth/intranet': {
+      id: '/api/auth/intranet'
+      path: '/api/auth/intranet'
+      fullPath: '/api/auth/intranet'
+      preLoaderRoute: typeof ApiAuthIntranetRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/flow-track-demandas-sync': {
       id: '/api/public/flow-track-demandas-sync'
@@ -995,6 +1035,8 @@ const rootRouteChildren: RootRouteChildren = {
   RhSmsRouteRoute: RhSmsRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   PendingRoute: PendingRoute,
+  AuthIntranetRoute: AuthIntranetRoute,
+  ApiAuthIntranetRoute: ApiAuthIntranetRoute,
   ApiPublicFlowTrackDemandasSyncRoute: ApiPublicFlowTrackDemandasSyncRoute,
   ApiPublicLgpFlowMonitoringRoute: ApiPublicLgpFlowMonitoringRoute,
   ApiPublicMontadoresAndaimeHabitatRoute:

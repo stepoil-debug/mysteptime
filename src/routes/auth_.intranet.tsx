@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/auth/intranet")({
+export const Route = createFileRoute("/auth_/intranet")({
   component: IntranetAuthPage,
 });
 
@@ -19,7 +19,7 @@ function IntranetAuthPage() {
 
     // Remove the credential from browser history immediately.
     window.history.replaceState(window.history.state, "", window.location.pathname);
-    if (!/^[A-Za-z0-9_-]{43}$/.test(ticket)) {
+    if (!/^[0-9a-f]{64}$/.test(ticket)) {
       setError("O acesso temporário da Intranet é inválido ou já expirou.");
       return;
     }
