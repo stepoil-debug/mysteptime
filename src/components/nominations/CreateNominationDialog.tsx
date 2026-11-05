@@ -248,10 +248,6 @@ export function CreateNominationDialog({ onClose }: { onClose: () => void }) {
       const groupId = crypto.randomUUID();
       const criadas: string[] = [];
       const paraAvisar: Nomination[] = [];
-      // Erro ao gravar a equipe fixa não pode interromper o laço (bug do Brandão, 2026-10-29:
-      // com "Equipe fixa" marcada, a tabela faltando no banco derrubava tudo depois da 1ª
-      // função). A solicitação já foi criada — segue como avulsa e avisa no fim.
-      const falhasEquipeFixa: string[] = [];
 
       // Uma nomeação por função — cada uma segue seu próprio fluxo de aprovação/nomeação, por
       // isso não dá pra combinar num só registro. Soldador sempre passa pela Qualidade — ela
@@ -311,26 +307,18 @@ export function CreateNominationDialog({ onClose }: { onClose: () => void }) {
             proxima_troca: proximaTroca,
             ultima_nomeacao_id: data.id,
           });
-          if (fixoError) {
-            console.error("nomination_fixed_teams", fixoError);
-            falhasEquipeFixa.push(l.funcao.trim());
-            paraAvisar.push(data as Nomination);
-          }
+          if (fixoError) throw fixoError;
         } else {
           paraAvisar.push(data as Nomination);
         }
         criadas.push(`${l.funcao.trim()} (${unidade}/${bsp.trim()})`);
       }
       await notifyRequestCreated(paraAvisar);
-      return { criadas, falhasEquipeFixa };
+      return criadas;
     },
-    onSuccess: ({ criadas, falhasEquipeFixa }) => {
-      const n = criadas.length;
+    onSuccess: (criadas) => {
+      const n = linhas.filter((l) => l.funcao.trim()).length;
       notify.success(n > 1 ? `${n} solicitações enviadas.` : "Solicitação enviada.");
-      if (falhasEquipeFixa.length)
-        notify.error(
-          `Solicitação criada, mas não foi possível registrar como equipe fixa: ${falhasEquipeFixa.join(", ")}. Avise a Logística de Pessoal.`,
-        );
       registrarLog(`Criou solicitação de nomeação: ${criadas.join(", ")}`);
       // Invalida as duas fontes possíveis (ambiente do Solicitante e da Logística) — não custa
       // invalidar uma query que não existe na tela atual.
