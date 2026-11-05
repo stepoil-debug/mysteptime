@@ -182,7 +182,7 @@ export function isStatusBloqueioRH(status: string | null | undefined): boolean {
 // Status "conhecidos" que sempre aparecem na lista suspensa da célula/filtro de Status, mesmo
 // que nenhuma linha esteja usando ainda (ela pediu "Trabalho Externo" explicitamente) — o resto
 // da lista continua vindo dos valores já digitados nos registros (ver statusExistentes).
-export const STATUS_CONHECIDOS = ["BLOQUEIO RH"];
+export const STATUS_CONHECIDOS = ["BLOQUEIO RH", "Em treinamento", "Em qualificação"];
 
 // Lista da coluna Status: sem "Trabalho Externo" em minúsculo e com Bloqueio RH sempre "BLOQUEIO RH".
 export function statusOpcoes(valores: (string | null | undefined)[]): string[] {
