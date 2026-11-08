@@ -113,7 +113,7 @@ export function parseDisponibilidadeWorkbook(
 
 /** Importa relatório de disponibilidade (mesmo fluxo do botão Importar Relatório de Disponibilidade). */
 export async function importDisponibilidade(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<any, "mysteptime", "mysteptime">,
   rows: ParsedDisponibilidadeRow[],
 ): Promise<DisponibilidadeImportSummary> {
   const matriculas = Array.from(new Set(rows.map((r) => r.matricula)));
@@ -177,7 +177,7 @@ export async function importDisponibilidade(
 }
 
 export async function importDisponibilidadeFromBuffer(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<any, "mysteptime", "mysteptime">,
   buf: ArrayBuffer | Buffer,
 ): Promise<DisponibilidadeImportSummary> {
   const rows = parseDisponibilidadeWorkbook(buf);

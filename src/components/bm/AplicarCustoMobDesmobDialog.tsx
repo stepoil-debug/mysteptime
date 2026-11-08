@@ -142,7 +142,7 @@ export function AplicarCustoMobDesmobDialog({ open, onOpenChange, bsp, bmNumber 
                   pra aplicar (reabrindo esse diálogo, que busca de novo na hora). */}
               <Button
                 type="button" size="sm" variant="outline" className="h-7 shrink-0 px-2 text-[11px]"
-                onClick={() => window.open("/admin/bm", "_blank", "noopener,noreferrer")}
+                onClick={() => window.open(`${import.meta.env.BASE_URL}admin/bm`, "_blank", "noopener,noreferrer")}
               >
                 <ExternalLink className="mr-1 h-3 w-3" />Logística Mob/Desmob
               </Button>

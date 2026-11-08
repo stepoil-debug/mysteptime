@@ -12,7 +12,7 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  public: {
+  mysteptime: {
     Tables: {
       activity_log: {
         Row: {
@@ -102,7 +102,7 @@ export type Database = {
           payload: Json | null
           request_type: string
           requested_by: string
-          status: Database["public"]["Enums"]["approval_status"]
+          status: Database["mysteptime"]["Enums"]["approval_status"]
         }
         Insert: {
           approver_id: string
@@ -114,7 +114,7 @@ export type Database = {
           payload?: Json | null
           request_type: string
           requested_by: string
-          status?: Database["public"]["Enums"]["approval_status"]
+          status?: Database["mysteptime"]["Enums"]["approval_status"]
         }
         Update: {
           approver_id?: string
@@ -126,7 +126,7 @@ export type Database = {
           payload?: Json | null
           request_type?: string
           requested_by?: string
-          status?: Database["public"]["Enums"]["approval_status"]
+          status?: Database["mysteptime"]["Enums"]["approval_status"]
         }
         Relationships: [
           {
@@ -892,10 +892,10 @@ export type Database = {
       cost_logs: {
         Row: {
           amount: number
-          billing: Database["public"]["Enums"]["billing_type"]
+          billing: Database["mysteptime"]["Enums"]["billing_type"]
           client_id: string | null
           collaborator_id: string | null
-          cost_type: Database["public"]["Enums"]["cost_type"]
+          cost_type: Database["mysteptime"]["Enums"]["cost_type"]
           created_at: string
           created_by: string | null
           id: string
@@ -907,10 +907,10 @@ export type Database = {
         }
         Insert: {
           amount?: number
-          billing?: Database["public"]["Enums"]["billing_type"]
+          billing?: Database["mysteptime"]["Enums"]["billing_type"]
           client_id?: string | null
           collaborator_id?: string | null
-          cost_type: Database["public"]["Enums"]["cost_type"]
+          cost_type: Database["mysteptime"]["Enums"]["cost_type"]
           created_at?: string
           created_by?: string | null
           id?: string
@@ -922,10 +922,10 @@ export type Database = {
         }
         Update: {
           amount?: number
-          billing?: Database["public"]["Enums"]["billing_type"]
+          billing?: Database["mysteptime"]["Enums"]["billing_type"]
           client_id?: string | null
           collaborator_id?: string | null
-          cost_type?: Database["public"]["Enums"]["cost_type"]
+          cost_type?: Database["mysteptime"]["Enums"]["cost_type"]
           created_at?: string
           created_by?: string | null
           id?: string
@@ -1401,7 +1401,7 @@ export type Database = {
           notes: string | null
           pre_embark_instructions: string | null
           project_id: string | null
-          status: Database["public"]["Enums"]["embarkation_status"]
+          status: Database["mysteptime"]["Enums"]["embarkation_status"]
           updated_at: string
         }
         Insert: {
@@ -1414,7 +1414,7 @@ export type Database = {
           notes?: string | null
           pre_embark_instructions?: string | null
           project_id?: string | null
-          status?: Database["public"]["Enums"]["embarkation_status"]
+          status?: Database["mysteptime"]["Enums"]["embarkation_status"]
           updated_at?: string
         }
         Update: {
@@ -1427,7 +1427,7 @@ export type Database = {
           notes?: string | null
           pre_embark_instructions?: string | null
           project_id?: string | null
-          status?: Database["public"]["Enums"]["embarkation_status"]
+          status?: Database["mysteptime"]["Enums"]["embarkation_status"]
           updated_at?: string
         }
         Relationships: [
@@ -2865,7 +2865,7 @@ export type Database = {
           overtime_hours: number
           sent_at: string | null
           sobreaviso_days: number
-          status: Database["public"]["Enums"]["payroll_status"]
+          status: Database["mysteptime"]["Enums"]["payroll_status"]
           total_hours: number
         }
         Insert: {
@@ -2879,7 +2879,7 @@ export type Database = {
           overtime_hours?: number
           sent_at?: string | null
           sobreaviso_days?: number
-          status?: Database["public"]["Enums"]["payroll_status"]
+          status?: Database["mysteptime"]["Enums"]["payroll_status"]
           total_hours?: number
         }
         Update: {
@@ -2893,7 +2893,7 @@ export type Database = {
           overtime_hours?: number
           sent_at?: string | null
           sobreaviso_days?: number
-          status?: Database["public"]["Enums"]["payroll_status"]
+          status?: Database["mysteptime"]["Enums"]["payroll_status"]
           total_hours?: number
         }
         Relationships: [
@@ -3222,7 +3222,7 @@ export type Database = {
           observations: string | null
           project_id: string | null
           report_date: string
-          status: Database["public"]["Enums"]["rdo_status"]
+          status: Database["mysteptime"]["Enums"]["rdo_status"]
           updated_at: string
         }
         Insert: {
@@ -3234,7 +3234,7 @@ export type Database = {
           observations?: string | null
           project_id?: string | null
           report_date: string
-          status?: Database["public"]["Enums"]["rdo_status"]
+          status?: Database["mysteptime"]["Enums"]["rdo_status"]
           updated_at?: string
         }
         Update: {
@@ -3246,7 +3246,7 @@ export type Database = {
           observations?: string | null
           project_id?: string | null
           report_date?: string
-          status?: Database["public"]["Enums"]["rdo_status"]
+          status?: Database["mysteptime"]["Enums"]["rdo_status"]
           updated_at?: string
         }
         Relationships: [
@@ -3643,7 +3643,7 @@ export type Database = {
           id: string
           project_id: string | null
           reject_comment: string | null
-          status: Database["public"]["Enums"]["timesheet_status"]
+          status: Database["mysteptime"]["Enums"]["timesheet_status"]
           updated_at: string
           validated_at: string | null
           validated_by: string | null
@@ -3657,7 +3657,7 @@ export type Database = {
           id?: string
           project_id?: string | null
           reject_comment?: string | null
-          status?: Database["public"]["Enums"]["timesheet_status"]
+          status?: Database["mysteptime"]["Enums"]["timesheet_status"]
           updated_at?: string
           validated_at?: string | null
           validated_by?: string | null
@@ -3671,7 +3671,7 @@ export type Database = {
           id?: string
           project_id?: string | null
           reject_comment?: string | null
-          status?: Database["public"]["Enums"]["timesheet_status"]
+          status?: Database["mysteptime"]["Enums"]["timesheet_status"]
           updated_at?: string
           validated_at?: string | null
           validated_by?: string | null
@@ -3726,8 +3726,8 @@ export type Database = {
           notes: string | null
           origin: string
           scheduled_at: string
-          status: Database["public"]["Enums"]["transport_status"]
-          transport_type: Database["public"]["Enums"]["transport_type"]
+          status: Database["mysteptime"]["Enums"]["transport_status"]
+          transport_type: Database["mysteptime"]["Enums"]["transport_type"]
           updated_at: string
           vehicle: string | null
           vendor_id: string | null
@@ -3742,8 +3742,8 @@ export type Database = {
           notes?: string | null
           origin: string
           scheduled_at: string
-          status?: Database["public"]["Enums"]["transport_status"]
-          transport_type: Database["public"]["Enums"]["transport_type"]
+          status?: Database["mysteptime"]["Enums"]["transport_status"]
+          transport_type: Database["mysteptime"]["Enums"]["transport_type"]
           updated_at?: string
           vehicle?: string | null
           vendor_id?: string | null
@@ -3758,8 +3758,8 @@ export type Database = {
           notes?: string | null
           origin?: string
           scheduled_at?: string
-          status?: Database["public"]["Enums"]["transport_status"]
-          transport_type?: Database["public"]["Enums"]["transport_type"]
+          status?: Database["mysteptime"]["Enums"]["transport_status"]
+          transport_type?: Database["mysteptime"]["Enums"]["transport_type"]
           updated_at?: string
           vehicle?: string | null
           vendor_id?: string | null
@@ -3984,9 +3984,9 @@ export type Database = {
           origin: string
           realizado: boolean
           scheduled_at: string
-          status: Database["public"]["Enums"]["transport_trip_status"]
+          status: Database["mysteptime"]["Enums"]["transport_trip_status"]
           status_lancamento: string | null
-          tipo: Database["public"]["Enums"]["transport_tipo"]
+          tipo: Database["mysteptime"]["Enums"]["transport_tipo"]
           tipo_transporte: string | null
           uber_solicitado_via: string | null
           unidade: string | null
@@ -4027,9 +4027,9 @@ export type Database = {
           origin: string
           realizado?: boolean
           scheduled_at: string
-          status?: Database["public"]["Enums"]["transport_trip_status"]
+          status?: Database["mysteptime"]["Enums"]["transport_trip_status"]
           status_lancamento?: string | null
-          tipo?: Database["public"]["Enums"]["transport_tipo"]
+          tipo?: Database["mysteptime"]["Enums"]["transport_tipo"]
           tipo_transporte?: string | null
           uber_solicitado_via?: string | null
           unidade?: string | null
@@ -4070,9 +4070,9 @@ export type Database = {
           origin?: string
           realizado?: boolean
           scheduled_at?: string
-          status?: Database["public"]["Enums"]["transport_trip_status"]
+          status?: Database["mysteptime"]["Enums"]["transport_trip_status"]
           status_lancamento?: string | null
-          tipo?: Database["public"]["Enums"]["transport_tipo"]
+          tipo?: Database["mysteptime"]["Enums"]["transport_tipo"]
           tipo_transporte?: string | null
           uber_solicitado_via?: string | null
           unidade?: string | null
@@ -4094,19 +4094,19 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          role: Database["public"]["Enums"]["app_role"]
+          role: Database["mysteptime"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
-          role: Database["public"]["Enums"]["app_role"]
+          role: Database["mysteptime"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
-          role?: Database["public"]["Enums"]["app_role"]
+          role?: Database["mysteptime"]["Enums"]["app_role"]
           user_id?: string
         }
         Relationships: []
@@ -4210,7 +4210,7 @@ export type Database = {
       }
       has_role: {
         Args: {
-          _role: Database["public"]["Enums"]["app_role"]
+          _role: Database["mysteptime"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
@@ -4301,7 +4301,7 @@ export type Database = {
       nomination_notificar_logistica_inserir: {
         Args: {
           p_detalhe?: string
-          p_nom: Database["public"]["Tables"]["nominations"]["Row"]
+          p_nom: Database["mysteptime"]["Tables"]["nominations"]["Row"]
           p_titulo: string
         }
         Returns: undefined
@@ -4389,7 +4389,7 @@ export type Database = {
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "mysteptime">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
@@ -4505,7 +4505,7 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  public: {
+  mysteptime: {
     Enums: {
       app_role: [
         "pending",

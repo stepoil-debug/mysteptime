@@ -1278,7 +1278,7 @@ async function requestEligibilityEvaluation(
   const accessToken = data.session?.access_token;
   if (!accessToken) throw new Error("Sua sessão no aplicativo expirou. Entre novamente.");
 
-  const response = await fetch("/api/integrations/drake/qualification-eligibility", {
+  const response = await fetch(`${import.meta.env.BASE_URL}api/integrations/drake/qualification-eligibility`, {
     method: "POST",
     credentials: "include",
     signal,

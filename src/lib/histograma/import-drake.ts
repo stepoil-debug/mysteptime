@@ -145,7 +145,7 @@ export function parseDrakeWorkbook(buf: ArrayBuffer | Buffer): ParsedDrakeRow[] 
 
 /** Importa relatório de embarque (mesmo fluxo do botão Importar Excel Drake). */
 export async function importDrakeEmbarkation(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<any, "mysteptime", "mysteptime">,
   rows: ParsedDrakeRow[],
 ): Promise<DrakeImportSummary> {
   const matriculas = Array.from(new Set(rows.map((r) => r.matricula)));
@@ -387,7 +387,7 @@ export async function importDrakeEmbarkation(
   };
 }
 
-async function garantirEmbarquesParaPeriodosSemCobertura(supabase: SupabaseClient): Promise<void> {
+async function garantirEmbarquesParaPeriodosSemCobertura(supabase: SupabaseClient<any, "mysteptime", "mysteptime">): Promise<void> {
   const periodosE = await selectAllPages<{
     id: string; colaborador_id: string; unidade_operacional: string | null; centro_de_custo: string | null;
     data_inicio: string; data_fim: string; origem: string | null;
@@ -446,7 +446,7 @@ async function garantirEmbarquesParaPeriodosSemCobertura(supabase: SupabaseClien
 // mantém só o de created_at mais recente e apaga o(s) resto — ver comentário no ponto de
 // chamada (fim de importDrakeEmbarkation) pra entender por que isso é necessário mesmo com o
 // delete-all-then-insert já existente.
-async function limparPeriodosDrakeEmbarqueSuperados(supabase: SupabaseClient): Promise<void> {
+async function limparPeriodosDrakeEmbarqueSuperados(supabase: SupabaseClient<any, "mysteptime", "mysteptime">): Promise<void> {
   const periodos = await selectAllPages<{
     id: string; colaborador_id: string; data_inicio: string; data_fim: string; created_at: string;
   }>((from, to) =>
@@ -490,7 +490,7 @@ async function limparPeriodosDrakeEmbarqueSuperados(supabase: SupabaseClient): P
 // Entre todo período "Programado" (P origem=manual, 1º dia; ou E origem=programado,
 // continuação) que se sobrepõe a um embarque REAL confirmado (tipo="E", origem != programado)
 // do mesmo colaborador, apaga o Programado — ver comentário no ponto de chamada.
-async function limparProgramadosSuperadosPorEmbarqueReal(supabase: SupabaseClient): Promise<void> {
+async function limparProgramadosSuperadosPorEmbarqueReal(supabase: SupabaseClient<any, "mysteptime", "mysteptime">): Promise<void> {
   const [programados, reais] = await Promise.all([
     selectAllPages<{ id: string; colaborador_id: string; tipo: string; origem: string | null; data_inicio: string; data_fim: string }>((from, to) =>
       supabase.from("hist_novo_periodos").select("id, colaborador_id, tipo, origem, data_inicio, data_fim")
@@ -539,7 +539,7 @@ async function limparProgramadosSuperadosPorEmbarqueReal(supabase: SupabaseClien
 // limparProgramadosSuperadosPorEmbarqueReal (chamada logo antes) já teria apagado. O que
 // sobra aqui é só quem nunca embarcou de verdade na data programada: decisão da usuária, esse
 // Programado vencido simplesmente some, sem exigir confirmação/exclusão manual em Lançamentos.
-async function limparProgramadosExpirados(supabase: SupabaseClient): Promise<void> {
+async function limparProgramadosExpirados(supabase: SupabaseClient<any, "mysteptime", "mysteptime">): Promise<void> {
   const hoje = todayStr();
   const programados = await selectAllPages<{ id: string; tipo: string; origem: string | null; data_fim: string }>((from, to) =>
     supabase.from("hist_novo_periodos").select("id, tipo, origem, data_fim")
@@ -566,7 +566,7 @@ async function limparProgramadosExpirados(supabase: SupabaseClient): Promise<voi
 }
 
 export async function importDrakeEmbarkationFromBuffer(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<any, "mysteptime", "mysteptime">,
   buf: ArrayBuffer | Buffer,
 ): Promise<DrakeImportSummary> {
   const rows = parseDrakeWorkbook(buf);

@@ -23,50 +23,25 @@ export const diagnoseEmailAlert = createServerFn({ method: "POST" })
     const roleAtual = roleRow?.role as string | undefined;
     if (!hasOperatorAccess(roleAtual)) throw new Error("Sem permissão.");
 
-    const key = process.env["LOVABLE_API_KEY"];
-    if (!key) throw new Error("Serviço de IA não configurado.");
-
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "fetch" },
-      body: JSON.stringify({
-        model: "openai/gpt-6-astra",
-        instructions: SYSTEM,
-        input: data.details,
-        stream: true,
-        store: false,
-        reasoning: { effort: "low" },
-      }),
-    });
-    if (!res.ok || !res.body) {
-      const body = await res.text().catch(() => "");
-      if (res.status === 429) throw new Error("Muitas análises em pouco tempo. Tente de novo em instantes.");
-      if (res.status === 402) throw new Error("Créditos de IA esgotados. Adicione créditos em Configurações > Planos.");
-      throw new Error(`Falha na análise (${res.status}). ${body.slice(0, 200)}`);
-    }
-
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = "";
+    // IA própria (API da Anthropic) no lugar do gateway do Lovable. Chave: ANTHROPIC_API_KEY na Vercel.
+    if (!process.env["ANTHROPIC_API_KEY"]) throw new Error("Serviço de IA não configurado.");
+    const { default: Anthropic } = await import("@anthropic-ai/sdk");
+    const client = new Anthropic();
     let text = "";
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      const lines = buf.split("\n");
-      buf = lines.pop() ?? "";
-      for (const l of lines) {
-        if (!l.startsWith("data:")) continue;
-        const payload = l.slice(5).trim();
-        if (!payload || payload === "[DONE]") continue;
-        try {
-          const ev = JSON.parse(payload);
-          if (ev.type === "response.output_text.delta") text += ev.delta ?? "";
-          if (ev.type === "error" || ev.type === "response.failed") throw new Error("A análise falhou. Tente novamente.");
-        } catch (e) {
-          if (e instanceof Error && e.message.startsWith("A análise")) throw e;
-        }
-      }
+    try {
+      const response = await client.messages.create({
+        model: "claude-opus-5-5",
+        max_tokens: 4000,
+        output_config: { effort: "low" },
+        system: SYSTEM,
+        messages: [{ role: "user", content: data.details }],
+      });
+      if (response.stop_reason === "refusal") throw new Error("A análise foi recusada. Revise o texto enviado.");
+      for (const block of response.content) if (block.type === "text") text += block.text;
+    } catch (e) {
+      if (e instanceof Anthropic.RateLimitError) throw new Error("Muitas análises em pouco tempo. Tente de novo em instantes.");
+      if (e instanceof Anthropic.APIError) throw new Error(`Falha na análise (${e.status ?? "rede"}).`);
+      throw e;
     }
     return { answer: text.trim() || "Não foi possível gerar um diagnóstico. Inclua mais detalhes do erro." };
   });

@@ -35,7 +35,7 @@ export type RunDrakeUpdateOptions = {
    * Manual: authenticateAppRequest → createUserClient(token do usuário logado).
    * Agendado: createUserClient(token obtido via signInWithPassword da conta de automação).
    */
-  db: SupabaseClient;
+  db: SupabaseClient<any, "mysteptime", "mysteptime">;
   onProgress?: DrakeProgressCallback;
   triggeredBy?: string | null;
   triggeredByLabel?: string | null;
@@ -145,7 +145,7 @@ export async function runScheduledDrakeUpdate(
 
   let accessToken: string | undefined;
   let claimedSlot = false;
-  let db: SupabaseClient | undefined;
+  let db: SupabaseClient<any, "mysteptime", "mysteptime"> | undefined;
   try {
     const session = await authenticateMyStepTimeAutomationUser();
     accessToken = session.accessToken;

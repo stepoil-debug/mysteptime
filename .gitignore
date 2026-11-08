@@ -52,3 +52,7 @@ tmp/drake/**
 # Access legado: exportacoes contêm dados pessoais (inclusive CPF) e nunca devem ser commitadas.
 private/access-history/
 
+
+# build da Vercel (Nitro preset vercel)
+.vercel
+.output

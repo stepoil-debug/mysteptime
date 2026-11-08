@@ -26,7 +26,7 @@ function IntranetAuthPage() {
 
     (async () => {
       try {
-        const response = await fetch("/api/auth/intranet", {
+        const response = await fetch(`${import.meta.env.BASE_URL}api/auth/intranet`, {
           method: "POST",
           cache: "no-store",
           credentials: "same-origin",
@@ -47,7 +47,7 @@ function IntranetAuthPage() {
           type: "magiclink",
         });
         if (authError) throw new Error("A autenticação do Mysteptime não pôde ser concluída.");
-        window.location.replace("/");
+        window.location.replace(import.meta.env.BASE_URL);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Não foi possível concluir o acesso integrado.");
       }

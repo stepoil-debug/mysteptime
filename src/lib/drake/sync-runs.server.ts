@@ -21,7 +21,7 @@ export interface DrakeSyncRunPayload {
 // lista de logs de sincronização na aba Lançamentos. Nunca deve derrubar a atualização em si por
 // causa de um erro aqui (mesma postura de persistIntegrationFailure), só loga um aviso.
 export async function recordDrakeSyncRun(
-  db: SupabaseClient,
+  db: SupabaseClient<any, "mysteptime", "mysteptime">,
   payload: DrakeSyncRunPayload,
 ): Promise<void> {
   try {

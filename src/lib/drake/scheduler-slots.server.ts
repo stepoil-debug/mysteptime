@@ -7,7 +7,7 @@ export type DrakeScheduleSlot = {
 };
 
 export async function tryClaimDrakeScheduleSlot(
-  db: SupabaseClient,
+  db: SupabaseClient<any, "mysteptime", "mysteptime">,
   slot: DrakeScheduleSlot,
   claimedBy: string,
 ): Promise<boolean> {
@@ -24,7 +24,7 @@ export async function tryClaimDrakeScheduleSlot(
 }
 
 export async function completeDrakeScheduleSlot(
-  db: SupabaseClient,
+  db: SupabaseClient<any, "mysteptime", "mysteptime">,
   slotKey: string,
   status: "success" | "error",
   errorMessage?: string,

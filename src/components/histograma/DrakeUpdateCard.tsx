@@ -204,7 +204,7 @@ export function DrakeUpdateCard() {
         throw new Error("Sua sessão no aplicativo expirou. Entre novamente.");
       }
 
-      const response = await fetch("/api/integrations/drake/update", {
+      const response = await fetch(`${import.meta.env.BASE_URL}api/integrations/drake/update`, {
         method: "POST",
         credentials: "include",
         signal: abort.signal,

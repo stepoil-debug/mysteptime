@@ -38,7 +38,7 @@ import {
 } from "./update-types";
 
 export async function updateDrakeQualifications(
-  db: SupabaseClient,
+  db: SupabaseClient<any, "mysteptime", "mysteptime">,
   onProgress: QualificationProgressCallback,
 ): Promise<QualificationUpdateResult> {
   const existing = getDrakeLogContext();
@@ -52,7 +52,7 @@ export async function updateDrakeQualifications(
 }
 
 async function updateQualificationsInner(
-  db: SupabaseClient,
+  db: SupabaseClient<any, "mysteptime", "mysteptime">,
   onProgress: QualificationProgressCallback,
   startedAtMs: number,
 ): Promise<QualificationUpdateResult> {

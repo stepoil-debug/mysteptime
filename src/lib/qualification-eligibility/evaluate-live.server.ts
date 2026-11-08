@@ -18,7 +18,7 @@ import {
 import { fetchWorkerQualificationSource } from "./repository";
 
 type AppDb = SupabaseClient<Database>;
-type StoredOption = Database["public"]["Tables"]["drake_qualification_options"]["Row"];
+type StoredOption = Database["mysteptime"]["Tables"]["drake_qualification_options"]["Row"];
 
 const MATRIX_DOMAIN = "QUALIFICATION_MATRICES";
 const WORKER_TYPE_DOMAIN = "WORKER_TYPES";
