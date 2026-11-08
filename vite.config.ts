@@ -31,7 +31,8 @@ export default defineConfig(async ({ command, mode }) => {
   ];
   if (command === "build") {
     const { nitro } = await import("nitro/vite");
-    plugins.push(nitro({ preset: process.env.NITRO_PRESET || "vercel" }));
+    // baseURL: os assets estáticos também precisam viver sob /mysteptime/ (o HTML os pede lá).
+    plugins.push(nitro({ preset: process.env.NITRO_PRESET || "vercel", baseURL: `${BASE_PATH}/` }));
   }
   plugins.push(viteReact());
 
