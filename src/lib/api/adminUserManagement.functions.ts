@@ -99,7 +99,7 @@ export const adminDeleteUser = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertOperator(context.supabase, context.userId);
 
-    const { data: result, error } = await context.supabase.functions.invoke("admin-user-management", {
+    const { data: result, error } = await context.supabase.functions.invoke("mysteptime-admin-user-management", {
       body: { action: "deleteUser", userId: data.userId },
     });
     if (error) throw new Error("Falha ao comunicar com o servidor de autenticação.");
@@ -121,7 +121,7 @@ export const adminResetPassword = createServerFn({ method: "POST" })
 
     // Mesmo motivo do adminCreateUser acima: redefinir senha de outro usuário exige
     // service_role, que só a Edge Function recebe automaticamente no Lovable Cloud.
-    const { data: result, error } = await context.supabase.functions.invoke("admin-user-management", {
+    const { data: result, error } = await context.supabase.functions.invoke("mysteptime-admin-user-management", {
       body: { action: "resetPassword", userId: data.userId, newPassword: data.newPassword },
     });
     if (error) throw new Error("Falha ao comunicar com o servidor de autenticação.");

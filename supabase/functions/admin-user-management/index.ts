@@ -35,7 +35,7 @@ serve(async (req) => {
     const token = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
     if (!token) return fail("Não autenticado.");
 
-    const admin = createClient(supabaseUrl, serviceRoleKey);
+    const admin = createClient(supabaseUrl, serviceRoleKey, { db: { schema: "mysteptime" } });
 
     const { data: userData, error: userErr } = await admin.auth.getUser(token);
     if (userErr || !userData?.user) return fail("Token inválido.");
@@ -79,13 +79,14 @@ serve(async (req) => {
       const newUserId = created.user?.id;
       if (!newUserId) return fail("Falha ao criar usuário.");
 
-      const { error: roleUpdateErr } = await admin.from("user_roles").update({ role }).eq("user_id", newUserId);
-      if (roleUpdateErr) return fail(roleUpdateErr.message);
-
-      // Mesmo motivo do resetPassword acima: a senha definida aqui é provisória, tem que ser
-      // trocada no primeiro acesso. Cargo/perfil (ex.: "Diretor") é opcional, aparece no
-      // cabeçalho junto do nome.
-      await admin.from("profiles").update({ must_change_password: true, perfil: perfil || null }).eq("id", newUserId);
+      // Na Intranet não existe o trigger em auth.users que criava perfil e papel: cria aqui.
+      const { error: profileErr } = await admin.from("profiles").upsert({
+        id: newUserId, email, full_name: fullName, must_change_password: true, perfil: perfil || null,
+      });
+      if (profileErr) return fail(profileErr.message);
+      await admin.from("user_roles").delete().eq("user_id", newUserId);
+      const { error: roleInsertErr } = await admin.from("user_roles").insert({ user_id: newUserId, role });
+      if (roleInsertErr) return fail(roleInsertErr.message);
 
       return ok({ userId: newUserId });
     }

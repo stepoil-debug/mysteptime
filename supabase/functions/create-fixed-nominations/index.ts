@@ -106,7 +106,7 @@ serve(async (req) => {
   if (!supabaseUrl || !serviceRoleKey) {
     return new Response(JSON.stringify({ error: "SUPABASE_URL/SERVICE_ROLE_KEY não configurados" }), { status: 500 });
   }
-  const supabase = createClient(supabaseUrl, serviceRoleKey);
+  const supabase = createClient(supabaseUrl, serviceRoleKey, { db: { schema: "mysteptime" } });
 
   const hoje = new Date().toISOString().slice(0, 10);
   const { data: equipes, error: errEquipes } = await supabase
