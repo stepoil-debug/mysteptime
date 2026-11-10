@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   classificarStatusPlanejamento as c,
+  statusPlanejamentoForaDaContagem,
   statusPlanejamentoOcupado,
 } from "./dashboard-status-planejamento";
 
@@ -15,11 +16,11 @@ describe("classificarStatusPlanejamento", () => {
     ).toBe(true);
   });
 
-  it("Fora da Ocupação: Disponível = Stand By, Indisponível próprio, Terceirizado = Outros", () => {
+  it("Fora da Ocupação: Disponível = Stand By, Indisponível próprio, texto livre = Outros", () => {
     expect(c("DISPONÍVEL")).toBe("standBy");
     expect(c("Disponivel")).toBe("standBy");
     expect(c("INDISPONÍVEL")).toBe("indisponivel");
-    expect(c("TERCEIRIZADO")).toBe("outros");
+    expect(c("CASA")).toBe("outros");
     expect(c("")).toBe("outros");
     expect(c("Férias")).toBe("ferias");
     expect(statusPlanejamentoOcupado("DISPONÍVEL")).toBe(false);
@@ -40,5 +41,13 @@ describe("classificarStatusPlanejamento", () => {
     expect(c("BLOQUEIO RH")).toBe("bloqueioRH");
     expect(c("EMBARCADO", true)).toBe("embarcado");
     expect(c("TERCEIRIZADO", true)).toBe("bloqueioRH");
+  });
+
+  it("Terceirizado fica fora de todas as contagens", () => {
+    expect(c("TERCEIRIZADO")).toBe("terceirizado");
+    expect(c("Terceirizada")).toBe("terceirizado");
+    expect(statusPlanejamentoForaDaContagem(" terceirizado ")).toBe(true);
+    expect(statusPlanejamentoForaDaContagem("EMBARCADO")).toBe(false);
+    expect(statusPlanejamentoOcupado("TERCEIRIZADO")).toBe(false);
   });
 });
