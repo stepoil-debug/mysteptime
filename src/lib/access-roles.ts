@@ -10,3 +10,8 @@ export function hasSystemAdminAccess(role: string | null | undefined): boolean {
 export function hasOperatorAccess(role: string | null | undefined): boolean {
   return OPERATOR_ROLES.some((allowed) => allowed === role);
 }
+
+/** M.O — Mão de Obra Planejada: qualquer ADM vê e edita (espelha is_system_admin no banco). */
+export function canEditMoPlanejamento(role: string | null | undefined): boolean {
+  return hasSystemAdminAccess(role);
+}

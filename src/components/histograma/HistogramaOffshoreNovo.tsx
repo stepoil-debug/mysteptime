@@ -7,7 +7,9 @@ import { notify } from "@/lib/notify";
 import { planilhaComCabecalho } from "@/lib/reportHeader";
 import { useAuth } from "@/hooks/useAuth";
 import { useRascunho, RascunhoAviso } from "@/hooks/useRascunho";
-import { hasOperatorAccess } from "@/lib/access-roles";
+import { canEditMoPlanejamento, hasOperatorAccess } from "@/lib/access-roles";
+import { MoPlanejamentoTab } from "@/components/histograma/mo/MoPlanejamentoTab";
+import { MoPlanejadoDashboardSection } from "@/components/histograma/mo/MoPlanejadoGraficos";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -357,7 +359,7 @@ function HistogramaOffshoreNovoContent({
   periodos: HistNovoPeriodo[];
   initialTab?: string;
 }) {
-  const { role } = useAuth();
+  const { role, roleLoaded } = useAuth();
   const isOperator = hasOperatorAccess(role);
   // Todo mundo que chega nessa página (operador, visitante, solicitante e os papéis de etapa
   // de Nomeações) vê Dashboard + Histograma — só a aba Lançamentos (lança/edita de verdade)
@@ -367,6 +369,9 @@ function HistogramaOffshoreNovoContent({
   // Planejamento de Transporte é uma ferramenta operacional pra logística programar
   // carro/passagem de quem embarca ou desembarca — mesma exclusividade de Lançamentos.
   const canSeePlanejamento = isOperator;
+  // M.O — Mão de Obra Planejada (pedido dela, 2026-11-09): só ADM (ver canEditMoPlanejamento);
+  // pros demais a aba não existe, e o deep-link ?tab=mo cai no Dashboard.
+  const canSeeMo = canEditMoPlanejamento(role);
 
   // "Offshore" = só quem está cadastrado na aba Planejamento de Embarque, casando por matrícula
   // com o Drake (pedido dela, 2026-09-29 — antes era baseado em quem estava marcado como
@@ -378,6 +383,9 @@ function HistogramaOffshoreNovoContent({
   // Planejamento de Embarque.
   const [origem, setOrigem] = useState<"geral" | "offshore">("offshore");
   const [innerTab, setInnerTab] = useState(initialTab ?? "dashboard");
+  useEffect(() => {
+    if (innerTab === "mo" && roleLoaded && !canSeeMo) setInnerTab("dashboard");
+  }, [innerTab, roleLoaded, canSeeMo]);
   const { data: planejamentoEmbarqueOffshore = [] } = usePlanejamentoEmbarqueQuery();
   const matriculasPlanejamento = useMemo(
     () =>
@@ -409,7 +417,7 @@ function HistogramaOffshoreNovoContent({
             </p>
           )}
         </div>
-        {innerTab !== "dashboard" && innerTab !== "planejamento" && (
+        {innerTab !== "dashboard" && innerTab !== "planejamento" && innerTab !== "mo" && (
           <Tabs value={origem} onValueChange={(v) => setOrigem(v as "geral" | "offshore")}>
             <TabsList>
               <TabsTrigger value="offshore">Offshore</TabsTrigger>
@@ -427,6 +435,7 @@ function HistogramaOffshoreNovoContent({
           {canSeePlanejamento && (
             <TabsTrigger value="planejamento">Planejamento de Embarque</TabsTrigger>
           )}
+          {canSeeMo && <TabsTrigger value="mo">M.O</TabsTrigger>}
         </TabsList>
         <TabsContent value="dashboard" className="mt-4">
           <DashboardTab colaboradores={colaboradores} periodos={periodos} />
@@ -444,6 +453,11 @@ function HistogramaOffshoreNovoContent({
         {canSeePlanejamento && (
           <TabsContent value="planejamento" className="mt-4">
             <PlanejamentoEmbarqueTab />
+          </TabsContent>
+        )}
+        {canSeeMo && (
+          <TabsContent value="mo" className="mt-4">
+            <MoPlanejamentoTab />
           </TabsContent>
         )}
       </Tabs>
@@ -6005,6 +6019,9 @@ function DashboardTab({
           </ChartContainer>
         )}
       </Card>
+
+      {/* ── PLANEJADO — M.O (pedido dela, 2026-11-09): sempre por último, separado do realizado ── */}
+      <MoPlanejadoDashboardSection unidades={filterUnidade} bsps={filterBsp} />
     </div>
   );
 }
