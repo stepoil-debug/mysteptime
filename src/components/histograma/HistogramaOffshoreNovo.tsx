@@ -178,12 +178,13 @@ import {
   isStatusNaBase,
   isStatusProgramado,
   isStatusEmbarcado,
-  isStatusFolga,
-  isStatusDisponivel,
-  isStatusBloqueioTemporario,
   isStatusBloqueioRH,
   type PlanejamentoEmbarqueSnapshotRow,
 } from "@/components/histograma/PlanejamentoEmbarqueTab";
+import {
+  classificarStatusPlanejamento,
+  statusPlanejamentoOcupado,
+} from "@/lib/dashboard-status-planejamento";
 import { KpiValue } from "@/components/KpiValue";
 import { ProximosEventosCard } from "@/components/histograma/ProximosEventosCard";
 import { DrakeSyncLogList } from "@/components/histograma/DrakeSyncLogList";
@@ -4083,10 +4084,8 @@ function ehUnidadeBase(unidade: string | null | undefined): boolean {
 // Offshore mexe nela, via rh_set_bloqueio_planejamento) — o texto do Status pode ser sobrescrito
 // depois por uma edição direta da célula (ex.: alguém troca o Status por engano sem desbloquear
 // primeiro), então checar só isStatusBloqueioRH(status) pode perder gente que continua bloqueada
-// de verdade. Conta como bloqueado se qualquer um dos dois disser que sim.
-function ehBloqueioRH(r: { status: string | null; rh_bloqueado: boolean }): boolean {
-  return r.rh_bloqueado || isStatusBloqueioRH(r.status);
-}
+// de verdade. Conta como bloqueado se qualquer um dos dois disser que sim — regra hoje em
+// classificarStatusPlanejamento (src/lib/dashboard-status-planejamento.ts).
 
 // Arredondar 3 % de forma independente (Math.round em cada uma) pode não somar 100 mesmo quando
 // as contagens originais somam certinho — sobra de arredondamento. "Maior resto" (Hare-Niemeyer)
@@ -4386,8 +4385,9 @@ function DashboardTab({
       if (!snapshotsPorDia.has(s.snapshot_date)) snapshotsPorDia.set(s.snapshot_date, []);
       snapshotsPorDia.get(s.snapshot_date)!.push(s);
     });
-    const ocupadoPlanejamentoStatus = (status: string | null) =>
-      isStatusEmbarcado(status) || isStatusProgramado(status) || isStatusFolga(status);
+    // Embarcado, Programado, Folga e Trabalho Externo (pedido dela, 2026-11-10) — mesma régua
+    // da rosquinha "Ocupação" (ver src/lib/dashboard-status-planejamento.ts).
+    const ocupadoPlanejamentoStatus = (status: string | null) => statusPlanejamentoOcupado(status);
     const totalHojeVivo = planejamentoEmbarque.length;
     const ocupadosHojeVivo = planejamentoEmbarque.filter((r) =>
       ocupadoPlanejamentoStatus(r.status),
@@ -4523,8 +4523,11 @@ function DashboardTab({
       embarcados: 0,
       programados: 0,
       folga: 0,
+      trabalhoExterno: 0,
       disponivel: 0,
       naBase: 0,
+      baseHenrique: 0,
+      bloqueioBaseHenrique: 0,
       bloqueioTemporario: 0,
       bloqueioRH: 0,
     };
@@ -4532,8 +4535,11 @@ function DashboardTab({
       embarcados: new Set<string>(),
       programados: new Set<string>(),
       folga: new Set<string>(),
+      trabalhoExterno: new Set<string>(),
       disponivel: new Set<string>(),
       naBase: new Set<string>(),
+      baseHenrique: new Set<string>(),
+      bloqueioBaseHenrique: new Set<string>(),
       bloqueioTemporario: new Set<string>(),
       bloqueioRH: new Set<string>(),
     };
@@ -4554,9 +4560,6 @@ function DashboardTab({
       if (!outrosNomesPorLabel.has(label)) outrosNomesPorLabel.set(label, new Set());
       outrosNomesPorLabel.get(label)!.add(nome);
     };
-    const normalizaStatus = (s: string | null | undefined) =>
-      (s ?? "").trim().toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-
     diasFiltro.forEach((dia) => {
       if (dia < CORTE_PLANEJAMENTO) {
         colaboradoresComMultiploEmbarque.forEach((c) => {
@@ -4605,38 +4608,48 @@ function DashboardTab({
                 rh_bloqueado: r.rh_bloqueado,
               }));
         soma.total += linhas.length;
+        // Balde de cada Status em src/lib/dashboard-status-planejamento.ts (com testes):
+        // Ocupação = Embarcado/Programado/Folga/Trabalho Externo; Fora da Ocupação = Stand By
+        // (Disponível), Indisponível, Férias/Atestado/Afastamento e Outros (Terceirizado e texto
+        // livre); Bloqueados Henrique = Base Henrique/Bloqueio Base Henrique (+ Na Base, outros
+        // "Base - Fulano" e Bloqueio RH, se aparecerem).
         linhas.forEach((l) => {
-          const statusNormalizado = normalizaStatus(l.status);
-          if (isStatusEmbarcado(l.status)) {
-            soma.embarcados++;
-            nomes.embarcados.add(l.nome);
-          } else if (isStatusProgramado(l.status)) {
-            soma.programados++;
-            nomes.programados.add(l.nome);
-          } else if (isStatusFolga(l.status)) {
-            soma.folga++;
-            nomes.folga.add(l.nome);
-          } else if (isStatusDisponivel(l.status)) {
-            soma.disponivel++;
-            nomes.disponivel.add(l.nome);
-          } else if (isStatusNaBase(l.status)) {
-            soma.naBase++;
-            nomes.naBase.add(l.nome);
-          } else if (isStatusBloqueioTemporario(l.status)) {
-            soma.bloqueioTemporario++;
-            nomes.bloqueioTemporario.add(l.nome);
-          } else if (ehBloqueioRH(l)) {
-            soma.bloqueioRH++;
-            nomes.bloqueioRH.add(l.nome);
+          const add = (k: keyof typeof nomes) => {
+            soma[k]++;
+            nomes[k].add(l.nome);
+          };
+          switch (classificarStatusPlanejamento(l.status, l.rh_bloqueado)) {
+            case "embarcado":
+              return add("embarcados");
+            case "programado":
+              return add("programados");
+            case "folga":
+              return add("folga");
+            case "trabalhoExterno":
+              return add("trabalhoExterno");
+            case "standBy":
+              return add("disponivel");
+            case "naBase":
+              return add("naBase");
+            case "baseHenrique":
+              return add("baseHenrique");
+            case "bloqueioBaseHenrique":
+              return add("bloqueioBaseHenrique");
+            case "bloqueioTemporario":
+              return add("bloqueioTemporario");
+            case "bloqueioRH":
+              return add("bloqueioRH");
+            case "ferias":
+              return addEspecial("Férias", l.nome);
+            case "atestado":
+              return addEspecial("Atestado", l.nome);
+            case "afastamento":
+              return addEspecial("Afastamento", l.nome);
+            case "indisponivel":
+              return addEspecial("Indisponível", l.nome);
+            default:
+              return addOutros(l.status?.trim() || "Sem status", l.nome);
           }
-          // Se alguém digitar "Férias"/"Atestado"/"Afastamento" direto na célula do Planejamento
-          // (mesmo dentro de um texto maior, tipo "Atestado médico"), continua com fatia própria
-          // — mesmo critério do Drake acima. "includes" em vez de igualdade exata pra não perder
-          // variações de texto livre.
-          else if (statusNormalizado.includes("FERIAS")) addEspecial("Férias", l.nome);
-          else if (statusNormalizado.includes("ATESTADO")) addEspecial("Atestado", l.nome);
-          else if (statusNormalizado.includes("AFASTAMENTO")) addEspecial("Afastamento", l.nome);
-          else addOutros(l.status?.trim() || "Sem status", l.nome);
         });
       }
     });
@@ -4698,6 +4711,12 @@ function DashboardTab({
       programadosMedia: media(soma.programados),
       folga: porNome(nomes.folga),
       folgaMedia: media(soma.folga),
+      trabalhoExterno: porNome(nomes.trabalhoExterno),
+      trabalhoExternoMedia: media(soma.trabalhoExterno),
+      baseHenrique: porNome(nomes.baseHenrique),
+      baseHenriqueMedia: media(soma.baseHenrique),
+      bloqueioBaseHenrique: porNome(nomes.bloqueioBaseHenrique),
+      bloqueioBaseHenriqueMedia: media(soma.bloqueioBaseHenrique),
       disponivel: porNome(nomes.disponivel),
       disponivelMedia: media(soma.disponivel),
       naBase: porNome(nomes.naBase),
@@ -4896,6 +4915,12 @@ function DashboardTab({
         value: statusReferenceDate.folgaMedia,
         nomes: folgaDoPlanejamento,
       },
+      // Trabalho Externo entra na Ocupação (pedido dela, 2026-11-10).
+      {
+        name: "Trabalho Externo",
+        value: statusReferenceDate.trabalhoExternoMedia,
+        nomes: statusReferenceDate.trabalhoExterno,
+      },
     ]
       .filter((d) => d.value > 0)
       .map((d, i) => ({ ...d, color: OCUPACAO_BLUE_PALETTE[i % OCUPACAO_BLUE_PALETTE.length] }));
@@ -4909,23 +4934,35 @@ function DashboardTab({
   const naoOcupacaoData = useMemo(() => {
     return [
       {
-        name: "Aguardando Escala",
+        // Disponível = "Stand By" (pedido dela, 2026-11-10; antes "Aguardando Escala").
+        name: "Stand By",
         value: statusReferenceDate.disponivelMedia,
         nomes: disponivelDoPlanejamento,
       },
-      // Férias/Atestado/Afastamento continuam com fatia própria (pedido dela).
+      // Indisponível e Férias/Atestado/Afastamento com fatia própria (pedido dela).
       ...statusReferenceDate.especiaisDetalhado,
-      // Qualquer Status sem nada definido (Indisponível, Terceirizado, Casa, texto livre digitado
-      // direto no Planejamento, etc.) — uma fatia só "Outros" (pedido dela), com o Status real de
-      // cada um no hover — garante que as 3 rosquinhas sempre somem 100% do Headcount.
+      // Terceirizado e qualquer outro texto livre — uma fatia só "Outros" (pedido dela), com o
+      // Status real de cada um no hover — garante que as 3 rosquinhas sempre somem 100%.
       statusReferenceDate.outros,
     ]
       .filter((d) => d.value > 0)
       .map((d, i) => ({ ...d, color: OCUPACAO_WARM_PALETTE[i % OCUPACAO_WARM_PALETTE.length] }));
   }, [statusReferenceDate, disponivelDoPlanejamento]);
 
+  // "Bloqueados Henrique" (pedido dela, 2026-11-10): Base Henrique e Bloqueio Base Henrique; Na
+  // Base, outros "Base - Fulano" e Bloqueio RH continuam aqui se aparecerem.
   const baseData = useMemo(() => {
     return [
+      {
+        name: "Base Henrique",
+        value: statusReferenceDate.baseHenriqueMedia,
+        nomes: statusReferenceDate.baseHenrique,
+      },
+      {
+        name: "Bloqueio Base Henrique",
+        value: statusReferenceDate.bloqueioBaseHenriqueMedia,
+        nomes: statusReferenceDate.bloqueioBaseHenrique,
+      },
       {
         name: "Na Base",
         value: statusReferenceDate.naBaseMedia,
@@ -4995,16 +5032,24 @@ function DashboardTab({
       hoverNames: colaboradoresNaBaseDoPlanejamento,
     },
     {
-      label: "Bloqueados",
-      value: statusReferenceDate.bloqueioTemporarioMedia + statusReferenceDate.bloqueioRHMedia,
+      label: "Bloqueados Henrique",
+      value:
+        statusReferenceDate.baseHenriqueMedia +
+        statusReferenceDate.bloqueioBaseHenriqueMedia +
+        statusReferenceDate.bloqueioTemporarioMedia +
+        statusReferenceDate.bloqueioRHMedia,
       icon: Lock,
       hoverNames: [
+        ...statusReferenceDate.baseHenrique.map((nome) => `${nome} — Base Henrique`),
+        ...statusReferenceDate.bloqueioBaseHenrique.map(
+          (nome) => `${nome} — Bloqueio Base Henrique`,
+        ),
         ...bloqueioRHDoPlanejamento.map((nome) => `${nome} — Bloqueio RH`),
         ...bloqueioTemporarioDoPlanejamento.map((nome) => `${nome} — Bloqueio Temporário`),
       ],
     },
     {
-      label: "Aguardando Escala",
+      label: "Stand By",
       value: statusReferenceDate.disponivelMedia,
       icon: CheckCircle2,
       hoverNames: disponivelDoPlanejamento,
@@ -5450,21 +5495,22 @@ function DashboardTab({
                 <span className="font-semibold" style={{ color: DASH_COLORS.navy }}>
                   Ocupado
                 </span>{" "}
-                (fatia azul): Embarcado, Programado e Folga de Embarque — vaga comprometida no ciclo
-                de rotação, mesmo quando a pessoa não está fisicamente a bordo naquele dia (folga do
-                ciclo ou mobilização já lançada).
+                (fatia azul): Embarcado, Programado, Folga de Embarque e Trabalho Externo — vaga
+                comprometida no ciclo de rotação, mesmo quando a pessoa não está fisicamente a bordo
+                naquele dia (folga do ciclo ou mobilização já lançada).
               </p>
               <p>
                 <span className="font-semibold" style={{ color: "#c2410c" }}>
                   Fora da ocupação
                 </span>{" "}
-                (fatia laranja): Aguardando Escala, Férias e Atestado — sem vaga reservada em
-                nenhuma unidade no momento.
+                (fatia laranja): Stand By (Disponível), Indisponível, Férias/Atestado e Outros
+                (Terceirizado) — sem vaga reservada em nenhuma unidade no momento.
               </p>
               <p>
                 <span className="font-semibold" style={{ color: "#7f1d1d" }}>
-                  Na Base / Bloqueio Temporário / Bloqueio RH
+                  Bloqueados Henrique
                 </span>{" "}
+                (Base Henrique e Bloqueio Base Henrique; também Na Base e Bloqueio RH, se houver)
                 (fatia vermelha): dentro do Headcount Total, mas numa categoria à parte — não entram
                 nem em "Ocupado" nem em "Fora da ocupação".
               </p>
@@ -5627,7 +5673,7 @@ function DashboardTab({
           </div>
           <div className="flex flex-col items-center gap-2 lg:border-l lg:pl-6">
             <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Bloqueados
+              Bloqueados Henrique
             </h4>
             <div className="flex flex-1 flex-wrap items-center justify-center gap-4">
               <div className="relative h-[180px] w-[180px] shrink-0">
