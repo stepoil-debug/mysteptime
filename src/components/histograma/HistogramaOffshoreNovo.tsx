@@ -5064,7 +5064,7 @@ function DashboardTab({
       hoverNames: disponivelDoPlanejamento,
     },
     {
-      label: "Não Disponíveis",
+      label: "Indisponíveis",
       value: statusReferenceDate.naoDisponiveisMedia,
       icon: AlertCircle,
       hoverNames: statusReferenceDate.naoDispComStatus,
