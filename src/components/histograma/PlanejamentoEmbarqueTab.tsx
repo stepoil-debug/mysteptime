@@ -78,6 +78,7 @@ import {
   type AcaoPlanejamento,
   type LinhaPlanejamento,
 } from "@/lib/planejamento-desfazer";
+import { statusPlanejamentoForaDaContagem } from "@/lib/dashboard-status-planejamento";
 import {
   Undo2,
   Search,
@@ -1846,6 +1847,12 @@ export function PlanejamentoEmbarqueTab() {
         return a.nome.localeCompare(b.nome, "pt-BR");
       });
   }, [linhasSemStatus, filterStatus, sortRules]);
+  // Terceirizados ficam na lista só para consulta, fora de toda contagem (pedido dela,
+  // 2026-11-10) — voltam a contar assim que o Status muda.
+  const terceirizadosNaLista = useMemo(
+    () => linhas.filter((r) => statusPlanejamentoForaDaContagem(r.status)).length,
+    [linhas],
+  );
 
   const exportarPlanejamento = () => {
     const rows = linhas.map((r) => ({
@@ -2057,11 +2064,16 @@ export function PlanejamentoEmbarqueTab() {
           </Button>
           <div
             className="flex items-center gap-1.5 rounded px-2 py-0.5 h-8 text-[11px] bg-muted border border-border/60"
-            title="Total de registros na lista filtrada"
+            title="Total de registros na lista filtrada (Terceirizados ficam fora da contagem)"
           >
             <Users className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="font-bold">{linhas.length}</span>
+            <span className="font-bold">{linhas.length - terceirizadosNaLista}</span>
             <span className="text-muted-foreground">colaborador(es)</span>
+            {terceirizadosNaLista > 0 && (
+              <span className="text-muted-foreground">
+                · +{terceirizadosNaLista} terceirizado(s) fora da contagem
+              </span>
+            )}
           </div>
           <Button asChild type="button" size="sm" variant="outline" className="h-8">
             <Link
@@ -2138,7 +2150,12 @@ export function PlanejamentoEmbarqueTab() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") e.currentTarget.click();
                 }}
-                className={`cursor-pointer p-3 transition-colors hover:bg-muted/60 ${ativo ? "border-primary bg-primary/5" : ""}`}
+                className={`cursor-pointer p-3 transition-colors hover:bg-muted/60 ${ativo ? "border-primary bg-primary/5" : ""} ${statusPlanejamentoForaDaContagem(status) ? "border-dashed opacity-70" : ""}`}
+                title={
+                  statusPlanejamentoForaDaContagem(status)
+                    ? "Só para consulta — Terceirizados não entram em nenhuma contagem"
+                    : undefined
+                }
               >
                 <div
                   className="text-[10px] uppercase tracking-wide text-muted-foreground truncate"
@@ -2147,6 +2164,9 @@ export function PlanejamentoEmbarqueTab() {
                   {status}
                 </div>
                 <div className="text-xl font-bold tabular-nums">{total}</div>
+                {statusPlanejamentoForaDaContagem(status) && (
+                  <div className="text-[10px] text-muted-foreground">fora da contagem</div>
+                )}
               </Card>
             );
           })}

@@ -5,7 +5,10 @@
 // Pedido dela (2026-11-10):
 // - Ocupação: Embarcado, Programado, Folga e Trabalho Externo.
 // - Fora da Ocupação: Disponível ("Stand By"), Indisponível (fatia própria), Férias/Atestado/
-//   Afastamento (fatias próprias, como já era) e "Outros" (Terceirizado e qualquer texto livre).
+//   Afastamento (fatias próprias, como já era) e "Outros" (qualquer texto livre).
+// - Terceirizado (pedido dela, 2026-11-10): fica FORA de todas as contagens (Headcount, rosquinhas,
+//   Taxa de Ocupação, total do Planejamento) — é só histórico de quem já foi, usado quando
+//   precisa. Assim que o Status muda para outro, a pessoa volta a contar normalmente.
 // - Bloqueados Henrique: "Base Henrique" e "Bloqueio - Base - Henrique" (e, se aparecerem,
 //   Na Base, outros "Base - Fulano"/Bloqueio Temporário e Bloqueio RH, que já ficavam aqui).
 
@@ -24,6 +27,7 @@ export type BaldeStatusPlanejamento =
   | "atestado"
   | "afastamento"
   | "indisponivel"
+  | "terceirizado"
   | "outros";
 
 /** Palavras do status em maiúsculas, sem acento e sem pontuação ("Bloqueio - Base" → [BLOQUEIO, BASE]). */
@@ -60,6 +64,7 @@ export function classificarStatusPlanejamento(
   if (texto.includes("ATESTADO")) return "atestado";
   if (texto.includes("AFASTAMENTO")) return "afastamento";
   if (p.includes("INDISPONIVEL")) return "indisponivel";
+  if (p.some((w) => w.startsWith("TERCEIRIZAD"))) return "terceirizado";
   return "outros";
 }
 
@@ -67,4 +72,9 @@ export function classificarStatusPlanejamento(
 export function statusPlanejamentoOcupado(status: string | null | undefined): boolean {
   const b = classificarStatusPlanejamento(status);
   return b === "embarcado" || b === "programado" || b === "folga" || b === "trabalhoExterno";
+}
+
+/** Terceirizado não entra em nenhuma contagem (só fica na lista do Planejamento para consulta). */
+export function statusPlanejamentoForaDaContagem(status: string | null | undefined): boolean {
+  return classificarStatusPlanejamento(status) === "terceirizado";
 }

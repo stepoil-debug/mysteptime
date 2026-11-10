@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { dashboardPlanningRows, dashboardStatusDates } from "./dashboard-planning-source";
+import {
+  criarBuscaFotoDoDia,
+  dashboardPlanningRows,
+  dashboardStatusDates,
+} from "./dashboard-planning-source";
 
 describe("cartões do dashboard e Planejamento de Embarque", () => {
   const today = "2026-10-21";
@@ -33,5 +37,28 @@ describe("cartões do dashboard e Planejamento de Embarque", () => {
   it("mantém os totais do planejamento mesmo em filtros futuros ou anteriores a setembro", () => {
     expect(dashboardStatusDates(["2026-11-01", "2026-11-02"], "2026-11-02", today)).toEqual([today]);
     expect(dashboardStatusDates(["2026-08-01", "2026-08-02"], "2026-08-02", today)).toEqual([today]);
+  });
+});
+describe("criarBuscaFotoDoDia (gráficos mensais)", () => {
+  const fotos = [
+    { snapshot_date: "2026-09-02", nome: "A" },
+    { snapshot_date: "2026-09-02", nome: "B" },
+    { snapshot_date: "2026-09-05", nome: "C" },
+  ];
+  const busca = criarBuscaFotoDoDia(fotos);
+
+  it("usa a foto do próprio dia", () => {
+    expect(busca("2026-09-02")?.map((f) => f.nome)).toEqual(["A", "B"]);
+    expect(busca("2026-09-05")?.map((f) => f.nome)).toEqual(["C"]);
+  });
+
+  it("dia sem foto usa a foto anterior mais recente", () => {
+    expect(busca("2026-09-04")?.map((f) => f.nome)).toEqual(["A", "B"]);
+    expect(busca("2026-10-01")?.map((f) => f.nome)).toEqual(["C"]);
+  });
+
+  it("antes da primeira foto devolve null (quem chama usa a lista viva)", () => {
+    expect(busca("2026-09-01")).toBeNull();
+    expect(criarBuscaFotoDoDia([])("2026-09-01")).toBeNull();
   });
 });

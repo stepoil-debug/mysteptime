@@ -3572,6 +3572,32 @@ function SimulacaoTab({
 
   const { data: focusNomineesAll = [] } = useNomineesForGroup(focusGroupIds ?? []);
 
+  // Avançar para Aprovação Técnica daqui mesmo, ao terminar de simular (pedido dela,
+  // 2026-11-10) — mesmo caminho do botão da janela da nomeação (useAdvanceStage, e
+  // EnviarParaTecnicaParcial quando o grupo tem mais de uma função).
+  const { role } = useAuth();
+  const canOperateSimulacao = FULL_NOMINATIONS_ACCESS_ROLES.includes(role ?? "");
+  const advanceSimulacao = useAdvanceStage();
+  const [enviarTecnicaAberto, setEnviarTecnicaAberto] = useState(false);
+  const focusNaSimulacao = useMemo(
+    () => (focusGroup ?? []).filter((n) => n.current_status === "simulacao"),
+    [focusGroup],
+  );
+  const candidatosAtivos = (nominationId: string) =>
+    focusNomineesAll.filter((x) => x.nomination_id === nominationId && x.is_active).length;
+  const avancarParaTecnica = () => {
+    if (focusNaSimulacao.length === 1) {
+      advanceSimulacao.mutate(
+        { nomination: focusNaSimulacao[0], target: "aprovacao_tecnica" },
+        { onSuccess: onExitFocus },
+      );
+    } else {
+      // Contagem de candidatos do diálogo precisa vir fresca (acabou de adicionar gente aqui).
+      qc.removeQueries({ queryKey: ["nominations", "candidatos-por-funcao"] });
+      setEnviarTecnicaAberto(true);
+    }
+  };
+
   // Função ativa dentro do grupo — pra qual "Adicionar" leva agora. Trocar de função pelas
   // abas do banner não sai do modo recrutamento nem perde o que já foi selecionado nas outras
   // (pedido dela: "tudo dentro de um único cartão, sem separar um de cada vez").
@@ -3811,10 +3837,46 @@ function SimulacaoTab({
               <span className="font-semibold">{requestTitle(focusGroup[0])}</span>
               {focusGroup[0].unidade && ` — ${focusGroup[0].unidade}`}
             </span>
-            <Button size="sm" variant="outline" className="h-7 bg-white" onClick={onExitFocus}>
-              <X className="mr-1.5 h-3.5 w-3.5" /> Voltar para Nomeações
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              {canOperateSimulacao && focusNaSimulacao.length > 0 && (
+                <Button
+                  size="sm"
+                  className="h-7"
+                  onClick={avancarParaTecnica}
+                  loading={advanceSimulacao.isPending}
+                  disabled={
+                    focusNaSimulacao.length === 1 && candidatosAtivos(focusNaSimulacao[0].id) === 0
+                  }
+                  title={
+                    focusNaSimulacao.length === 1 && candidatosAtivos(focusNaSimulacao[0].id) === 0
+                      ? "Adicione ao menos um candidato antes de avançar"
+                      : undefined
+                  }
+                >
+                  <ArrowRight className="mr-1.5 h-3.5 w-3.5" /> Avançar para Aprovação Técnica
+                </Button>
+              )}
+              <Button size="sm" variant="outline" className="h-7 bg-white" onClick={onExitFocus}>
+                <X className="mr-1.5 h-3.5 w-3.5" /> Voltar para Nomeações
+              </Button>
+            </div>
           </div>
+          <Dialog open={enviarTecnicaAberto} onOpenChange={setEnviarTecnicaAberto}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Avançar para Aprovação Técnica</DialogTitle>
+              </DialogHeader>
+              {enviarTecnicaAberto && (
+                <EnviarParaTecnicaParcial
+                  items={focusNaSimulacao}
+                  onDone={() => {
+                    setEnviarTecnicaAberto(false);
+                    onExitFocus();
+                  }}
+                />
+              )}
+            </DialogContent>
+          </Dialog>
 
           {/* Uma aba por função do grupo — trocar aqui muda pra quem "Adicionar" vale, sem sair
               do modo recrutamento nem perder a seleção já feita nas outras funções. */}
@@ -7232,6 +7294,7 @@ export function NominationsPage({
       list = list.filter(
         (n) =>
           n.funcao.toLowerCase().includes(q) ||
+          (n.unidade ?? "").toLowerCase().includes(q) ||
           (n.pm_name ?? "").toLowerCase().includes(q) ||
           (n.project ?? "").toLowerCase().includes(q) ||
           (n.client ?? "").toLowerCase().includes(q) ||
@@ -7397,7 +7460,7 @@ export function NominationsPage({
         <TabsContent value="nomeacoes" className="space-y-4 pt-4">
           <div className="flex flex-wrap items-center gap-2">
             <Input
-              placeholder="Buscar função, solicitante, BSP..."
+              placeholder="Buscar função, unidade, solicitante, BSP..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="max-w-xs h-8 text-sm"

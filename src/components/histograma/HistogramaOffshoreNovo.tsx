@@ -109,7 +109,6 @@ import {
   Download,
   BedDouble,
   Info,
-  Building2,
   ChevronLeft,
   ChevronRight,
   Lock,
@@ -171,6 +170,7 @@ import {
 import type { TimesheetEmbarque, TimesheetSemana } from "@/lib/timesheetOffshore";
 import { UNIDADES_OPERACIONAIS_FIXAS, resolverFuncaoEmbarque } from "@/lib/timesheetOffshore";
 import { DrakeUpdateCard } from "@/components/histograma/DrakeUpdateCard";
+import { MoDisponivelDiaCard } from "@/components/histograma/MoDisponivelDiaCard";
 import {
   PlanejamentoEmbarqueTab,
   usePlanejamentoEmbarqueQuery,
@@ -183,13 +183,18 @@ import {
 } from "@/components/histograma/PlanejamentoEmbarqueTab";
 import {
   classificarStatusPlanejamento,
+  statusPlanejamentoForaDaContagem,
   statusPlanejamentoOcupado,
 } from "@/lib/dashboard-status-planejamento";
 import { KpiValue } from "@/components/KpiValue";
 import { ProximosEventosCard } from "@/components/histograma/ProximosEventosCard";
 import { DrakeSyncLogList } from "@/components/histograma/DrakeSyncLogList";
 import { selectAllPages } from "@/lib/supabasePaginate";
-import { dashboardPlanningRows, dashboardStatusDates } from "@/lib/histograma/dashboard-planning-source";
+import {
+  criarBuscaFotoDoDia,
+  dashboardPlanningRows,
+  dashboardStatusDates,
+} from "@/lib/histograma/dashboard-planning-source";
 import {
   fetchHistogramCollaborators,
   fetchHistogramEmbarkations,
@@ -4380,16 +4385,18 @@ function DashboardTab({
       porMes.get(chave)!.push(d);
     });
 
-    const snapshotsPorDia = new Map<string, PlanejamentoEmbarqueSnapshotRow[]>();
-    planejamentoSnapshots.forEach((s) => {
-      if (!snapshotsPorDia.has(s.snapshot_date)) snapshotsPorDia.set(s.snapshot_date, []);
-      snapshotsPorDia.get(s.snapshot_date)!.push(s);
-    });
+    // Foto do dia ou, sem foto, a anterior mais recente (pedido dela, 2026-11-10). Hoje usa
+    // sempre a lista viva (a foto de hoje é tirada na 1ª abertura e pode estar desatualizada).
+    const fotoDoDia = criarBuscaFotoDoDia(planejamentoSnapshots);
     // Embarcado, Programado, Folga e Trabalho Externo (pedido dela, 2026-11-10) — mesma régua
     // da rosquinha "Ocupação" (ver src/lib/dashboard-status-planejamento.ts).
     const ocupadoPlanejamentoStatus = (status: string | null) => statusPlanejamentoOcupado(status);
-    const totalHojeVivo = planejamentoEmbarque.length;
-    const ocupadosHojeVivo = planejamentoEmbarque.filter((r) =>
+    // Terceirizado fica fora de toda contagem (pedido dela, 2026-11-10).
+    const planejamentoContavel = planejamentoEmbarque.filter(
+      (r) => !statusPlanejamentoForaDaContagem(r.status) || r.rh_bloqueado,
+    );
+    const totalHojeVivo = planejamentoContavel.length;
+    const ocupadosHojeVivo = planejamentoContavel.filter((r) =>
       ocupadoPlanejamentoStatus(r.status),
     ).length;
     const pctHojeVivo = totalHojeVivo > 0 ? (ocupadosHojeVivo / totalHojeVivo) * 100 : 0;
@@ -4443,10 +4450,13 @@ function DashboardTab({
           somaOcupados += ocupados;
         });
       } else {
-        // Set/2026 em diante — Planejamento de Embarque (foto do dia, ou a lista viva de hoje
-        // pros dias que ainda não têm foto).
+        // Set/2026 em diante — Planejamento de Embarque (foto do dia, ou a anterior mais recente
+        // quando o dia não tem foto; hoje e antes da 1ª foto, a lista viva).
         diasDoMes.forEach((dia) => {
-          const fotos = snapshotsPorDia.get(dia);
+          const fotos =
+            dia === today
+              ? null
+              : fotoDoDia(dia)?.filter((f) => !statusPlanejamentoForaDaContagem(f.status));
           if (fotos && fotos.length > 0) {
             const ocupados = fotos.filter((f) => ocupadoPlanejamentoStatus(f.status)).length;
             somaPct += (ocupados / fotos.length) * 100;
@@ -4599,7 +4609,7 @@ function DashboardTab({
         });
       } else {
         const fonte = dashboardPlanningRows(dia, today, planejamentoEmbarque, planejamentoSnapshots);
-        const linhas: { nome: string; status: string | null; rh_bloqueado: boolean }[] =
+        const linhasDia: { nome: string; status: string | null; rh_bloqueado: boolean }[] =
           fonte.source === "snapshot"
             ? fonte.rows.map((f) => ({ nome: f.colaborador_nome, status: f.status, rh_bloqueado: false }))
             : fonte.rows.map((r) => ({
@@ -4607,6 +4617,11 @@ function DashboardTab({
                 status: r.status,
                 rh_bloqueado: r.rh_bloqueado,
               }));
+        // Terceirizado fica fora de toda contagem (pedido dela, 2026-11-10): nem Headcount, nem
+        // rosquinha. Volta a contar assim que o Status muda para qualquer outro.
+        const linhas = linhasDia.filter(
+          (l) => classificarStatusPlanejamento(l.status, l.rh_bloqueado) !== "terceirizado",
+        );
         soma.total += linhas.length;
         // Balde de cada Status em src/lib/dashboard-status-planejamento.ts (com testes):
         // Ocupação = Embarcado/Programado/Folga/Trabalho Externo; Fora da Ocupação = Stand By
@@ -5026,13 +5041,7 @@ function DashboardTab({
       hoverNames: folgaDoPlanejamento,
     },
     {
-      label: "Na Base",
-      value: statusReferenceDate.naBaseMedia,
-      icon: Building2,
-      hoverNames: colaboradoresNaBaseDoPlanejamento,
-    },
-    {
-      label: "Bloqueados Henrique",
+      label: "Bloqueados - Henrique",
       value:
         statusReferenceDate.baseHenriqueMedia +
         statusReferenceDate.bloqueioBaseHenriqueMedia +
@@ -5271,27 +5280,52 @@ function DashboardTab({
   // De/Até acima, que serve só pros KPIs e pros gráficos de unidade/semana) ──
   const datesYTD = useMemo(() => generateDateRange(`${anoAtual}-01-01`, today), [anoAtual, today]);
 
-  // Quantidade exata de pessoas diferentes que estiveram embarcadas em algum dia daquele mês
-  // (não é média — é a contagem real de colaboradores únicos), com o detalhe por unidade
-  // guardado à parte só pra aparecer no tooltip ao passar o mouse.
+  // Quantidade exata de pessoas diferentes que estiveram EMBARCADAS em algum dia daquele mês
+  // (não é média — é a contagem de colaboradores únicos), com o detalhe por unidade no tooltip.
+  // Mesma fonte e mesma população da "Taxa de Ocupação por mês" (pedido dela, 2026-11-10, pra
+  // os dois baterem): Jan-Ago/2026 pelo Drake (colaboradoresComMultiploEmbarque, status do dia
+  // por computeStatusParaDashboard); a partir de Set/2026 pelo Planejamento de Embarque — foto
+  // do dia, ou a lista viva de hoje pros dias sem foto —, contando só Status "Embarcado"
+  // (Terceirizado nunca conta).
   const pobByMonth = useMemo(() => {
+    const corteMesPlanejamento = "2026-09";
     const colaboradoresPorMes = new Map<string, Set<string>>();
     const colaboradoresPorMesUnidade = new Map<string, Map<string, Set<string>>>();
+    const add = (mk: string, chave: string, unidade: string | null | undefined) => {
+      if (!colaboradoresPorMes.has(mk)) colaboradoresPorMes.set(mk, new Set());
+      colaboradoresPorMes.get(mk)!.add(chave);
+      const u = unidade?.trim();
+      if (!u) return;
+      if (!colaboradoresPorMesUnidade.has(mk)) colaboradoresPorMesUnidade.set(mk, new Map());
+      const um = colaboradoresPorMesUnidade.get(mk)!;
+      if (!um.has(u)) um.set(u, new Set());
+      um.get(u)!.add(chave);
+    };
+    const chaveNome = (nome: string) =>
+      `nome:${nome.trim().toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "")}`;
+    const fotoDoDia = criarBuscaFotoDoDia(planejamentoSnapshots);
+
     datesYTD.forEach((d) => {
       const mk = d.slice(0, 7);
-      colaboradoresFiltrados.forEach((c) => {
-        const result = computeDayStatus(periodosByColaborador.get(c.id) ?? [], d);
-        if (pobBucket(result) !== "E") return;
-        if (!colaboradoresPorMes.has(mk)) colaboradoresPorMes.set(mk, new Set());
-        colaboradoresPorMes.get(mk)!.add(c.id);
-        const u = result.periodo?.unidade_operacional;
-        if (u) {
-          if (!colaboradoresPorMesUnidade.has(mk)) colaboradoresPorMesUnidade.set(mk, new Map());
-          const um = colaboradoresPorMesUnidade.get(mk)!;
-          if (!um.has(u)) um.set(u, new Set());
-          um.get(u)!.add(c.id);
+      if (mk < corteMesPlanejamento) {
+        colaboradoresComMultiploEmbarque.forEach((c) => {
+          const result = computeStatusParaDashboard(periodosByColaborador.get(c.id) ?? [], d);
+          if (!result.periodo || toOldBucket(result.status) !== "E") return;
+          add(mk, c.id, result.periodo.unidade_operacional);
+        });
+      } else {
+        // Foto do dia ou, sem foto, a anterior mais recente; hoje, a lista viva.
+        const fotos = d === today ? null : fotoDoDia(d);
+        if (fotos && fotos.length > 0) {
+          fotos.forEach((f) => {
+            if (isStatusEmbarcado(f.status)) add(mk, chaveNome(f.colaborador_nome), f.unidade);
+          });
+        } else {
+          planejamentoEmbarque.forEach((r) => {
+            if (isStatusEmbarcado(r.status)) add(mk, chaveNome(r.nome), r.unidade);
+          });
         }
-      });
+      }
     });
     const monthKeys = Array.from(new Set(datesYTD.map((d) => d.slice(0, 7)))).sort();
     return monthKeys.map((mk) => {
@@ -5305,7 +5339,14 @@ function DashboardTab({
         porUnidade,
       };
     });
-  }, [datesYTD, colaboradoresFiltrados, periodosByColaborador]);
+  }, [
+    datesYTD,
+    colaboradoresComMultiploEmbarque,
+    periodosByColaborador,
+    planejamentoSnapshots,
+    planejamentoEmbarque,
+    today,
+  ]);
 
   const renderPobMesTooltip = (props: unknown) => {
     const { active, payload } = props as {
@@ -5508,7 +5549,7 @@ function DashboardTab({
               </p>
               <p>
                 <span className="font-semibold" style={{ color: "#7f1d1d" }}>
-                  Bloqueados Henrique
+                  Bloqueados - Henrique
                 </span>{" "}
                 (Base Henrique e Bloqueio Base Henrique; também Na Base e Bloqueio RH, se houver)
                 (fatia vermelha): dentro do Headcount Total, mas numa categoria à parte — não entram
@@ -5673,7 +5714,7 @@ function DashboardTab({
           </div>
           <div className="flex flex-col items-center gap-2 lg:border-l lg:pl-6">
             <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Bloqueados Henrique
+              Bloqueados - Henrique
             </h4>
             <div className="flex flex-1 flex-wrap items-center justify-center gap-4">
               <div className="relative h-[180px] w-[180px] shrink-0">
@@ -5718,12 +5759,35 @@ function DashboardTab({
                   >
                     {pctBaseCards}%
                   </span>
-                  <span className="text-[10px] text-muted-foreground">na base / bloqueio</span>
+                  <span className="text-[10px] text-muted-foreground">bloqueados</span>
                 </div>
               </div>
               <MiniStatusBarChart data={baseData} />
             </div>
             <StatusLegendRow data={baseData} />
+            {/* Separação por Status embaixo do gráfico (pedido dela, 2026-11-10). */}
+            {baseData.length > 0 && (
+              <table className="w-full max-w-xs text-xs">
+                <tbody>
+                  {baseData.map((d) => (
+                    <tr key={d.name} className="border-b border-border/60">
+                      <td className="py-1">
+                        <span
+                          className="mr-1.5 inline-block h-2.5 w-2.5 rounded-full align-middle"
+                          style={{ backgroundColor: d.color }}
+                        />
+                        {d.name}
+                      </td>
+                      <td className="py-1 text-right font-semibold">{d.value}</td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <td className="py-1 font-semibold">Total</td>
+                    <td className="py-1 text-right font-bold">{baseCards}</td>
+                  </tr>
+                </tbody>
+              </table>
+            )}
           </div>
           <div className="flex flex-col items-center gap-2 lg:border-l lg:pl-6">
             <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -5930,72 +5994,8 @@ function DashboardTab({
         )}
       </Card>
 
-      {/* ── POB x Unidade ── */}
-      <Card className="p-4">
-        <h3 className="text-sm font-semibold">POB x Unidade</h3>
-        <p className="text-xs text-muted-foreground mb-3">
-          {pobReferenceDate === today
-            ? "Embarcados hoje, por unidade"
-            : `Embarcados em ${fmtDiaCurto(pobReferenceDate)}, por unidade`}
-        </p>
-        {byUnitStatus.length === 0 ? (
-          <EmptyState
-            icon={Ship}
-            title={
-              pobReferenceDate === today
-                ? "Nenhuma unidade com colaborador embarcado hoje"
-                : `Nenhuma unidade com colaborador embarcado em ${fmtDiaCurto(pobReferenceDate)}`
-            }
-          />
-        ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {byUnitStatus.map((u) => (
-              <div
-                key={u.name}
-                className="rounded-lg border border-border bg-gradient-to-br from-white to-slate-50 p-4"
-              >
-                <p className="truncate text-sm font-medium text-muted-foreground" title={u.name}>
-                  {u.name}
-                </p>
-                <p
-                  className="mt-1 text-3xl font-bold"
-                  style={{
-                    backgroundImage: `linear-gradient(135deg, ${DASH_COLORS.orange}, #fdba74)`,
-                    WebkitBackgroundClip: "text",
-                    backgroundClip: "text",
-                    color: "transparent",
-                  }}
-                >
-                  {u.Embarcado}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {pobReferenceDate === today
-                    ? "embarcado(s) hoje"
-                    : `embarcado(s) em ${fmtDiaCurto(pobReferenceDate)}`}
-                </p>
-                {u.porFuncao.length > 0 && (
-                  <div className="mt-3 flex h-8 items-end gap-1">
-                    {u.porFuncao.map((f) => {
-                      const maxCount = Math.max(...u.porFuncao.map((x) => x.count));
-                      return (
-                        <div
-                          key={f.funcao}
-                          className="w-2 rounded-sm"
-                          style={{
-                            height: `${(f.count / maxCount) * 100}%`,
-                            backgroundColor: funcaoColor.get(f.funcao) ?? DASH_COLORS.slate,
-                          }}
-                          title={`${f.funcao}: ${f.count}\n${f.nomes.join(", ")}`}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
+      {/* ── M.O disponível x Dia (pedido dela, 2026-11-10; substituiu o "POB x Unidade") ── */}
+      <MoDisponivelDiaCard linhas={planejamentoEmbarque} hoje={today} />
 
       {/* ── Mão de Obra por Semana ── */}
       <Card className="p-4">
@@ -6037,7 +6037,8 @@ function DashboardTab({
       <Card className="p-4">
         <h3 className="text-sm font-semibold">POB por Mês</h3>
         <p className="text-xs text-muted-foreground mb-3">
-          Quantidade de pessoas embarcadas por mês, do início do ano até o mês atual
+          Pessoas diferentes que estiveram embarcadas em algum dia do mês — mesma fonte da Taxa de
+          Ocupação por mês (Drake até Ago/26; Planejamento de Embarque a partir de Set/26)
         </p>
         {pobByMonth.length === 0 ? (
           <EmptyState icon={TrendingUp} title="Nenhum dado no período selecionado" />
