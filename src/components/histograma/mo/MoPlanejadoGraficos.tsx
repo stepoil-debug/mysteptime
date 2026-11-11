@@ -110,7 +110,7 @@ export function MoPlanejadoGraficos({
           (arredondadas)
         </p>
         <ChartContainer config={semanaConfig} className="aspect-auto h-[280px] w-full">
-          <BarChart data={semanas} margin={{ top: 20, right: 8, bottom: 4, left: 0 }}>
+          <BarChart data={semanas} margin={{ top: 20, right: 8, bottom: 4, left: 18 }}>
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="rotulo"
@@ -143,7 +143,7 @@ export function MoPlanejadoGraficos({
           8 meses a partir do atual · soma de homem-dia e média diária de funcionários
         </p>
         <ChartContainer config={mesConfig} className="aspect-auto h-[280px] w-full">
-          <ComposedChart data={meses} margin={{ top: 20, right: 8, bottom: 4, left: 0 }}>
+          <ComposedChart data={meses} margin={{ top: 20, right: 8, bottom: 4, left: 18 }}>
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="rotulo"

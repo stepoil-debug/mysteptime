@@ -434,7 +434,7 @@ function HistogramaOffshoreNovoContent({
       </div>
 
       <Tabs value={innerTab} onValueChange={setInnerTab}>
-        <TabsList>
+        <TabsList className="max-w-full justify-start overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           {canSeeHistograma && <TabsTrigger value="histograma">Histograma</TabsTrigger>}
           {canSeeLancamentos && <TabsTrigger value="lancamentos">Lançamentos</TabsTrigger>}
@@ -5855,13 +5855,13 @@ function DashboardTab({
                         value?: number | string;
                       };
                       const w = Number(width);
-                      if (!Number.isFinite(w) || w < 22) return null;
+                      if (!Number.isFinite(w) || w < 15) return null;
                       return (
                         <text
                           x={Number(x) + w / 2}
                           y={Number(y) - 5}
                           textAnchor="middle"
-                          className="fill-foreground text-[10px] font-bold sm:text-[11px]"
+                          className="fill-foreground text-[9px] font-bold xl:text-[11px]"
                         >
                           {`${value}%`}
                         </text>
