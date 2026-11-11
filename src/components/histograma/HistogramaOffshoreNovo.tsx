@@ -5042,7 +5042,7 @@ function DashboardTab({
       hoverNames: folgaDoPlanejamento,
     },
     {
-      label: "Bloqueados - Henrique",
+      label: "Bloqueados Henrique",
       value:
         statusReferenceDate.baseHenriqueMedia +
         statusReferenceDate.bloqueioBaseHenriqueMedia +
