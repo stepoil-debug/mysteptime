@@ -46,15 +46,24 @@ export function MoDisponivelDiaCard({
       {funcoes.length === 0 ? (
         <EmptyState icon={Users} title="Nenhum colaborador no Planejamento de Embarque" />
       ) : (
-        <div className="overflow-x-auto">
-          <table className="border-separate border-spacing-1 text-xs">
-            <thead>
+        // Ocupa a largura do card (colunas de dia dividem o espaço) e mostra 8 funções por vez;
+        // as demais rolam dentro do quadro, com o cabeçalho de dias e a coluna de função fixos
+        // (pedido dela, 2026-11-10). Em tela estreita, rola na horizontal também.
+        <div className="max-h-[352px] overflow-auto rounded-md">
+          <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-1 text-xs">
+            <colgroup>
+              <col className="w-[150px] sm:w-[190px]" />
+              {dias.map((d) => (
+                <col key={d} />
+              ))}
+            </colgroup>
+            <thead className="sticky top-0 z-20 bg-card">
               <tr>
-                <th className="sticky left-0 z-10 bg-card" />
+                <th className="sticky left-0 z-30 bg-card" />
                 {dias.map((d) => {
                   const dow = new Date(`${d}T00:00:00Z`).getUTCDay();
                   return (
-                    <th key={d} className="min-w-[38px] px-0.5 text-center font-medium">
+                    <th key={d} className="bg-card px-0.5 text-center font-medium">
                       <div className="text-muted-foreground">{DIA_SEMANA[dow]}</div>
                       <div>{d.slice(8, 10)}</div>
                     </th>
@@ -66,7 +75,7 @@ export function MoDisponivelDiaCard({
               {funcoes.map((f) => (
                 <tr key={f.funcao}>
                   <td
-                    className="sticky left-0 z-10 max-w-[200px] truncate bg-card pr-3 font-medium"
+                    className="sticky left-0 z-10 truncate bg-card pr-3 font-medium"
                     title={f.funcao}
                   >
                     {f.funcao}
