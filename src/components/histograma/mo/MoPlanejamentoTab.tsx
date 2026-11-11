@@ -1012,8 +1012,8 @@ export function MoPlanejamentoTab() {
       <div className="space-y-2">
         <h3 className="text-sm font-semibold">Prévia dos gráficos de planejado (Dashboard)</h3>
         <p className="text-xs text-muted-foreground">
-          Calculada com as linhas filtradas acima. No Dashboard, os gráficos usam todas as linhas
-          (ou os filtros de Unidade/BSP do Dashboard).
+          Calculada com as linhas filtradas acima. No Dashboard aparecem exatamente estes gráficos, com
+          todas as linhas (sem filtro).
         </p>
         <MoPlanejadoGraficos diario={previa} hoje={hoje} />
       </div>

@@ -434,7 +434,7 @@ function HistogramaOffshoreNovoContent({
       </div>
 
       <Tabs value={innerTab} onValueChange={setInnerTab}>
-        <TabsList>
+        <TabsList className="max-w-full justify-start overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           {canSeeHistograma && <TabsTrigger value="histograma">Histograma</TabsTrigger>}
           {canSeeLancamentos && <TabsTrigger value="lancamentos">Lançamentos</TabsTrigger>}
@@ -2402,7 +2402,7 @@ function LancamentosTab({
           className="flex flex-wrap items-end gap-2"
           onKeyDown={(e) => e.key === "Enter" && aplicarFiltro()}
         >
-          <div className="space-y-0.5 w-56">
+          <div className="w-full space-y-0.5 sm:w-56">
             <Label className="text-[10px] uppercase tracking-wide text-muted-foreground/70">
               Colaborador
             </Label>
@@ -3975,7 +3975,7 @@ function MiniStatusBarChart({ data }: { data: DonutStatusDatum[] }) {
   return (
     <ChartContainer
       config={donutChartConfig}
-      className="h-[180px] w-[150px] shrink-0 [&_.recharts-wrapper]:drop-shadow-md"
+      className="h-[180px] w-full min-w-[110px] max-w-[150px] [&_.recharts-wrapper]:drop-shadow-md"
     >
       <BarChart data={data} margin={{ top: 22, right: 6, left: 6, bottom: 0 }}>
         <XAxis dataKey="name" hide />
@@ -5042,6 +5042,17 @@ function DashboardTab({
     },
     {
       label: "Bloqueados - Henrique",
+      // Quantidade de cada Status embaixo do número (pedido dela, 2026-11-10).
+      detalhe: [
+        { label: "Base Henrique", value: statusReferenceDate.baseHenriqueMedia },
+        { label: "Bloqueio Base Henrique", value: statusReferenceDate.bloqueioBaseHenriqueMedia },
+        ...(statusReferenceDate.bloqueioRHMedia > 0
+          ? [{ label: "Bloqueio RH", value: statusReferenceDate.bloqueioRHMedia }]
+          : []),
+        ...(statusReferenceDate.bloqueioTemporarioMedia > 0
+          ? [{ label: "Bloqueio Temporário", value: statusReferenceDate.bloqueioTemporarioMedia }]
+          : []),
+      ],
       value:
         statusReferenceDate.baseHenriqueMedia +
         statusReferenceDate.bloqueioBaseHenriqueMedia +
@@ -5410,7 +5421,7 @@ function DashboardTab({
               onChange={(e) => setDataFim(e.target.value)}
             />
           </div>
-          <div className="space-y-0.5 w-56">
+          <div className="w-full space-y-0.5 sm:w-56">
             <Label className="text-[10px] uppercase tracking-wide text-muted-foreground/70">
               Colaborador
             </Label>
@@ -5421,7 +5432,7 @@ function DashboardTab({
               compact
             />
           </div>
-          <div className="space-y-0.5 w-48">
+          <div className="w-full space-y-0.5 sm:w-48">
             <Label className="text-[10px] uppercase tracking-wide text-muted-foreground/70">
               Unidade
             </Label>
@@ -5437,7 +5448,7 @@ function DashboardTab({
               emptyLabel="Nenhuma unidade encontrada."
             />
           </div>
-          <div className="space-y-0.5 w-40">
+          <div className="w-full space-y-0.5 sm:w-40">
             <Label className="text-[10px] uppercase tracking-wide text-muted-foreground/70">
               BSP
             </Label>
@@ -5456,24 +5467,34 @@ function DashboardTab({
       </Card>
 
       {/* ── KPIs ── */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-9">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:auto-cols-fr xl:grid-flow-col xl:grid-cols-none">
         {kpiCards.map((k, i) => {
           const card = (
             <Card
               className={cn(
-                "bg-gradient-to-br from-white to-slate-50 p-4",
+                "h-full min-w-0 bg-gradient-to-br from-white to-slate-50 p-3 sm:p-4",
                 k.hoverNames && "cursor-default",
               )}
             >
-              <div className="flex items-center justify-between">
-                <span className="text-xs uppercase tracking-wide text-muted-foreground">
+              <div className="flex min-w-0 items-start justify-between gap-1">
+                <span className="min-w-0 break-words text-[11px] uppercase leading-tight tracking-wide text-muted-foreground sm:text-xs">
                   {k.label}
                 </span>
-                <k.icon className="h-4 w-4 text-muted-foreground" />
+                <k.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
               </div>
-              <div className="mt-2 text-3xl font-semibold text-slate-800">
+              <div className="mt-2 whitespace-nowrap text-[clamp(1.375rem,1rem+1.2vw,1.875rem)] font-semibold leading-tight text-slate-800">
                 <KpiValue value={k.value} suffix={k.suffix} />
               </div>
+              {k.detalhe && (
+                <div className="mt-1 space-y-0.5 text-[11px] text-muted-foreground">
+                  {k.detalhe.map((d) => (
+                    <div key={d.label} className="flex justify-between gap-2">
+                      <span className="truncate">{d.label}</span>
+                      <span className="font-semibold text-slate-700">{d.value}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </Card>
           );
 
@@ -5558,7 +5579,7 @@ function DashboardTab({
             </PopoverContent>
           </Popover>
         </div>
-        <div className="mt-3 grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+        <div className="mt-3 grid min-w-0 gap-6 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
           {/* Resumo "Quantidade de Pessoas Embarcadas" (pedido dela, 2026-10-28) — formato do
               e-mail diário (Unidade | Quantidade | TOTAL), lado a lado com as rosquinhas e em
               destaque; mesmos números do "POB x Unidade", em ordem alfabética. */}
@@ -5572,7 +5593,7 @@ function DashboardTab({
             {byUnitStatus.length === 0 ? (
               <p className="py-10 text-xs text-muted-foreground">Ninguém embarcado</p>
             ) : (
-              <div className="w-full max-w-[300px] overflow-hidden rounded-lg border-2 border-[#1e3a5f] shadow-md">
+              <div className="w-full max-w-[300px] overflow-x-auto rounded-lg border-2 border-[#1e3a5f] shadow-md">
                 <table className="w-full border-collapse text-[13px]">
                   <thead>
                     <tr className="bg-gradient-to-b from-[#2c5282] via-[#1e3a5f] to-[#0f2744] text-white">
@@ -5608,19 +5629,19 @@ function DashboardTab({
             <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Ocupação
             </h4>
-            <div className="flex flex-1 flex-wrap items-center justify-center gap-4">
-              <div className="relative h-[180px] w-[180px] shrink-0">
+            <div className="flex w-full min-w-0 flex-1 flex-wrap items-center justify-center gap-4">
+              <div className="relative aspect-square w-full min-w-[140px] max-w-[180px] shrink">
                 <ChartContainer
                   config={donutChartConfig}
-                  className="aspect-square h-[180px] w-[180px] [&_.recharts-wrapper]:drop-shadow-md"
+                  className="aspect-square h-full w-full [&_.recharts-wrapper]:drop-shadow-md"
                 >
                   <PieChart>
                     <Pie
                       data={ocupacaoData}
-                      cx={90}
-                      cy={90}
-                      innerRadius={58}
-                      outerRadius={82}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius="64%"
+                      outerRadius="91%"
                       dataKey="value"
                       startAngle={90}
                       endAngle={-270}
@@ -5662,19 +5683,19 @@ function DashboardTab({
             <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Fora da Ocupação
             </h4>
-            <div className="flex flex-1 flex-wrap items-center justify-center gap-4">
-              <div className="relative h-[180px] w-[180px] shrink-0">
+            <div className="flex w-full min-w-0 flex-1 flex-wrap items-center justify-center gap-4">
+              <div className="relative aspect-square w-full min-w-[140px] max-w-[180px] shrink">
                 <ChartContainer
                   config={donutChartConfig}
-                  className="aspect-square h-[180px] w-[180px] [&_.recharts-wrapper]:drop-shadow-md"
+                  className="aspect-square h-full w-full [&_.recharts-wrapper]:drop-shadow-md"
                 >
                   <PieChart>
                     <Pie
                       data={naoOcupacaoData}
-                      cx={90}
-                      cy={90}
-                      innerRadius={58}
-                      outerRadius={82}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius="64%"
+                      outerRadius="91%"
                       dataKey="value"
                       startAngle={90}
                       endAngle={-270}
@@ -5716,19 +5737,19 @@ function DashboardTab({
             <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Bloqueados - Henrique
             </h4>
-            <div className="flex flex-1 flex-wrap items-center justify-center gap-4">
-              <div className="relative h-[180px] w-[180px] shrink-0">
+            <div className="flex w-full min-w-0 flex-1 flex-wrap items-center justify-center gap-4">
+              <div className="relative aspect-square w-full min-w-[140px] max-w-[180px] shrink">
                 <ChartContainer
                   config={donutChartConfig}
-                  className="aspect-square h-[180px] w-[180px] [&_.recharts-wrapper]:drop-shadow-md"
+                  className="aspect-square h-full w-full [&_.recharts-wrapper]:drop-shadow-md"
                 >
                   <PieChart>
                     <Pie
                       data={baseData}
-                      cx={90}
-                      cy={90}
-                      innerRadius={58}
-                      outerRadius={82}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius="64%"
+                      outerRadius="91%"
                       dataKey="value"
                       startAngle={90}
                       endAngle={-270}
@@ -5802,16 +5823,17 @@ function DashboardTab({
             >
               <BarChart
                 data={ocupacaoMensalData}
-                margin={{ top: 22, right: 2, left: 2, bottom: 2 }}
+                margin={{ top: 22, right: 4, left: 18, bottom: 8 }}
                 barCategoryGap="18%"
               >
                 <XAxis
                   dataKey="name"
-                  tick={{ fontSize: 12, fontWeight: 600 }}
-                  interval={0}
+                  tick={{ fontSize: 11, fontWeight: 600 }}
+                  interval="preserveStartEnd"
+                  minTickGap={6}
                   angle={-35}
                   textAnchor="end"
-                  height={40}
+                  height={48}
                 />
                 <YAxis hide domain={[0, 100]} />
                 <ChartTooltip content={renderMonthlyPctTooltip} />
@@ -5821,11 +5843,30 @@ function DashboardTab({
                   maxBarSize={30}
                   fill={`url(#${embossGradientId(DASH_COLORS.navy)})`}
                 >
+                  {/* Rótulo só quando a barra tem largura pra ele; sem espaço, o % fica no
+                      tooltip (evita "54%53%53%" sobrepostos em telas estreitas). */}
                   <LabelList
                     dataKey="value"
-                    position="top"
-                    formatter={(v: number) => `${v}%`}
-                    className="fill-foreground text-[13px] font-bold"
+                    content={(props) => {
+                      const { x, y, width, value } = props as {
+                        x?: number | string;
+                        y?: number | string;
+                        width?: number | string;
+                        value?: number | string;
+                      };
+                      const w = Number(width);
+                      if (!Number.isFinite(w) || w < 15) return null;
+                      return (
+                        <text
+                          x={Number(x) + w / 2}
+                          y={Number(y) - 5}
+                          textAnchor="middle"
+                          className="fill-foreground text-[9px] font-bold xl:text-[11px]"
+                        >
+                          {`${value}%`}
+                        </text>
+                      );
+                    }}
                   />
                 </Bar>
               </BarChart>
@@ -6068,7 +6109,7 @@ function DashboardTab({
       </Card>
 
       {/* ── PLANEJADO — M.O (pedido dela, 2026-11-09): sempre por último, separado do realizado ── */}
-      <MoPlanejadoDashboardSection unidades={filterUnidade} bsps={filterBsp} />
+      <MoPlanejadoDashboardSection />
     </div>
   );
 }

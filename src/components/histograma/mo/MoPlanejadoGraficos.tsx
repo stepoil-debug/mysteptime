@@ -30,6 +30,7 @@ import {
   type MoSemana,
 } from "@/lib/mo-planejado";
 import { todayStr } from "@/lib/histogramaNovo";
+import { selectAllPages } from "@/lib/supabasePaginate";
 
 // Gráficos de PLANEJADO da "Apresentação 1 - Planejado" (pedido dela, 2026-11-09). Mesmos
 // cálculos em src/lib/mo-planejado.ts; aqui só desenha. Usado no fim do Dashboard (dados da
@@ -109,7 +110,7 @@ export function MoPlanejadoGraficos({
           (arredondadas)
         </p>
         <ChartContainer config={semanaConfig} className="aspect-auto h-[280px] w-full">
-          <BarChart data={semanas} margin={{ top: 20, right: 8, bottom: 4, left: 0 }}>
+          <BarChart data={semanas} margin={{ top: 20, right: 8, bottom: 4, left: 18 }}>
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="rotulo"
@@ -142,7 +143,7 @@ export function MoPlanejadoGraficos({
           8 meses a partir do atual · soma de homem-dia e média diária de funcionários
         </p>
         <ChartContainer config={mesConfig} className="aspect-auto h-[280px] w-full">
-          <ComposedChart data={meses} margin={{ top: 20, right: 8, bottom: 4, left: 0 }}>
+          <ComposedChart data={meses} margin={{ top: 20, right: 8, bottom: 4, left: 18 }}>
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="rotulo"
@@ -208,28 +209,33 @@ export function MoPlanejadoGraficos({
 }
 
 // Seção no fim do Dashboard: visível pra todos que veem o Dashboard, dados só pela RPC
-// (agregados por dia/função, nunca as linhas). Respeita os filtros Unidade/BSP do Dashboard;
-// De/Até e Colaborador não se aplicam (horizonte próprio).
+// (agregados por dia/função, nunca as linhas). Só reflete a aba M.O (pedido dela, 2026-11-10):
+// nenhum filtro do Dashboard se aplica, então mostra exatamente os gráficos da aba M.O sem filtro.
 export function MoPlanejadoDashboardSection({
-  unidades,
-  bsps,
+  unidades = [],
+  bsps = [],
 }: {
-  unidades: string[];
-  bsps: string[];
-}) {
+  unidades?: string[];
+  bsps?: string[];
+} = {}) {
   const hoje = todayStr();
   const janela = janelaGraficos(hoje);
   const { data: diario = [], isLoading } = useQuery<MoDiario[]>({
     queryKey: ["mo-planejado-diario", janela.inicio, janela.fim, unidades, bsps],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("mo_planejado_diario", {
-        p_inicio: janela.inicio,
-        p_fim: janela.fim,
-        p_unidades: unidades.length ? unidades : null,
-        p_bsps: bsps.length ? bsps : null,
-      });
-      if (error) throw error;
-      return (data ?? []).map((r: MoDiario) => ({ ...r, qtd_total: Number(r.qtd_total) }));
+      // Paginado: são ~8 meses × todas as funções (vários milhares de linhas) e o PostgREST
+      // corta em 1000 sem erro — era isso que deixava o Dashboard diferente da aba M.O.
+      const data = await selectAllPages<MoDiario>((from, to) =>
+        supabase
+          .rpc("mo_planejado_diario", {
+            p_inicio: janela.inicio,
+            p_fim: janela.fim,
+            p_unidades: unidades.length ? unidades : null,
+            p_bsps: bsps.length ? bsps : null,
+          })
+          .range(from, to),
+      );
+      return data.map((r) => ({ ...r, qtd_total: Number(r.qtd_total) }));
     },
   });
   const { data: ultima } = useQuery<{
@@ -258,8 +264,7 @@ export function MoPlanejadoDashboardSection({
               dateStyle: "short",
               timeStyle: "short",
             })}${ultima.atualizado_por ? ` por ${ultima.atualizado_por}` : ""}.`}
-          {(unidades.length > 0 || bsps.length > 0) &&
-            " Filtrado pela Unidade/BSP do Dashboard (De/Até e Colaborador não se aplicam)."}
+          {" Mesmos números da aba M.O (os filtros do Dashboard não se aplicam aqui)."}
         </p>
       </div>
       {isLoading ? (
