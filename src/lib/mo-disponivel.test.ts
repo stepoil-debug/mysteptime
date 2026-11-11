@@ -90,6 +90,8 @@ describe("moDisponivelPorDia", () => {
     );
     expect(r.dias).toEqual(["2026-11-10", "2026-11-11", "2026-11-12"]);
     expect(r.funcoes.map((f) => f.funcao)).toEqual(["CALDEIREIRO", "SOLDADOR"]);
+    // Total de M.O por função: todos os Status, sem Terceirizado.
+    expect(r.funcoes.map((f) => f.total)).toEqual([2, 1]);
     expect(r.funcoes[0].porDia.map((d) => d.qtd)).toEqual([2, 1, 2]);
     expect(r.funcoes[0].porDia[2].nomes).toEqual(["B", "C"]);
     expect(r.funcoes[1].porDia.map((d) => d.qtd)).toEqual([0, 0, 0]);

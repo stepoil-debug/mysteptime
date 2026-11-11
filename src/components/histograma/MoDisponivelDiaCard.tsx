@@ -52,14 +52,21 @@ export function MoDisponivelDiaCard({
         <div className="max-h-[352px] overflow-auto rounded-md">
           <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-1 text-xs">
             <colgroup>
-              <col className="w-[150px] sm:w-[190px]" />
+              <col className="w-[190px] sm:w-[250px]" />
               {dias.map((d) => (
                 <col key={d} />
               ))}
             </colgroup>
             <thead className="sticky top-0 z-20 bg-card">
               <tr>
-                <th className="sticky left-0 z-30 bg-card" />
+                <th className="sticky left-0 z-30 bg-card pr-3 text-left align-bottom font-medium">
+                  <div className="flex items-end justify-between gap-2 text-[10px] uppercase tracking-wide text-muted-foreground">
+                    <span>Função</span>
+                    <span title="Total de M.O da função no Planejamento de Embarque (todos os Status, menos Terceirizado)">
+                      Total M.O
+                    </span>
+                  </div>
+                </th>
                 {dias.map((d) => {
                   const dow = new Date(`${d}T00:00:00Z`).getUTCDay();
                   return (
@@ -74,11 +81,19 @@ export function MoDisponivelDiaCard({
             <tbody>
               {funcoes.map((f) => (
                 <tr key={f.funcao}>
-                  <td
-                    className="sticky left-0 z-10 truncate bg-card pr-3 font-medium"
-                    title={f.funcao}
-                  >
-                    {f.funcao}
+                  <td className="sticky left-0 z-10 bg-card pr-3 font-medium">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate" title={f.funcao}>
+                        {f.funcao}
+                      </span>
+                      {/* Total de M.O da função no Planejamento (pedido dela, 2026-11-11). */}
+                      <span
+                        className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-bold tabular-nums text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                        title={`${f.total} pessoa(s) de ${f.funcao} no Planejamento (todos os Status, menos Terceirizado)`}
+                      >
+                        {f.total}
+                      </span>
+                    </div>
                   </td>
                   {f.porDia.map((c) => (
                     <td key={c.dia} className="p-0">

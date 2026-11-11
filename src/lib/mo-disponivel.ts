@@ -30,6 +30,8 @@ export interface LinhaDisponibilidade {
 
 export interface MoDisponivelFuncao {
   funcao: string;
+  /** Total de M.O da função no Planejamento (todos os Status, menos Terceirizado). */
+  total: number;
   /** Um item por dia (mesma ordem de `dias`). */
   porDia: { dia: string; qtd: number; nomes: string[] }[];
 }
@@ -110,6 +112,7 @@ export function moDisponivelPorDia(
     )
     .map(([funcao, pessoas]) => ({
       funcao,
+      total: pessoas.length,
       porDia: dias.map((dia) => {
         const nomes = pessoas
           .filter((p) => disponivelNoDia(p, dia, hoje))
