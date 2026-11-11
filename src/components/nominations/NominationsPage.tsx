@@ -14,6 +14,7 @@ import { supabase as supabaseTyped } from "@/integrations/supabase/client";
 // cast local para não bloquear o build.
 const supabase: any = supabaseTyped;
 import { useAuth } from "@/hooks/useAuth";
+import { equipeNaData as equipeNaDataCompartilhada } from "@/lib/equipes-embarcadas";
 import { useRascunho, RascunhoAviso } from "@/hooks/useRascunho";
 import { FULL_NOMINATIONS_ACCESS_ROLES as fullNominationRoles, hasSystemAdminAccess } from "@/lib/access-roles";
 import { useViewAs, VIEW_AS_ROLES } from "@/hooks/useViewAs";
@@ -4306,24 +4307,12 @@ function ClientCascadeView() {
   // batendo exatamente com a data de referência — sem duplicar quem já conta como embarcado.
   const { data: planejamentoEmbarque = [], isLoading: isLoadingPlanejamento } =
     usePlanejamentoEmbarqueQuery();
-  const equipeNaData = useMemo(() => {
-    const unidadeValida = (row: PlanejamentoEmbarqueRow) =>
-      row.unidade?.trim() && row.unidade.trim().toUpperCase() !== "FOLGA";
-    const embarcados: EquipeItem[] = planejamentoEmbarque
-      .filter((row) => unidadeValida(row) && isStatusEmbarcado(row.status))
-      .map((row) => ({ row, tipo: "embarcado" as const }));
-    const embarcadosIds = new Set(embarcados.map((item) => item.row.id));
-    const programados: EquipeItem[] = planejamentoEmbarque
-      .filter(
-        (row) =>
-          !embarcadosIds.has(row.id) &&
-          unidadeValida(row) &&
-          isStatusProgramado(row.status) &&
-          row.embarque === teamReferenceDate,
-      )
-      .map((row) => ({ row, tipo: "programado" as const }));
-    return [...embarcados, ...programados];
-  }, [planejamentoEmbarque, teamReferenceDate]);
+  // Regra compartilhada com o gráfico "Equipes Embarcadas por Unidade" do Dashboard do
+  // Histograma (src/lib/equipes-embarcadas.ts) — as duas telas sempre mostram o mesmo número.
+  const equipeNaData = useMemo<EquipeItem[]>(
+    () => equipeNaDataCompartilhada(planejamentoEmbarque, teamReferenceDate),
+    [planejamentoEmbarque, teamReferenceDate],
+  );
 
   // Cartão sempre mostra o total completo — clicar nele filtra a árvore abaixo
   // (visibleItems/groups), sem os cartões sumirem uns aos outros.
