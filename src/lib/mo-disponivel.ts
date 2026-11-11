@@ -2,14 +2,15 @@
 // disponíveis em cada um dos próximos dias, só com os dados do Planejamento de Embarque
 // (Função, Status e datas). Puro — ver mo-disponivel.test.ts.
 //
-// Regra por pessoa e dia:
-// - Terceirizado não entra (fica fora de toda contagem — ver dashboard-status-planejamento.ts).
-// - Status sem data de fim (Bloqueados - Henrique, Na Base, Bloqueio RH, Indisponível, Atestado,
-//   Afastamento) → indisponível em todos os dias.
-// - Demais: indisponível nos dias cobertos por Embarque→Desembarque, Folga, Férias ou pelo
-//   embarque programado (Programado 1 + Duração). Hoje, quem está Embarcado/Programado/Folga/
-//   Trabalho Externo/Férias pelo Status também não está disponível; e se esse Status não tem as
-//   datas que dizem quando acaba, continua indisponível nos dias seguintes.
+// Regra por pessoa e dia (pedido dela, 2026-11-11: "puxar tudo da aba Planejamento de Embarque"):
+// - Hoje: disponível = Status "Disponível" no Planejamento (bate com o cartão Stand By).
+// - Próximos dias:
+//   · quem está "Disponível" continua disponível, menos nos dias cobertos pelas datas dele
+//     (Embarque→Desembarque, Folga, Férias, Programado 1 + Duração);
+//   · quem está Embarcado/Programado/Folga/Trabalho Externo/Férias volta a ficar disponível no
+//     dia seguinte ao fim do ciclo que as datas dele mostram (sem data de fim, segue fora);
+//   · qualquer outro Status (Bloqueados - Henrique, Indisponível, Terceirizado, Em treinamento,
+//     Em qualificação, texto livre...) não conta como disponível em nenhum dia.
 import { classificarStatusPlanejamento } from "./dashboard-status-planejamento";
 
 export interface LinhaDisponibilidade {
@@ -33,17 +34,6 @@ export interface MoDisponivelFuncao {
   porDia: { dia: string; qtd: number; nomes: string[] }[];
 }
 
-const SEMPRE_INDISPONIVEL = new Set([
-  "naBase",
-  "baseHenrique",
-  "bloqueioBaseHenrique",
-  "bloqueioTemporario",
-  "bloqueioRH",
-  "indisponivel",
-  "atestado",
-  "afastamento",
-]);
-
 export function addDiasIso(iso: string, n: number): string {
   const d = new Date(`${iso}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + n);
@@ -57,38 +47,47 @@ export function proximosDias(hoje: string, n: number): string[] {
 const dentro = (dia: string, ini: string | null, fim: string | null) =>
   !!ini && !!fim && ini <= dia && dia <= fim;
 
-/** A pessoa está disponível nesse dia? */
-export function disponivelNoDia(r: LinhaDisponibilidade, dia: string, hoje: string): boolean {
-  const balde = classificarStatusPlanejamento(r.status, r.rh_bloqueado);
-  if (balde === "terceirizado" || SEMPRE_INDISPONIVEL.has(balde)) return false;
-
-  if (dentro(dia, r.embarque, r.desembarque)) return false;
-  if (dentro(dia, r.folga_inicio, r.folga_fim)) return false;
-  if (dentro(dia, r.ferias_inicio, r.ferias_fim)) return false;
+/** Datas do Planejamento cobrem esse dia (embarque, folga, férias ou embarque programado)? */
+function ocupadoPelasDatas(r: LinhaDisponibilidade, dia: string): boolean {
+  if (dentro(dia, r.embarque, r.desembarque)) return true;
+  if (dentro(dia, r.folga_inicio, r.folga_fim)) return true;
+  if (dentro(dia, r.ferias_inicio, r.ferias_fim)) return true;
   if (r.programado_1 && dia >= r.programado_1) {
     const dur =
       r.duracao_embarque_dias && r.duracao_embarque_dias > 0 ? r.duracao_embarque_dias : null;
-    // Sem duração, não dá para saber quando volta: fica indisponível dali em diante.
-    if (!dur || dia <= addDiasIso(r.programado_1, dur)) return false;
+    // Sem duração, não dá para saber quando volta: fica ocupado dali em diante.
+    if (!dur || dia <= addDiasIso(r.programado_1, dur)) return true;
+  }
+  return false;
+}
+
+/** A pessoa está disponível nesse dia? */
+export function disponivelNoDia(r: LinhaDisponibilidade, dia: string, hoje: string): boolean {
+  const balde = classificarStatusPlanejamento(r.status, r.rh_bloqueado);
+
+  if (balde === "standBy") {
+    // Hoje vale o Status, igual à aba; nos próximos dias, as datas marcadas tiram a pessoa.
+    return dia === hoje || !ocupadoPelasDatas(r, dia);
   }
 
-  // Status de hoje que já diz que a pessoa está ocupada.
-  const ocupadoPeloStatus =
+  const emCiclo =
     balde === "embarcado" ||
     balde === "programado" ||
     balde === "folga" ||
     balde === "trabalhoExterno" ||
     balde === "ferias";
-  if (ocupadoPeloStatus) {
-    if (dia === hoje) return false;
-    // Até quando? Pela última data conhecida do ciclo; sem nenhuma, segue indisponível.
-    const fimConhecido = [r.desembarque, r.folga_fim, r.ferias_fim]
-      .filter((d): d is string => !!d && d >= hoje)
-      .sort()
-      .pop();
-    if (!fimConhecido || dia <= fimConhecido) return false;
+  if (!emCiclo || dia === hoje) return false;
+  // Volta depois do fim do ciclo que as datas mostram; sem nenhuma data de fim, segue fora.
+  const fins = [r.desembarque, r.folga_fim, r.ferias_fim];
+  if (r.programado_1 && r.duracao_embarque_dias && r.duracao_embarque_dias > 0) {
+    fins.push(addDiasIso(r.programado_1, r.duracao_embarque_dias));
   }
-  return true;
+  const fimConhecido = fins
+    .filter((d): d is string => !!d && d >= hoje)
+    .sort()
+    .pop();
+  if (!fimConhecido || dia <= fimConhecido) return false;
+  return !ocupadoPelasDatas(r, dia);
 }
 
 /** Tabela função × dia (funções em ordem alfabética; "Sem função" no fim). */

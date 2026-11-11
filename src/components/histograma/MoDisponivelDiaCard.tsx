@@ -30,9 +30,9 @@ export function MoDisponivelDiaCard({
     <Card className="p-4">
       <h3 className="text-sm font-semibold">M.O disponível x Dia</h3>
       <p className="mb-3 text-xs text-muted-foreground">
-        Pessoas disponíveis por função nos próximos {nDias} dias, pelo Planejamento de Embarque
-        (Status e datas de embarque, folga, férias e programado). Terceirizados e bloqueados não
-        entram.
+        Tudo pelo Planejamento de Embarque: hoje = Status "Disponível" (igual ao cartão Stand By);
+        nos próximos dias, entra quem termina o ciclo pelas datas (embarque, folga, férias,
+        programado) e sai quem tem embarque marcado. Demais Status não contam.
       </p>
       <div className="mb-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
         <span className="flex items-center gap-1.5">

@@ -48,19 +48,28 @@ describe("disponivelNoDia", () => {
     expect(disponivelNoDia(p({ status: "EMBARCADO" }), "2026-11-23", hoje)).toBe(false);
   });
 
-  it("Programado 1 com duração", () => {
+  it("Programado 1 com duração (pessoa Disponível hoje)", () => {
     const r = p({ programado_1: "2026-11-13", duracao_embarque_dias: 3 });
     expect(disponivelNoDia(r, "2026-11-12", hoje)).toBe(true);
     expect(disponivelNoDia(r, "2026-11-14", hoje)).toBe(false);
     expect(disponivelNoDia(r, "2026-11-17", hoje)).toBe(true);
   });
 
-  it("Bloqueados, Indisponível e Terceirizado nunca ficam disponíveis", () => {
+  it("hoje vale o Status Disponível, mesmo com datas marcadas", () => {
+    expect(disponivelNoDia(p({ embarque: hoje, desembarque: "2026-11-12" }), hoje, hoje)).toBe(
+      true,
+    );
+  });
+
+  it("qualquer outro Status nunca fica disponível", () => {
     for (const status of [
       "BASE HENRIQUE",
       "BLOQUEIO - BASE - HENRIQUE",
       "INDISPONÍVEL",
       "TERCEIRIZADO",
+      "Em treinamento",
+      "Em qualificação",
+      "",
     ]) {
       expect(disponivelNoDia(p({ status }), "2026-11-20", hoje)).toBe(false);
     }
@@ -72,7 +81,7 @@ describe("moDisponivelPorDia", () => {
     const r = moDisponivelPorDia(
       [
         p({ nome: "B" }),
-        p({ nome: "C", embarque: "2026-11-10", desembarque: "2026-11-11" }),
+        p({ nome: "C", embarque: "2026-11-11", desembarque: "2026-11-11" }),
         p({ nome: "D", funcao: "SOLDADOR", status: "INDISPONÍVEL" }),
         p({ nome: "E", funcao: "RIGGER", status: "TERCEIRIZADO" }),
       ],
@@ -81,7 +90,7 @@ describe("moDisponivelPorDia", () => {
     );
     expect(r.dias).toEqual(["2026-11-10", "2026-11-11", "2026-11-12"]);
     expect(r.funcoes.map((f) => f.funcao)).toEqual(["CALDEIREIRO", "SOLDADOR"]);
-    expect(r.funcoes[0].porDia.map((d) => d.qtd)).toEqual([1, 1, 2]);
+    expect(r.funcoes[0].porDia.map((d) => d.qtd)).toEqual([2, 1, 2]);
     expect(r.funcoes[0].porDia[2].nomes).toEqual(["B", "C"]);
     expect(r.funcoes[1].porDia.map((d) => d.qtd)).toEqual([0, 0, 0]);
   });
