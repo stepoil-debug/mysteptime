@@ -171,6 +171,7 @@ import type { TimesheetEmbarque, TimesheetSemana } from "@/lib/timesheetOffshore
 import { UNIDADES_OPERACIONAIS_FIXAS, resolverFuncaoEmbarque } from "@/lib/timesheetOffshore";
 import { DrakeUpdateCard } from "@/components/histograma/DrakeUpdateCard";
 import { MoDisponivelDiaCard } from "@/components/histograma/MoDisponivelDiaCard";
+import { EquipesEmbarcadasUnidadeCard } from "@/components/histograma/EquipesEmbarcadasUnidadeCard";
 import {
   PlanejamentoEmbarqueTab,
   usePlanejamentoEmbarqueQuery,
@@ -5875,144 +5876,9 @@ function DashboardTab({
         />
       </div>
 
-      {/* ── POB por Unidade × Dia (com BSP) ── */}
-      <Card className="p-4">
-        <h3 className="text-sm font-semibold">POB por Unidade × Dia</h3>
-        <p className="text-xs text-muted-foreground mb-3">
-          Embarcados por dia, por unidade e por BSP, no período selecionado acima
-        </p>
-        {datesPobUnidadeDia.length === 0 ? (
-          <EmptyState icon={CalendarDays} title="Selecione um período válido" />
-        ) : unidadeBspRows.length === 0 ? (
-          <EmptyState icon={Ship} title="Nenhuma unidade com embarcado no período selecionado" />
-        ) : (
-          <div className="relative rounded border border-border">
-            {/* Linha vertical separando "Unidade/BSP" do dia 01 desenhada por cima da tabela
-                (position absolute, do topo ao fim), em vez de border em cada célula — border
-                normal por célula, com border-collapse, ficava inconsistente entre os tipos de
-                linha (cabeçalho/grupo de unidade/BSP/Total), dando a impressão de linha
-                cortada/quebrada (pedido dela: tem que ser inteira, sem cortes). */}
-            <div
-              className="pointer-events-none absolute inset-y-0 z-20 w-0 border-r border-r-border"
-              style={{ left: 150 }}
-            />
-            {/* table-fixed + sem min-w: as colunas de dia dividem o espaço disponível em partes
-                iguais, então a tabela nunca precisa de scroll horizontal, independente de quantos
-                dias tiver no período. */}
-            <table className="w-full table-fixed border-collapse text-xs">
-              <colgroup>
-                <col className="w-[150px]" />
-                {datesPobUnidadeDia.map((d) => (
-                  <col key={d} />
-                ))}
-              </colgroup>
-              <thead className="sticky top-0 z-10">
-                <tr>
-                  <th className="border border-border bg-muted px-2 py-1.5 text-left font-medium">
-                    Unidade / BSP
-                  </th>
-                  {datesPobUnidadeDia.map((d) => (
-                    <th
-                      key={d}
-                      className="border border-border px-0.5 py-1 text-center font-normal overflow-hidden"
-                      style={{ backgroundColor: "var(--muted)" }}
-                    >
-                      {d.slice(8, 10)}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {(() => {
-                  let lastUnidade = "";
-                  return unidadeBspRows.map((row) => {
-                    const isFirstDaUnidade = row.unidade !== lastUnidade;
-                    lastUnidade = row.unidade;
-                    return (
-                      <Fragment key={`${row.unidade}::${row.bsp}`}>
-                        {isFirstDaUnidade && (
-                          <tr>
-                            <td
-                              colSpan={1 + datesPobUnidadeDia.length}
-                              className="border border-border bg-muted/70 px-2 py-1 font-semibold"
-                            >
-                              <div className="max-w-[142px] truncate" title={row.unidade}>
-                                {row.unidade}
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                        <tr className="hover:bg-muted/40">
-                          <td
-                            className={cn(
-                              "bg-background border border-border px-2 py-1 pl-5 truncate",
-                              row.bsp === "Sem BSP"
-                                ? "text-amber-600 font-medium"
-                                : "text-muted-foreground",
-                            )}
-                            title={
-                              row.bsp === "Sem BSP"
-                                ? `Sem BSP no Drake nem no Planejamento de Embarque: ${Array.from(
-                                    new Set(Array.from(row.nomesByDate.values()).flat()),
-                                  )
-                                    .sort((a, b) => a.localeCompare(b, "pt-BR"))
-                                    .join(", ")}`
-                                : undefined
-                            }
-                          >
-                            {row.bsp}
-                          </td>
-                          {datesPobUnidadeDia.map((d) => {
-                            const count = row.countByDate.get(d) ?? 0;
-                            const nomes = row.nomesByDate.get(d) ?? [];
-                            return (
-                              <td
-                                key={d}
-                                className="border border-border p-0 text-center overflow-hidden"
-                                style={
-                                  count > 0
-                                    ? {
-                                        backgroundColor: "#22c55e33",
-                                        color: "#166534",
-                                        fontWeight: 700,
-                                      }
-                                    : { backgroundColor: "#f1f5f9" }
-                                }
-                                title={nomes.length > 0 ? nomes.join(", ") : undefined}
-                              >
-                                {count > 0 ? count : ""}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      </Fragment>
-                    );
-                  });
-                })()}
-                {/* Total geral do dia (soma de todas as unidades/BSP) — pedido dela, pra não
-                    precisar somar a coluna manualmente. */}
-                <tr className="border-t-2 border-t-border">
-                  <td className="border border-border bg-muted px-2 py-1 font-semibold">Total</td>
-                  {datesPobUnidadeDia.map((d) => {
-                    const total = unidadeBspRows.reduce(
-                      (sum, row) => sum + (row.countByDate.get(d) ?? 0),
-                      0,
-                    );
-                    return (
-                      <td
-                        key={d}
-                        className="border border-border bg-muted px-0.5 py-1 text-center font-bold"
-                      >
-                        {total > 0 ? total : ""}
-                      </td>
-                    );
-                  })}
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+      {/* ── Equipes Embarcadas por Unidade (pedido dela, 2026-11-11; substituiu o "POB por
+          Unidade × Dia") — mesma base da aba Equipes Embarcadas de Nomeações. ── */}
+      <EquipesEmbarcadasUnidadeCard linhas={planejamentoEmbarque} hoje={today} />
 
       {/* ── M.O disponível x Dia (pedido dela, 2026-11-10; substituiu o "POB x Unidade") ── */}
       <MoDisponivelDiaCard linhas={planejamentoEmbarque} hoje={today} />
