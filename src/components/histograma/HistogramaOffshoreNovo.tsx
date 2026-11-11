@@ -5042,17 +5042,6 @@ function DashboardTab({
     },
     {
       label: "Bloqueados - Henrique",
-      // Quantidade de cada Status embaixo do número (pedido dela, 2026-11-10).
-      detalhe: [
-        { label: "Base Henrique", value: statusReferenceDate.baseHenriqueMedia },
-        { label: "Bloqueio Base Henrique", value: statusReferenceDate.bloqueioBaseHenriqueMedia },
-        ...(statusReferenceDate.bloqueioRHMedia > 0
-          ? [{ label: "Bloqueio RH", value: statusReferenceDate.bloqueioRHMedia }]
-          : []),
-        ...(statusReferenceDate.bloqueioTemporarioMedia > 0
-          ? [{ label: "Bloqueio Temporário", value: statusReferenceDate.bloqueioTemporarioMedia }]
-          : []),
-      ],
       value:
         statusReferenceDate.baseHenriqueMedia +
         statusReferenceDate.bloqueioBaseHenriqueMedia +
@@ -5485,16 +5474,6 @@ function DashboardTab({
               <div className="mt-2 whitespace-nowrap text-[clamp(1.375rem,1rem+1.2vw,1.875rem)] font-semibold leading-tight text-slate-800">
                 <KpiValue value={k.value} suffix={k.suffix} />
               </div>
-              {k.detalhe && (
-                <div className="mt-1 space-y-0.5 text-[11px] text-muted-foreground">
-                  {k.detalhe.map((d) => (
-                    <div key={d.label} className="flex justify-between gap-2">
-                      <span className="truncate">{d.label}</span>
-                      <span className="font-semibold text-slate-700">{d.value}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
             </Card>
           );
 
