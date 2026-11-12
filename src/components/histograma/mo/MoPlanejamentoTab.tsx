@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { supabase as supabaseTyped } from "@/integrations/supabase/client";
 import { notify } from "@/lib/notify";
+import { selectAllPages } from "@/lib/supabasePaginate";
 import { todayStr } from "@/lib/histogramaNovo";
 import {
   MO_STATUS_BSP,
@@ -38,6 +39,13 @@ import {
 } from "@/lib/mo-planejado-import";
 import { StringMultiCombobox } from "@/components/histograma/HistogramaOffshoreNovo";
 import { MoPlanejadoGraficos } from "@/components/histograma/mo/MoPlanejadoGraficos";
+import {
+  DeParaFuncoesSection,
+  DetalhamentoPlanejadoSection,
+  funcoesSemDepara,
+} from "@/components/histograma/mo/MoDetalhamentoPlanejado";
+import { useMoDepara } from "@/components/histograma/mo/usePlanejadoXDisponivel";
+import { normFuncao } from "@/lib/mo-planejado-x-disponivel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -62,9 +70,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-// Aba "M.O — Mão de Obra Planejada" (pedido dela, 2026-11-09): a liderança (qualquer ADM —
-// ver canEditMoPlanejamento em access-roles.ts / is_system_admin no banco) preenche a mão de
-// obra PLANEJADA como numa planilha. Alimenta os gráficos de planejado do Dashboard.
+// Aba "M.O — Mão de Obra Planejada" (pedido dela, 2026-11-09): a liderança preenche a mão de
+// obra PLANEJADA como numa planilha. Alimenta os gráficos de planejado do Dashboard. Desde
+// 2026-11-12 só quem está em mo_editores (Bruna e Diego) vê e edita — ver useMoPodeEditar.
 
 // mo_planejamento ainda não está nos tipos gerados do Supabase.
 const supabase: any = supabaseTyped;
@@ -104,6 +112,41 @@ async function inserirLinhas(linhas: NovaLinha[]) {
   for (let i = 0; i < linhas.length; i += 500) {
     const { error } = await supabase.from(TABELA).insert(linhas.slice(i, i + 500));
     if (error) throw error;
+  }
+}
+
+// Importar de novo (pedido dela, 2026-11-12): "Substituir" grava as linhas novas e SÓ DEPOIS
+// apaga as que já existiam (pelos ids lidos antes) — se a gravação falhar, nada é apagado.
+async function substituirLinhas(linhas: NovaLinha[]) {
+  const antigos = await selectAllPages<{ id: string }>((from, to) =>
+    supabase.from(TABELA).select("id").order("id").range(from, to),
+  );
+  await inserirLinhas(linhas);
+  const ids = antigos.map((r) => r.id);
+  for (let i = 0; i < ids.length; i += 200) {
+    const { error } = await supabase.from(TABELA).delete().in("id", ids.slice(i, i + 200));
+    if (error) throw error;
+  }
+  return ids.length;
+}
+
+async function lerPlanilhaMo(file: File): Promise<MoLinhaImportada[] | null> {
+  try {
+    const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+    const nome = wb.SheetNames.find((n) => n.trim().toUpperCase() === "M.O");
+    if (!nome) {
+      notify.error('A planilha não tem a aba "M.O".');
+      return null;
+    }
+    const linhas = parsePlanilhaMo(matrizDesdeA1(wb.Sheets[nome]));
+    if (linhas.length === 0) {
+      notify.error("Nenhuma linha encontrada na aba M.O (dados a partir da linha 3, colunas B:H).");
+      return null;
+    }
+    return linhas;
+  } catch (err) {
+    notify.error(`Não foi possível ler a planilha: ${(err as Error).message}`);
+    return null;
   }
 }
 
@@ -174,6 +217,7 @@ function LinhaMo({
   onDuplicar,
   onExcluir,
   hoje,
+  semDepara,
 }: {
   registro: MoRegistro;
   indice: number;
@@ -181,6 +225,7 @@ function LinhaMo({
   onDuplicar: (r: MoRegistro) => void;
   onExcluir: (r: MoRegistro) => void;
   hoje: string;
+  semDepara?: boolean;
 }) {
   const [rascunho, setRascunho] = useState({
     qtd: String(registro.qtd),
@@ -288,6 +333,11 @@ function LinhaMo({
           onChange={(e) => set("funcao", e.target.value)}
           onBlur={() => normalizarAoSair("funcao")}
         />
+        {semDepara && (
+          <p className="flex items-center gap-1 px-1.5 text-[10px] text-amber-700">
+            <AlertTriangle className="h-3 w-3" /> Função sem correspondência no Drake
+          </p>
+        )}
       </td>
       <td className="min-w-[150px] px-1 py-0.5">
         <Input
@@ -540,10 +590,29 @@ function ImportarMoDialog({
 }) {
   const qc = useQueryClient();
   const validas = linhas.filter((l) => l.erros.length === 0);
+  const { data: existentes } = useQuery<number>({
+    queryKey: [...QUERY_KEY, "contagem"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from(TABELA)
+        .select("id", { count: "exact", head: true });
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
   const importar = useMutation({
-    mutationFn: () => inserirLinhas(validas.map(importadaParaNova)),
-    onSuccess: () => {
-      notify.success(`${validas.length} linha(s) importada(s).`);
+    mutationFn: async (modo: "adicionar" | "substituir") => {
+      const novas = validas.map(importadaParaNova);
+      if (modo === "substituir") return substituirLinhas(novas);
+      await inserirLinhas(novas);
+      return 0;
+    },
+    onSuccess: (apagadas) => {
+      notify.success(
+        apagadas > 0
+          ? `${validas.length} linha(s) importada(s); ${apagadas} linha(s) antiga(s) substituída(s).`
+          : `${validas.length} linha(s) importada(s).`,
+      );
       qc.invalidateQueries({ queryKey: QUERY_KEY });
       qc.invalidateQueries({ queryKey: ["mo-planejado-diario"] });
       onClose();
@@ -561,6 +630,14 @@ function ImportarMoDialog({
           {linhas.length > validas.length &&
             " As linhas com erro (em vermelho) não serão importadas."}
         </p>
+        {!!existentes && (
+          <p className="rounded border border-amber-300 bg-amber-50 px-2 py-1.5 text-xs text-amber-900">
+            A M.O já tem <b>{existentes}</b> linha(s). <b>Substituir</b> troca todas elas pelas{" "}
+            {validas.length} da planilha (as antigas só são apagadas depois que as novas forem
+            gravadas). <b>Adicionar</b> mantém as atuais e soma as novas — se for a mesma planilha,
+            fica tudo duplicado.
+          </p>
+        )}
         <div className="max-h-[55vh] overflow-auto rounded border">
           <table className="w-full text-xs">
             <thead className="sticky top-0 bg-muted">
@@ -600,16 +677,74 @@ function ImportarMoDialog({
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button
-            disabled={validas.length === 0}
-            loading={importar.isPending}
-            onClick={() => importar.mutate()}
-          >
-            Importar {validas.length} linha(s)
-          </Button>
+          {existentes ? (
+            <>
+              <Button
+                variant="outline"
+                disabled={validas.length === 0 || importar.isPending}
+                onClick={() => importar.mutate("adicionar")}
+              >
+                Adicionar às atuais
+              </Button>
+              <Button
+                disabled={validas.length === 0}
+                loading={importar.isPending}
+                onClick={() => importar.mutate("substituir")}
+              >
+                Substituir as {existentes} linha(s) atuais
+              </Button>
+            </>
+          ) : (
+            <Button
+              disabled={validas.length === 0}
+              loading={importar.isPending}
+              onClick={() => importar.mutate("adicionar")}
+            >
+              Importar {validas.length} linha(s)
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * Botão "Importar planilha da M.O" para o Dashboard (pedido dela, 2026-11-12 — temporário: sai
+ * depois que ela importar; os dados ficam). Mesmo fluxo da aba M.O.
+ */
+export function ImportarPlanilhaMoBotao() {
+  const ref = useRef<HTMLInputElement>(null);
+  const [importacao, setImportacao] = useState<{
+    linhas: MoLinhaImportada[];
+    origem: string;
+  } | null>(null);
+  return (
+    <>
+      <Button size="sm" variant="outline" onClick={() => ref.current?.click()}>
+        <Upload className="mr-1.5 h-3.5 w-3.5" /> Importar planilha da M.O (.xlsx)
+      </Button>
+      <input
+        ref={ref}
+        type="file"
+        accept=".xlsx,.xlsm,.xls"
+        className="hidden"
+        onChange={async (e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (!f) return;
+          const linhas = await lerPlanilhaMo(f);
+          if (linhas) setImportacao({ linhas, origem: f.name });
+        }}
+      />
+      {importacao && (
+        <ImportarMoDialog
+          linhas={importacao.linhas}
+          origem={importacao.origem}
+          onClose={() => setImportacao(null)}
+        />
+      )}
+    </>
   );
 }
 
@@ -660,6 +795,13 @@ export function MoPlanejamentoTab() {
       bsp: uniq([...MO_STATUS_BSP, ...registros.map((r) => r.bsp)]),
     };
   }, [registros]);
+
+  // Aviso "Função sem correspondência no Drake" (só depois que o De/Para carregou).
+  const { data: depara, isSuccess: deparaOk } = useMoDepara();
+  const semDepara = useMemo(
+    () => (deparaOk && depara ? funcoesSemDepara(opcoes.funcao, depara) : new Set<string>()),
+    [deparaOk, depara, opcoes.funcao],
+  );
 
   const filtrados = useMemo(
     () =>
@@ -774,24 +916,8 @@ export function MoPlanejamentoTab() {
   };
 
   const lerArquivo = async (file: File) => {
-    try {
-      const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
-      const nome = wb.SheetNames.find((n) => n.trim().toUpperCase() === "M.O");
-      if (!nome) {
-        notify.error('A planilha não tem a aba "M.O".');
-        return;
-      }
-      const linhas = parsePlanilhaMo(matrizDesdeA1(wb.Sheets[nome]));
-      if (linhas.length === 0) {
-        notify.error(
-          "Nenhuma linha encontrada na aba M.O (dados a partir da linha 3, colunas B:H).",
-        );
-        return;
-      }
-      setImportacao({ linhas, origem: file.name });
-    } catch (err) {
-      notify.error(`Não foi possível ler a planilha: ${(err as Error).message}`);
-    }
+    const linhas = await lerPlanilhaMo(file);
+    if (linhas) setImportacao({ linhas, origem: file.name });
   };
 
   let indice = 0;
@@ -1000,6 +1126,7 @@ export function MoPlanejamentoTab() {
                         onSalvo={atualizarCache}
                         onDuplicar={duplicar}
                         onExcluir={setExcluindo}
+                        semDepara={semDepara.has(normFuncao(r.funcao))}
                       />
                     ))}
                 </Fragment>
@@ -1008,6 +1135,9 @@ export function MoPlanejamentoTab() {
           </tbody>
         </table>
       </div>
+
+      <DeParaFuncoesSection funcoesMo={opcoes.funcao} />
+      <DetalhamentoPlanejadoSection funcoesMo={opcoes.funcao} hoje={hoje} />
 
       <div className="space-y-2">
         <h3 className="text-sm font-semibold">Prévia dos gráficos de planejado (Dashboard)</h3>

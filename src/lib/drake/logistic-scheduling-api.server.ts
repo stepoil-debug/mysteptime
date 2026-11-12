@@ -25,13 +25,16 @@ export interface DrakeLogisticSchedulingRow {
 export async function fetchLogisticScheduling(
   http: DrakeHttpClient,
   workerId: string,
+  // Opcional (2026-11-12): a sincronização da programação logística pede mais pernas e só o
+  // passado; sem isso, mesmo comportamento de antes (Auditoria).
+  options: { daysBefore?: number; daysAfter?: number; limit?: number } = {},
 ): Promise<DrakeLogisticSchedulingRow[]> {
   const response = await http.get(LOGISTIC_SCHEDULING_URL, {
     failOnStatusCode: false,
     params: {
-      daysBefore: DEFAULT_DAYS_BEFORE,
-      daysAfter: DEFAULT_DAYS_AFTER,
-      limit: DEFAULT_LIMIT,
+      daysBefore: options.daysBefore ?? DEFAULT_DAYS_BEFORE,
+      daysAfter: options.daysAfter ?? DEFAULT_DAYS_AFTER,
+      limit: options.limit ?? DEFAULT_LIMIT,
       order: "desc",
       page: 1,
       workerId,

@@ -74,6 +74,22 @@ export function statusPlanejamentoOcupado(status: string | null | undefined): bo
   return b === "embarcado" || b === "programado" || b === "folga" || b === "trabalhoExterno";
 }
 
+const BALDES_BLOQUEADOS = new Set<BaldeStatusPlanejamento>([
+  "naBase",
+  "baseHenrique",
+  "bloqueioBaseHenrique",
+  "bloqueioTemporario",
+  "bloqueioRH",
+]);
+
+/** Bloqueados (gráfico vermelho) — ficam fora da Taxa de Ocupação (pedido dela, 2026-11-12). */
+export function statusPlanejamentoBloqueado(
+  status: string | null | undefined,
+  rhBloqueado?: boolean | null,
+): boolean {
+  return BALDES_BLOQUEADOS.has(classificarStatusPlanejamento(status, !!rhBloqueado));
+}
+
 /** Terceirizado não entra em nenhuma contagem (só fica na lista do Planejamento para consulta). */
 export function statusPlanejamentoForaDaContagem(status: string | null | undefined): boolean {
   return classificarStatusPlanejamento(status) === "terceirizado";

@@ -4275,8 +4275,11 @@ function diasAteData(data: string, referencia: string): number {
   return Math.round((parse(data) - parse(referencia)) / 86400000);
 }
 
-function ClientCascadeView() {
-  // Tudo começa aberto, como solicitado. Os sets guardam somente os itens recolhidos.
+// Exportado também pro Dashboard do Histograma (pedido dela, 2026-11-12: "igual tá lá").
+export function ClientCascadeView({ iniciarRecolhido = false }: { iniciarRecolhido?: boolean } = {}) {
+  // Em Nomeações tudo começa aberto, como solicitado, e os sets guardam os itens recolhidos. No
+  // Dashboard do Histograma (iniciarRecolhido, pedido dela, 2026-11-12) começa tudo recolhido e
+  // os sets guardam o que foi aberto à mão.
   const [collapsedClients, setCollapsedClients] = useState<Set<string>>(new Set());
   const [collapsedUnits, setCollapsedUnits] = useState<Set<string>>(new Set());
   const [collapsedBsps, setCollapsedBsps] = useState<Set<string>>(new Set());
@@ -4285,6 +4288,9 @@ function ClientCascadeView() {
   const [unidadeFiltro, setUnidadeFiltro] = useState<string | null>(null);
   const today = todayStr();
   const teamReferenceDate = today;
+
+  const aberto = (set: Set<string>, key: string) =>
+    iniciarRecolhido ? set.has(key) : !set.has(key);
 
   const toggleCollapsed = (
     setter: React.Dispatch<React.SetStateAction<Set<string>>>,
@@ -4367,6 +4373,18 @@ function ClientCascadeView() {
       });
   }, [visibleItems]);
 
+  const chavesCascata = {
+    clientes: groups.map((c) => c.name),
+    unidades: groups.flatMap((c) => c.units.map((u) => `${c.name}::${u.name}`)),
+    bsps: groups.flatMap((c) =>
+      c.units.flatMap((u) => u.bsps.map((b) => `${c.name}::${u.name}::${b.name}`)),
+    ),
+  };
+  const tudoAberto =
+    chavesCascata.clientes.every((k) => aberto(collapsedClients, k)) &&
+    chavesCascata.unidades.every((k) => aberto(collapsedUnits, k)) &&
+    chavesCascata.bsps.every((k) => aberto(collapsedBsps, k));
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -4376,28 +4394,22 @@ function ClientCascadeView() {
           variant="ghost"
           className="h-8 ml-auto text-muted-foreground"
           onClick={() => {
-            const tudoAberto =
-              collapsedClients.size === 0 && collapsedUnits.size === 0 && collapsedBsps.size === 0;
-            if (tudoAberto) {
-              setCollapsedClients(new Set(groups.map((c) => c.name)));
-              setCollapsedUnits(
-                new Set(groups.flatMap((c) => c.units.map((u) => `${c.name}::${u.name}`))),
-              );
-              setCollapsedBsps(
-                new Set(
-                  groups.flatMap((c) =>
-                    c.units.flatMap((u) => u.bsps.map((b) => `${c.name}::${u.name}::${b.name}`)),
-                  ),
-                ),
-              );
-            } else {
+            const todos = () => {
+              setCollapsedClients(new Set(chavesCascata.clientes));
+              setCollapsedUnits(new Set(chavesCascata.unidades));
+              setCollapsedBsps(new Set(chavesCascata.bsps));
+            };
+            const nenhum = () => {
               setCollapsedClients(new Set());
               setCollapsedUnits(new Set());
               setCollapsedBsps(new Set());
-            }
+            };
+            // Recolher tudo = sets cheios no modo normal, vazios no modo iniciarRecolhido.
+            if (tudoAberto === !iniciarRecolhido) todos();
+            else nenhum();
           }}
         >
-          {collapsedClients.size === 0 && collapsedUnits.size === 0 && collapsedBsps.size === 0 ? (
+          {tudoAberto ? (
             <>
               <ChevronsDownUp className="mr-1.5 h-3.5 w-3.5" />
               Recolher tudo
@@ -4464,7 +4476,7 @@ function ClientCascadeView() {
             />
           ) : (
             groups.map((client) => {
-              const clientOpen = !collapsedClients.has(client.name);
+              const clientOpen = aberto(collapsedClients, client.name);
               return (
                 <div key={client.name} className="border-b last:border-b-0">
                   <div className="flex w-full items-center justify-between bg-slate-50 px-4 py-3 text-left">
@@ -4492,7 +4504,7 @@ function ClientCascadeView() {
                   {clientOpen &&
                     client.units.map((unit) => {
                       const unitKey = `${client.name}::${unit.name}`;
-                      const unitOpen = !collapsedUnits.has(unitKey);
+                      const unitOpen = aberto(collapsedUnits, unitKey);
                       return (
                         <div key={unitKey}>
                           <div className="flex w-full items-center justify-between border-t bg-sky-50/60 px-4 py-2.5 text-left">
@@ -4525,7 +4537,7 @@ function ClientCascadeView() {
                           {unitOpen &&
                             unit.bsps.map((bsp) => {
                               const bspKey = `${unitKey}::${bsp.name}`;
-                              const bspOpen = !collapsedBsps.has(bspKey);
+                              const bspOpen = aberto(collapsedBsps, bspKey);
                               // Próxima troca de turma do BSP = desembarque mais próximo entre os embarcados —
                               // é o próximo dia em que ALGUÉM daquele BSP precisa ser rendido. Programado ainda
                               // não tem desembarque (nem embarcou de verdade), não conta pra essa conta.
