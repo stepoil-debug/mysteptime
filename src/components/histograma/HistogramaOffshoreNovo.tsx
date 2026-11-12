@@ -4315,11 +4315,16 @@ function DashboardTab({
   // cartões/rosquinha baterem entre si) e têm seu PRÓPRIO filtro De/Até, discreto, mostrado
   // só em cima delas — nasce sempre no mês atual inteiro (pedido dela), mas continua editável
   // se ela quiser ver outro período, sem afetar os gráficos "por dia" de cima.
-  const inicioMesAtualDefault = `${today.slice(0, 7)}-01`;
-  const [anoMesAtualDefault, mesMesAtualDefault] = today.slice(0, 7).split("-").map(Number);
-  const fimMesAtualDefault = `${today.slice(0, 7)}-${String(new Date(anoMesAtualDefault, mesMesAtualDefault, 0).getDate()).padStart(2, "0")}`;
-  const [inicioMesAtual, setInicioMesAtual] = useState(inicioMesAtualDefault);
-  const [fimMesAtual, setFimMesAtual] = useState(fimMesAtualDefault);
+  // "Mão de Obra por Semana" (pedido dela, 2026-11-12: "puxe a realidade que vem do Drake"):
+  // abre nas últimas 6 semanas até hoje (segunda de 5 semanas atrás → hoje) e nunca conta dia
+  // depois de hoje — só o que o Drake já registrou, sem projeção.
+  const inicioSeisSemanasDefault = (() => {
+    const d = new Date(`${today}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() || 7) - 1) - 35);
+    return d.toISOString().slice(0, 10);
+  })();
+  const [inicioMesAtual, setInicioMesAtual] = useState(inicioSeisSemanasDefault);
+  const [fimMesAtual, setFimMesAtual] = useState(today);
   const datesMesAtual = useMemo(
     () =>
       inicioMesAtual && fimMesAtual && inicioMesAtual <= fimMesAtual
@@ -5234,7 +5239,7 @@ function DashboardTab({
   const weeklyData = useMemo(() => {
     const weekMap = new Map<string, { label: string; dates: string[] }>();
     const weekOrder: string[] = [];
-    datesMesAtual.forEach((d) => {
+    datesMesAtual.filter((d) => d <= today).forEach((d) => {
       const dt = new Date(d + "T12:00:00");
       const dow = dt.getDay() || 7;
       const mon = new Date(dt);
@@ -5275,7 +5280,7 @@ function DashboardTab({
         Disponível: Math.round(disp / n),
       };
     });
-  }, [datesMesAtual, dailyRecords]);
+  }, [datesMesAtual, dailyRecords, today]);
 
   // ── NOVO: POB por Mês (do início do ano até hoje, agregado — independente do filtro
   // De/Até acima, que serve só pros KPIs e pros gráficos de unidade/semana) ──
@@ -5859,7 +5864,7 @@ function DashboardTab({
       {/* ── Filtro discreto pros gráficos "por mês" abaixo (POB por Unidade × Dia e Mão de
           Obra por Semana) — separado do De/Até de cima, que é só pros gráficos "por dia". ── */}
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        <span>Período dos gráficos por mês:</span>
+        <span>Período do Mão de Obra por Semana (Drake):</span>
         <span>De:</span>
         <Input
           type="date"
@@ -5886,7 +5891,9 @@ function DashboardTab({
       {/* ── Mão de Obra por Semana ── */}
       <Card className="p-4">
         <h3 className="text-sm font-semibold">Mão de Obra por Semana</h3>
-        <p className="text-xs text-muted-foreground mb-3">Média diária de pessoas por semana</p>
+        <p className="text-xs text-muted-foreground mb-3">
+          Média diária de pessoas por semana, pelo Drake — só dias até hoje (sem projeção)
+        </p>
         {weeklyData.length === 0 ? (
           <EmptyState icon={TrendingUp} title="Nenhum dado no período selecionado" />
         ) : (
