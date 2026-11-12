@@ -11,9 +11,8 @@
 -- Segredo: fica no Vault do Supabase com o nome 'drake_cron_secret' (app.cron_secret não está
 -- configurado neste banco — conferido em 2026-11-12). Criar ANTES desta migração, uma vez:
 --   select vault.create_secret(encode(extensions.gen_random_bytes(32), 'hex'), 'drake_cron_secret');
--- e copiar o valor (select decrypted_secret from vault.decrypted_secrets
--- where name = 'drake_cron_secret') para o secret CRON_SECRET do app no Lovable. Sem o mesmo valor
--- nos dois lados a rota responde 401/503 e nada acontece.
+-- A rota confere a senha no próprio banco (RPC drake_cron_secret_ok, migration 20261112030000);
+-- não precisa de secret no Lovable. Senha errada = 401 e nada acontece.
 --
 -- Para desligar: select cron.unschedule('drake-sync-horario-fixo');
 create extension if not exists pg_cron with schema extensions;
