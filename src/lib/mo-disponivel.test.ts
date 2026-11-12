@@ -77,20 +77,24 @@ describe("disponivelNoDia", () => {
 });
 
 describe("moDisponivelPorDia", () => {
-  it("agrupa por função, tira Terceirizado e zera quem não está disponível", () => {
+  it("agrupa por função, tira Terceirizado/Indisponível/Bloqueados e zera quem não está disponível", () => {
     const r = moDisponivelPorDia(
       [
         p({ nome: "B" }),
         p({ nome: "C", embarque: "2026-11-11", desembarque: "2026-11-11" }),
-        p({ nome: "D", funcao: "SOLDADOR", status: "INDISPONÍVEL" }),
+        p({ nome: "D", funcao: "SOLDADOR", status: "FOLGA" }),
         p({ nome: "E", funcao: "RIGGER", status: "TERCEIRIZADO" }),
+        p({ nome: "F", funcao: "CALDEIREIRO", status: "INDISPONÍVEL" }),
+        p({ nome: "G", funcao: "CALDEIREIRO", status: "Base Henrique" }),
+        p({ nome: "H", funcao: "CALDEIREIRO", status: "Bloqueio - Base - Henrique" }),
+        p({ nome: "I", funcao: "PINTOR", status: "Bloqueio RH" }),
       ],
       hoje,
       3,
     );
     expect(r.dias).toEqual(["2026-11-10", "2026-11-11", "2026-11-12"]);
     expect(r.funcoes.map((f) => f.funcao)).toEqual(["CALDEIREIRO", "SOLDADOR"]);
-    // Total de M.O por função: todos os Status, sem Terceirizado.
+    // Total de M.O por função: sem Terceirizado, Indisponível e Bloqueados.
     expect(r.funcoes.map((f) => f.total)).toEqual([2, 1]);
     expect(r.funcoes[0].porDia.map((d) => d.qtd)).toEqual([2, 1, 2]);
     expect(r.funcoes[0].porDia[2].nomes).toEqual(["B", "C"]);

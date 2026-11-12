@@ -32,7 +32,8 @@ export function MoDisponivelDiaCard({
       <p className="mb-3 text-xs text-muted-foreground">
         Tudo pelo Planejamento de Embarque: hoje = Status "Disponível" (igual ao cartão Stand By);
         nos próximos dias, entra quem termina o ciclo pelas datas (embarque, folga, férias,
-        programado) e sai quem tem embarque marcado. Demais Status não contam.
+        programado) e sai quem tem embarque marcado. Indisponível, Bloqueados e Terceirizados ficam
+        de fora.
       </p>
       <div className="mb-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
         <span className="flex items-center gap-1.5">
@@ -62,7 +63,7 @@ export function MoDisponivelDiaCard({
                 <th className="sticky left-0 z-30 bg-card pr-3 text-left align-bottom font-medium">
                   <div className="flex items-end justify-between gap-2 text-[10px] uppercase tracking-wide text-muted-foreground">
                     <span>Função</span>
-                    <span title="Total de M.O da função no Planejamento de Embarque (todos os Status, menos Terceirizado)">
+                    <span title="Total de M.O da função no Planejamento de Embarque (sem Terceirizado, Indisponível e Bloqueados)">
                       Total M.O
                     </span>
                   </div>
@@ -89,7 +90,7 @@ export function MoDisponivelDiaCard({
                       {/* Total de M.O da função no Planejamento (pedido dela, 2026-11-11). */}
                       <span
                         className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-bold tabular-nums text-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                        title={`${f.total} pessoa(s) de ${f.funcao} no Planejamento (todos os Status, menos Terceirizado)`}
+                        title={`${f.total} pessoa(s) de ${f.funcao} no Planejamento (sem Terceirizado, Indisponível e Bloqueados)`}
                       >
                         {f.total}
                       </span>

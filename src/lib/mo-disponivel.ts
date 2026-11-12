@@ -30,7 +30,7 @@ export interface LinhaDisponibilidade {
 
 export interface MoDisponivelFuncao {
   funcao: string;
-  /** Total de M.O da função no Planejamento (todos os Status, menos Terceirizado). */
+  /** Total de M.O da função no Planejamento (sem Terceirizado, Indisponível e Bloqueados). */
   total: number;
   /** Um item por dia (mesma ordem de `dias`). */
   porDia: { dia: string; qtd: number; nomes: string[] }[];
@@ -93,6 +93,18 @@ export function disponivelNoDia(r: LinhaDisponibilidade, dia: string, hoje: stri
 }
 
 /** Tabela função × dia (funções em ordem alfabética; "Sem função" no fim). */
+// Fora do quantitativo inteiro (pedido dela, 2026-11-12): Terceirizado, Indisponível e todos os
+// Bloqueados (Base Henrique, Bloqueio - Base - Henrique, Na Base, Bloqueio Temporário, Bloqueio RH).
+const FORA_DO_QUANTITATIVO = new Set([
+  "terceirizado",
+  "indisponivel",
+  "naBase",
+  "baseHenrique",
+  "bloqueioBaseHenrique",
+  "bloqueioTemporario",
+  "bloqueioRH",
+]);
+
 export function moDisponivelPorDia(
   linhas: LinhaDisponibilidade[],
   hoje: string,
@@ -101,7 +113,7 @@ export function moDisponivelPorDia(
   const dias = proximosDias(hoje, nDias);
   const porFuncao = new Map<string, LinhaDisponibilidade[]>();
   for (const r of linhas) {
-    if (classificarStatusPlanejamento(r.status, r.rh_bloqueado) === "terceirizado") continue;
+    if (FORA_DO_QUANTITATIVO.has(classificarStatusPlanejamento(r.status, r.rh_bloqueado))) continue;
     const funcao = r.funcao?.trim() || "Sem função";
     if (!porFuncao.has(funcao)) porFuncao.set(funcao, []);
     porFuncao.get(funcao)!.push(r);
