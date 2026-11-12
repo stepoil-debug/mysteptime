@@ -3,6 +3,7 @@ import {
   classificarStatusPlanejamento as c,
   statusPlanejamentoForaDaContagem,
   statusPlanejamentoOcupado,
+  statusPlanejamentoBloqueado,
 } from "./dashboard-status-planejamento";
 
 describe("classificarStatusPlanejamento", () => {
@@ -49,5 +50,16 @@ describe("classificarStatusPlanejamento", () => {
     expect(statusPlanejamentoForaDaContagem(" terceirizado ")).toBe(true);
     expect(statusPlanejamentoForaDaContagem("EMBARCADO")).toBe(false);
     expect(statusPlanejamentoOcupado("TERCEIRIZADO")).toBe(false);
+  });
+});
+
+describe("statusPlanejamentoBloqueado", () => {
+  it("Bloqueados saem da taxa; Indisponível e Stand By continuam", () => {
+    expect(statusPlanejamentoBloqueado("Base Henrique")).toBe(true);
+    expect(statusPlanejamentoBloqueado("Bloqueio - Base - Henrique")).toBe(true);
+    expect(statusPlanejamentoBloqueado("Na Base")).toBe(true);
+    expect(statusPlanejamentoBloqueado("Bloqueio RH")).toBe(true);
+    expect(statusPlanejamentoBloqueado("INDISPONÍVEL")).toBe(false);
+    expect(statusPlanejamentoBloqueado("DISPONÍVEL")).toBe(false);
   });
 });

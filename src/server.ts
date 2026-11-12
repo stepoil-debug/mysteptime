@@ -49,7 +49,10 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
-    scheduleDrakeUpdateForRequest(ctx);
+    // A rota do cron já roda a janela automática ela mesma (e espera terminar).
+    if (!new URL(request.url).pathname.startsWith("/api/integrations/drake/cron")) {
+      scheduleDrakeUpdateForRequest(ctx);
+    }
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);

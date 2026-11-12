@@ -105,6 +105,46 @@ const FORA_DO_QUANTITATIVO = new Set([
   "bloqueioRH",
 ]);
 
+const ROTULO_BALDE: Record<string, string> = {
+  embarcado: "Embarcado",
+  programado: "Programado",
+  folga: "Folga",
+  standBy: "Disponível",
+  trabalhoExterno: "Trabalho Externo",
+  ferias: "Férias",
+  atestado: "Atestado",
+  afastamento: "Afastamento",
+  outros: "Outros",
+  indisponivel: "Indisponível",
+  terceirizado: "Terceirizado",
+  naBase: "Na Base",
+  baseHenrique: "Base Henrique",
+  bloqueioBaseHenrique: "Bloqueio - Base - Henrique",
+  bloqueioTemporario: "Bloqueio Temporário",
+  bloqueioRH: "Bloqueio RH",
+};
+const ORDEM_BALDE = Object.keys(ROTULO_BALDE);
+
+/**
+ * Quais Status compõem o Total M.O (efetivo offshore do card) e quais ficam fora, com a
+ * quantidade de cada um (pedido dela, 2026-11-12) — mesma regra de FORA_DO_QUANTITATIVO.
+ */
+export function composicaoEfetivo(linhas: LinhaDisponibilidade[]) {
+  const dentro = new Map<string, number>();
+  const fora = new Map<string, number>();
+  for (const r of linhas) {
+    const b = classificarStatusPlanejamento(r.status, r.rh_bloqueado);
+    const alvo = FORA_DO_QUANTITATIVO.has(b) ? fora : dentro;
+    alvo.set(b, (alvo.get(b) ?? 0) + 1);
+  }
+  const lista = (m: Map<string, number>) =>
+    Array.from(m.entries())
+      .sort((a, b) => ORDEM_BALDE.indexOf(a[0]) - ORDEM_BALDE.indexOf(b[0]))
+      .map(([b, qtd]) => ({ status: ROTULO_BALDE[b] ?? b, qtd }));
+  const total = Array.from(dentro.values()).reduce((s, n) => s + n, 0);
+  return { total, dentro: lista(dentro), fora: lista(fora) };
+}
+
 export function moDisponivelPorDia(
   linhas: LinhaDisponibilidade[],
   hoje: string,
@@ -134,4 +174,41 @@ export function moDisponivelPorDia(
       }),
     }));
   return { dias, funcoes };
+}
+
+/**
+ * Disponível por função em dias quaisquer (Detalhamento "Planejado x Disponível" da aba M.O,
+ * pedido dela, 2026-11-12). Mesma regra e mesma população de moDisponivelPorDia — só aceita
+ * qualquer lista de dias. Dias antes de hoje ficam null (o disponível só existe de hoje em
+ * diante). Chave = função em maiúsculas, sem acento e sem espaço sobrando.
+ */
+export function disponivelPorFuncaoNosDias(
+  linhas: LinhaDisponibilidade[],
+  dias: string[],
+  hoje: string,
+): Map<string, { funcao: string; total: number; porDia: Map<string, number | null> }> {
+  const chave = (s: string) =>
+    s
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toUpperCase();
+  const porFuncao = new Map<string, { funcao: string; pessoas: LinhaDisponibilidade[] }>();
+  for (const r of linhas) {
+    if (FORA_DO_QUANTITATIVO.has(classificarStatusPlanejamento(r.status, r.rh_bloqueado))) continue;
+    const funcao = r.funcao?.trim() || "Sem função";
+    const k = chave(funcao);
+    if (!porFuncao.has(k)) porFuncao.set(k, { funcao, pessoas: [] });
+    porFuncao.get(k)!.pessoas.push(r);
+  }
+  const out = new Map<string, { funcao: string; total: number; porDia: Map<string, number | null> }>();
+  porFuncao.forEach(({ funcao, pessoas }, k) => {
+    const porDia = new Map<string, number | null>();
+    for (const dia of dias) {
+      porDia.set(dia, dia < hoje ? null : pessoas.filter((p) => disponivelNoDia(p, dia, hoje)).length);
+    }
+    out.set(k, { funcao, total: pessoas.length, porDia });
+  });
+  return out;
 }

@@ -113,6 +113,62 @@ export async function runDueDrakeSchedule(now = new Date()): Promise<boolean> {
   return true;
 }
 
+export type DrakeCronOutcome =
+  | { status: "disabled" }
+  | { status: "success"; scheduleKey: string; created?: number; updated?: number }
+  | { status: "skipped"; scheduleKey: string; reason: "update-already-running" | "slot-already-claimed" }
+  | { status: "error"; scheduleKey: string; message: string };
+
+/**
+ * Chamado pelo pg_cron (rota /api/integrations/drake/cron — pedido dela, 2026-11-12), para a
+ * sincronização não depender de alguém abrir o site. ADITIVO: usa a MESMA janela, a mesma trava
+ * e a mesma reserva no banco (drake_scheduler_slots) de runDueDrakeSchedule — se a visita ao
+ * site já processou a janela, o cron só pula, e vice-versa. Diferente de runDueDrakeSchedule,
+ * espera terminar e devolve o resultado (a requisição do cron fica aberta durante a execução).
+ */
+export async function runDrakeScheduleFromCron(now = new Date()): Promise<DrakeCronOutcome> {
+  const config = getDrakeSchedulerConfig();
+  if (!config.enabled) return { status: "disabled" };
+
+  const due = getDueDrakeSchedule(now, config.intervalMinutes);
+  // Marca a janela nesta instância para a visita ao site não tentar de novo em paralelo.
+  getGlobalState().attemptedSlots.add(due.key);
+
+  logger.info("drake-scheduler", "Janela automatica iniciada pelo cron", {
+    trigger: due.trigger,
+    scheduledFor: due.scheduledFor,
+  });
+  try {
+    const { result } = await runScheduledDrakeUpdate(due.trigger, {
+      scheduleSlot: { key: due.key, scheduledFor: due.scheduledFor },
+    });
+    return {
+      status: "success",
+      scheduleKey: due.key,
+      created: result.created,
+      updated: result.updated,
+    };
+  } catch (error: unknown) {
+    const code =
+      error instanceof DrakeIntegrationError
+        ? error.code
+        : error instanceof Error && "code" in error
+          ? String((error as Error & { code?: string }).code ?? "")
+          : "";
+    if (code === DRAKE_UPDATE_ALREADY_RUNNING)
+      return { status: "skipped", scheduleKey: due.key, reason: "update-already-running" };
+    if (code === DRAKE_SCHEDULE_ALREADY_CLAIMED)
+      return { status: "skipped", scheduleKey: due.key, reason: "slot-already-claimed" };
+    const message =
+      error instanceof Error ? error.message.slice(0, 300) : String(error).slice(0, 300);
+    logger.error("drake-scheduler", "Falha na execucao automatica pelo cron", {
+      errorCode: code || "UNKNOWN",
+      sanitizedMessage: message,
+    });
+    return { status: "error", scheduleKey: due.key, message };
+  }
+}
+
 /** Apenas para testes. */
 export function __resetDrakeSchedulerForTests(): void {
   getGlobalState().attemptedSlots.clear();

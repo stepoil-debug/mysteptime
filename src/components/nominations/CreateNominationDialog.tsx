@@ -89,6 +89,9 @@ export async function uploadScopeDocument(file: File): Promise<{ path: string; n
 }
 
 const UNIDADES_FIXAS = ["Bravo", "Deep Blue"];
+// Funções que entram na lista mesmo sem ninguém no Planejamento de Embarque ainda (pedido dela,
+// 2026-11-12: futuras contratações).
+const FUNCOES_FIXAS = ["Inspetor de Pintura", "Hidrojatista", "Mecânico de Hidrojato"];
 // BSPs cadastradas manualmente por unidade (pedido dela, 2026-10-30: SEMCO / Deep Blue).
 const BSPS_FIXAS_POR_UNIDADE: Record<string, string[]> = { "Deep Blue": ["26-894-02"] };
 
@@ -116,6 +119,10 @@ export function useNominationFormData() {
       if (!f.atual) return;
       const chave = f.funcao.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/\s+/g, " ");
       if (!porChave.has(chave)) porChave.set(chave, f);
+    });
+    FUNCOES_FIXAS.forEach((funcao) => {
+      const chave = funcao.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+      if (!porChave.has(chave)) porChave.set(chave, { funcao, atual: true });
     });
     return Array.from(porChave.values(), (f) => f.funcao).sort((a, b) => a.localeCompare(b, "pt-BR"));
   }, [funcoesPlanejamento]);
