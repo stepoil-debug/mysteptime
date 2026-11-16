@@ -78,7 +78,10 @@ import {
   type AcaoPlanejamento,
   type LinhaPlanejamento,
 } from "@/lib/planejamento-desfazer";
-import { statusPlanejamentoForaDaContagem } from "@/lib/dashboard-status-planejamento";
+import {
+  statusPlanejamentoBloqueado,
+  statusPlanejamentoForaDaContagem,
+} from "@/lib/dashboard-status-planejamento";
 import {
   Undo2,
   Search,
@@ -1853,6 +1856,14 @@ export function PlanejamentoEmbarqueTab() {
     () => linhas.filter((r) => statusPlanejamentoForaDaContagem(r.status)).length,
     [linhas],
   );
+  // Headcount Total / Headcount Offshore, mesma regra dos cartões do Dashboard (pedido dela,
+  // 2026-11-16), mas sobre a lista FILTRADA: Total = sem Terceirizados; Offshore = Total sem os
+  // Bloqueados (Base Henrique, Bloqueio - Base - Henrique, Na Base, Bloqueio Temporário/RH).
+  const headcount = useMemo(() => {
+    const quadro = linhas.filter((r) => !statusPlanejamentoForaDaContagem(r.status));
+    const bloqueados = quadro.filter((r) => statusPlanejamentoBloqueado(r.status, r.rh_bloqueado)).length;
+    return { total: quadro.length, bloqueados, offshore: quadro.length - bloqueados };
+  }, [linhas]);
 
   const exportarPlanejamento = () => {
     const rows = linhas.map((r) => ({
@@ -2130,6 +2141,34 @@ export function PlanejamentoEmbarqueTab() {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Mesmos totais do Dashboard, respeitando os filtros acima (pedido dela, 2026-11-16). */}
+      <div className="grid grid-cols-2 gap-2">
+        <Card
+          className="p-3"
+          title="Todos da lista filtrada, inclusive os Bloqueados (Terceirizados ficam fora)"
+        >
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <Users className="h-3.5 w-3.5" /> Headcount Total
+          </div>
+          <div className="text-2xl font-bold tabular-nums">{headcount.total}</div>
+          <div className="text-[10px] text-muted-foreground">com os Bloqueados</div>
+        </Card>
+        <Card
+          className="border-sky-300 bg-sky-50/60 p-3 dark:border-sky-800 dark:bg-sky-950/30"
+          title="Headcount Total sem os Bloqueados — mesma base da Taxa de Ocupação do Dashboard"
+        >
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <Users className="h-3.5 w-3.5" /> Headcount Offshore
+          </div>
+          <div className="text-2xl font-bold tabular-nums">{headcount.offshore}</div>
+          <div className="text-[10px] text-muted-foreground">
+            {headcount.bloqueados > 0
+              ? `sem os ${headcount.bloqueados} bloqueados`
+              : "nenhum bloqueado na lista"}
+          </div>
+        </Card>
+      </div>
 
       {contagemStatus.length > 0 && (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
