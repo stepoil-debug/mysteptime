@@ -5095,6 +5095,19 @@ function DashboardTab({
       icon: Users,
       sub: baseCards > 0 ? `sem os ${baseCards} bloqueados` : undefined,
     },
+    // Headcount Ativo (pedido dela, 2026-11-16) = Embarcados + Folga + Programados + Disponíveis +
+    // Trabalho Externo — mesmos valores dos cartões ao lado (fica fora só quem é Indisponível).
+    {
+      label: "Headcount Ativo",
+      value:
+        statusReferenceDate.embarcadosMedia +
+        statusReferenceDate.folgaMedia +
+        statusReferenceDate.programadosMedia +
+        statusReferenceDate.disponivelMedia +
+        statusReferenceDate.trabalhoExternoMedia,
+      icon: Users,
+      sub: "embarc. + folga + prog. + disp. + trab. ext.",
+    },
     {
       label: "Embarcados",
       value: statusReferenceDate.embarcadosMedia,
