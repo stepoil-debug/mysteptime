@@ -210,6 +210,49 @@ async function updateDrakeDataInner(
       ),
     );
 
+    // Etapa extra (pedido dela, 2026-11-12): embarques confirmados pela programação logística
+    // do Drake, gravados à parte (drake_logistica_embarques) para o Dashboard. Falha aqui é só
+    // aviso — a Ficha Anual, o Timesheet e o resto já foram sincronizados acima.
+    let logisticaPeriodos: number | undefined;
+    try {
+      const { synchronizeDrakeLogisticaEmbarques } = await import(
+        "./logistica-embarques-sync.server"
+      );
+      const logistica = await withSessionRetry((ctx) =>
+        synchronizeDrakeLogisticaEmbarques(db, ctx, env.DRAKE_TIMEZONE || undefined),
+      );
+      logisticaPeriodos = logistica.periodos;
+    } catch (error: unknown) {
+      logger.warn("drake-update", "Programacao logistica nao sincronizada (seguindo sem ela)", {
+        sanitizedMessage:
+          error instanceof Error ? error.message.slice(0, 300) : String(error).slice(0, 300),
+      });
+    }
+
+    // Etapas extras (pedido dela, 2026-11-18): 1) matrícula automática de quem está sem ela no
+    // Planejamento (só nome igual e cadastro único); 2) endereço do Drake de quem está no
+    // Planejamento (coluna "Endereço"). Mesma regra: falha aqui é só aviso.
+    try {
+      const { preencherMatriculasPlanejamento } = await import(
+        "./matriculas-planejamento-sync.server"
+      );
+      await preencherMatriculasPlanejamento(db);
+    } catch (error: unknown) {
+      logger.warn("drake-update", "Matriculas do Planejamento nao preenchidas (seguindo sem elas)", {
+        sanitizedMessage:
+          error instanceof Error ? error.message.slice(0, 300) : String(error).slice(0, 300),
+      });
+    }
+    try {
+      const { synchronizeDrakeEnderecos } = await import("./enderecos-sync.server");
+      await withSessionRetry((ctx) => synchronizeDrakeEnderecos(db, ctx));
+    } catch (error: unknown) {
+      logger.warn("drake-update", "Enderecos nao sincronizados (seguindo sem eles)", {
+        sanitizedMessage:
+          error instanceof Error ? error.message.slice(0, 300) : String(error).slice(0, 300),
+      });
+    }
+
     await emit("annual-position-completed", { status: "completed" });
     await emit("finalizing", { status: "completed" });
 
@@ -227,6 +270,7 @@ async function updateDrakeDataInner(
       skipped: summary.skippedExistingDays,
       novosColaboradores: summary.novosColaboradores,
       positionConflicts,
+      logisticaPeriodos,
     };
 
     logger.info("drake-update", "Atualizacao da ficha anual Drake concluida", {

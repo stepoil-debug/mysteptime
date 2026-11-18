@@ -14,6 +14,7 @@ import { supabase as supabaseTyped } from "@/integrations/supabase/client";
 // cast local para não bloquear o build.
 const supabase: any = supabaseTyped;
 import { useAuth } from "@/hooks/useAuth";
+import { equipeNaData as equipeNaDataCompartilhada } from "@/lib/equipes-embarcadas";
 import { useRascunho, RascunhoAviso } from "@/hooks/useRascunho";
 import { FULL_NOMINATIONS_ACCESS_ROLES as fullNominationRoles, hasSystemAdminAccess } from "@/lib/access-roles";
 import { useViewAs, VIEW_AS_ROLES } from "@/hooks/useViewAs";
@@ -3572,6 +3573,32 @@ function SimulacaoTab({
 
   const { data: focusNomineesAll = [] } = useNomineesForGroup(focusGroupIds ?? []);
 
+  // Avançar para Aprovação Técnica daqui mesmo, ao terminar de simular (pedido dela,
+  // 2026-11-10) — mesmo caminho do botão da janela da nomeação (useAdvanceStage, e
+  // EnviarParaTecnicaParcial quando o grupo tem mais de uma função).
+  const { role } = useAuth();
+  const canOperateSimulacao = FULL_NOMINATIONS_ACCESS_ROLES.includes(role ?? "");
+  const advanceSimulacao = useAdvanceStage();
+  const [enviarTecnicaAberto, setEnviarTecnicaAberto] = useState(false);
+  const focusNaSimulacao = useMemo(
+    () => (focusGroup ?? []).filter((n) => n.current_status === "simulacao"),
+    [focusGroup],
+  );
+  const candidatosAtivos = (nominationId: string) =>
+    focusNomineesAll.filter((x) => x.nomination_id === nominationId && x.is_active).length;
+  const avancarParaTecnica = () => {
+    if (focusNaSimulacao.length === 1) {
+      advanceSimulacao.mutate(
+        { nomination: focusNaSimulacao[0], target: "aprovacao_tecnica" },
+        { onSuccess: onExitFocus },
+      );
+    } else {
+      // Contagem de candidatos do diálogo precisa vir fresca (acabou de adicionar gente aqui).
+      qc.removeQueries({ queryKey: ["nominations", "candidatos-por-funcao"] });
+      setEnviarTecnicaAberto(true);
+    }
+  };
+
   // Função ativa dentro do grupo — pra qual "Adicionar" leva agora. Trocar de função pelas
   // abas do banner não sai do modo recrutamento nem perde o que já foi selecionado nas outras
   // (pedido dela: "tudo dentro de um único cartão, sem separar um de cada vez").
@@ -3811,10 +3838,46 @@ function SimulacaoTab({
               <span className="font-semibold">{requestTitle(focusGroup[0])}</span>
               {focusGroup[0].unidade && ` — ${focusGroup[0].unidade}`}
             </span>
-            <Button size="sm" variant="outline" className="h-7 bg-white" onClick={onExitFocus}>
-              <X className="mr-1.5 h-3.5 w-3.5" /> Voltar para Nomeações
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              {canOperateSimulacao && focusNaSimulacao.length > 0 && (
+                <Button
+                  size="sm"
+                  className="h-7"
+                  onClick={avancarParaTecnica}
+                  loading={advanceSimulacao.isPending}
+                  disabled={
+                    focusNaSimulacao.length === 1 && candidatosAtivos(focusNaSimulacao[0].id) === 0
+                  }
+                  title={
+                    focusNaSimulacao.length === 1 && candidatosAtivos(focusNaSimulacao[0].id) === 0
+                      ? "Adicione ao menos um candidato antes de avançar"
+                      : undefined
+                  }
+                >
+                  <ArrowRight className="mr-1.5 h-3.5 w-3.5" /> Avançar para Aprovação Técnica
+                </Button>
+              )}
+              <Button size="sm" variant="outline" className="h-7 bg-white" onClick={onExitFocus}>
+                <X className="mr-1.5 h-3.5 w-3.5" /> Voltar para Nomeações
+              </Button>
+            </div>
           </div>
+          <Dialog open={enviarTecnicaAberto} onOpenChange={setEnviarTecnicaAberto}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Avançar para Aprovação Técnica</DialogTitle>
+              </DialogHeader>
+              {enviarTecnicaAberto && (
+                <EnviarParaTecnicaParcial
+                  items={focusNaSimulacao}
+                  onDone={() => {
+                    setEnviarTecnicaAberto(false);
+                    onExitFocus();
+                  }}
+                />
+              )}
+            </DialogContent>
+          </Dialog>
 
           {/* Uma aba por função do grupo — trocar aqui muda pra quem "Adicionar" vale, sem sair
               do modo recrutamento nem perder a seleção já feita nas outras funções. */}
@@ -4212,8 +4275,11 @@ function diasAteData(data: string, referencia: string): number {
   return Math.round((parse(data) - parse(referencia)) / 86400000);
 }
 
-function ClientCascadeView() {
-  // Tudo começa aberto, como solicitado. Os sets guardam somente os itens recolhidos.
+// Exportado também pro Dashboard do Histograma (pedido dela, 2026-11-12: "igual tá lá").
+export function ClientCascadeView({ iniciarRecolhido = false }: { iniciarRecolhido?: boolean } = {}) {
+  // Em Nomeações tudo começa aberto, como solicitado, e os sets guardam os itens recolhidos. No
+  // Dashboard do Histograma (iniciarRecolhido, pedido dela, 2026-11-12) começa tudo recolhido e
+  // os sets guardam o que foi aberto à mão.
   const [collapsedClients, setCollapsedClients] = useState<Set<string>>(new Set());
   const [collapsedUnits, setCollapsedUnits] = useState<Set<string>>(new Set());
   const [collapsedBsps, setCollapsedBsps] = useState<Set<string>>(new Set());
@@ -4222,6 +4288,9 @@ function ClientCascadeView() {
   const [unidadeFiltro, setUnidadeFiltro] = useState<string | null>(null);
   const today = todayStr();
   const teamReferenceDate = today;
+
+  const aberto = (set: Set<string>, key: string) =>
+    iniciarRecolhido ? set.has(key) : !set.has(key);
 
   const toggleCollapsed = (
     setter: React.Dispatch<React.SetStateAction<Set<string>>>,
@@ -4244,24 +4313,12 @@ function ClientCascadeView() {
   // batendo exatamente com a data de referência — sem duplicar quem já conta como embarcado.
   const { data: planejamentoEmbarque = [], isLoading: isLoadingPlanejamento } =
     usePlanejamentoEmbarqueQuery();
-  const equipeNaData = useMemo(() => {
-    const unidadeValida = (row: PlanejamentoEmbarqueRow) =>
-      row.unidade?.trim() && row.unidade.trim().toUpperCase() !== "FOLGA";
-    const embarcados: EquipeItem[] = planejamentoEmbarque
-      .filter((row) => unidadeValida(row) && isStatusEmbarcado(row.status))
-      .map((row) => ({ row, tipo: "embarcado" as const }));
-    const embarcadosIds = new Set(embarcados.map((item) => item.row.id));
-    const programados: EquipeItem[] = planejamentoEmbarque
-      .filter(
-        (row) =>
-          !embarcadosIds.has(row.id) &&
-          unidadeValida(row) &&
-          isStatusProgramado(row.status) &&
-          row.embarque === teamReferenceDate,
-      )
-      .map((row) => ({ row, tipo: "programado" as const }));
-    return [...embarcados, ...programados];
-  }, [planejamentoEmbarque, teamReferenceDate]);
+  // Regra compartilhada com o gráfico "Equipes Embarcadas por Unidade" do Dashboard do
+  // Histograma (src/lib/equipes-embarcadas.ts) — as duas telas sempre mostram o mesmo número.
+  const equipeNaData = useMemo<EquipeItem[]>(
+    () => equipeNaDataCompartilhada(planejamentoEmbarque, teamReferenceDate),
+    [planejamentoEmbarque, teamReferenceDate],
+  );
 
   // Cartão sempre mostra o total completo — clicar nele filtra a árvore abaixo
   // (visibleItems/groups), sem os cartões sumirem uns aos outros.
@@ -4316,6 +4373,18 @@ function ClientCascadeView() {
       });
   }, [visibleItems]);
 
+  const chavesCascata = {
+    clientes: groups.map((c) => c.name),
+    unidades: groups.flatMap((c) => c.units.map((u) => `${c.name}::${u.name}`)),
+    bsps: groups.flatMap((c) =>
+      c.units.flatMap((u) => u.bsps.map((b) => `${c.name}::${u.name}::${b.name}`)),
+    ),
+  };
+  const tudoAberto =
+    chavesCascata.clientes.every((k) => aberto(collapsedClients, k)) &&
+    chavesCascata.unidades.every((k) => aberto(collapsedUnits, k)) &&
+    chavesCascata.bsps.every((k) => aberto(collapsedBsps, k));
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -4325,28 +4394,22 @@ function ClientCascadeView() {
           variant="ghost"
           className="h-8 ml-auto text-muted-foreground"
           onClick={() => {
-            const tudoAberto =
-              collapsedClients.size === 0 && collapsedUnits.size === 0 && collapsedBsps.size === 0;
-            if (tudoAberto) {
-              setCollapsedClients(new Set(groups.map((c) => c.name)));
-              setCollapsedUnits(
-                new Set(groups.flatMap((c) => c.units.map((u) => `${c.name}::${u.name}`))),
-              );
-              setCollapsedBsps(
-                new Set(
-                  groups.flatMap((c) =>
-                    c.units.flatMap((u) => u.bsps.map((b) => `${c.name}::${u.name}::${b.name}`)),
-                  ),
-                ),
-              );
-            } else {
+            const todos = () => {
+              setCollapsedClients(new Set(chavesCascata.clientes));
+              setCollapsedUnits(new Set(chavesCascata.unidades));
+              setCollapsedBsps(new Set(chavesCascata.bsps));
+            };
+            const nenhum = () => {
               setCollapsedClients(new Set());
               setCollapsedUnits(new Set());
               setCollapsedBsps(new Set());
-            }
+            };
+            // Recolher tudo = sets cheios no modo normal, vazios no modo iniciarRecolhido.
+            if (tudoAberto === !iniciarRecolhido) todos();
+            else nenhum();
           }}
         >
-          {collapsedClients.size === 0 && collapsedUnits.size === 0 && collapsedBsps.size === 0 ? (
+          {tudoAberto ? (
             <>
               <ChevronsDownUp className="mr-1.5 h-3.5 w-3.5" />
               Recolher tudo
@@ -4413,7 +4476,7 @@ function ClientCascadeView() {
             />
           ) : (
             groups.map((client) => {
-              const clientOpen = !collapsedClients.has(client.name);
+              const clientOpen = aberto(collapsedClients, client.name);
               return (
                 <div key={client.name} className="border-b last:border-b-0">
                   <div className="flex w-full items-center justify-between bg-slate-50 px-4 py-3 text-left">
@@ -4441,7 +4504,7 @@ function ClientCascadeView() {
                   {clientOpen &&
                     client.units.map((unit) => {
                       const unitKey = `${client.name}::${unit.name}`;
-                      const unitOpen = !collapsedUnits.has(unitKey);
+                      const unitOpen = aberto(collapsedUnits, unitKey);
                       return (
                         <div key={unitKey}>
                           <div className="flex w-full items-center justify-between border-t bg-sky-50/60 px-4 py-2.5 text-left">
@@ -4474,7 +4537,7 @@ function ClientCascadeView() {
                           {unitOpen &&
                             unit.bsps.map((bsp) => {
                               const bspKey = `${unitKey}::${bsp.name}`;
-                              const bspOpen = !collapsedBsps.has(bspKey);
+                              const bspOpen = aberto(collapsedBsps, bspKey);
                               // Próxima troca de turma do BSP = desembarque mais próximo entre os embarcados —
                               // é o próximo dia em que ALGUÉM daquele BSP precisa ser rendido. Programado ainda
                               // não tem desembarque (nem embarcou de verdade), não conta pra essa conta.
@@ -7232,6 +7295,7 @@ export function NominationsPage({
       list = list.filter(
         (n) =>
           n.funcao.toLowerCase().includes(q) ||
+          (n.unidade ?? "").toLowerCase().includes(q) ||
           (n.pm_name ?? "").toLowerCase().includes(q) ||
           (n.project ?? "").toLowerCase().includes(q) ||
           (n.client ?? "").toLowerCase().includes(q) ||
@@ -7397,7 +7461,7 @@ export function NominationsPage({
         <TabsContent value="nomeacoes" className="space-y-4 pt-4">
           <div className="flex flex-wrap items-center gap-2">
             <Input
-              placeholder="Buscar função, solicitante, BSP..."
+              placeholder="Buscar função, unidade, solicitante, BSP..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="max-w-xs h-8 text-sm"

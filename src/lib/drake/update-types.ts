@@ -151,6 +151,8 @@ export interface DrakeUpdateResult {
   annualPositionEvents?: number;
   annualPositionWorkers?: number;
   removedStaleEvents?: number;
+  /** Períodos gravados pela programação logística do Drake (etapa extra, 2026-11-12). */
+  logisticaPeriodos?: number;
   positionConflicts?: import("@/lib/histograma/drake-snapshot").DrakePositionConflict[];
 }
 

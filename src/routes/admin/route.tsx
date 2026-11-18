@@ -133,18 +133,18 @@ function AdminLayout() {
     >
 
       {/* ── Top navbar ──
-          O header inteiro é um flex-wrap: em telas largas os itens cabem numa linha só e
-          nada muda visualmente. Quando não cabem, o próprio nav quebra em várias linhas
-          (em vez de rolar por baixo do pano, que é o que gerava a barra de rolagem
-          horizontal) — sem largura fixa em nenhum elemento, então nada ultrapassa a viewport. */}
-      <header className="sticky top-0 z-10 w-full max-w-full bg-[#0f2744]/90 backdrop-blur-md border-b border-white/10 px-3 py-3 sm:px-4 lg:px-6">
-        <div className="grid w-full max-w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 lg:flex lg:flex-wrap lg:gap-x-4">
+          Sticky (ocupa o próprio espaço, nunca cobre o conteúdo) e acima das tabelas com
+          cabeçalho/colunas fixas (z-20/z-30). A partir de 1024px o menu fica numa linha só,
+          com rolagem horizontal suave sem barra visível; abaixo disso, o botão de menu abre
+          os mesmos itens no drawer (MobileNavigation). Sino, senha e sair sempre visíveis. */}
+      <header className="sticky top-0 z-40 w-full max-w-full bg-[#0f2744]/90 backdrop-blur-md border-b border-white/10 px-3 py-2.5 sm:px-4 lg:px-6">
+        <div className="grid w-full max-w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 lg:flex lg:flex-nowrap lg:gap-x-4">
           <div className="flex min-w-0 items-center gap-1">
             <MobileNavigation items={visibleNavFinal} pathname={pathname} />
             <BrandLogo className="h-8 w-auto shrink-0 sm:h-10 lg:h-11" />
           </div>
 
-          <nav className="hidden min-w-0 flex-1 flex-wrap items-center gap-1 lg:flex">
+          <nav className="hidden min-w-0 flex-1 flex-nowrap items-center gap-1 overflow-x-auto overscroll-x-contain scroll-smooth [scrollbar-width:none] lg:flex [&::-webkit-scrollbar]:hidden">
             {visibleNavFinal.map((n) => {
               const active = n.exact ? pathname === n.to : pathname.startsWith(n.to);
               return (
@@ -152,7 +152,7 @@ function AdminLayout() {
                   key={n.to}
                   to={n.to}
                   className={cn(
-                    "relative shrink-0 whitespace-nowrap rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors sm:px-3 sm:text-base",
+                    "relative shrink-0 whitespace-nowrap rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors 2xl:px-3 2xl:text-base",
                     active ? "text-white" : "text-white/55 hover:bg-white/8 hover:text-white/85",
                   )}
                 >
@@ -201,7 +201,10 @@ function AdminLayout() {
       </header>
 
       <main className="w-full min-w-0 max-w-full flex-1 overflow-x-auto p-3 sm:p-4 lg:p-8">
-        <AnimatedOutlet />
+        {/* ≥1920px: conteúdo centralizado com no máximo 1800px, pros gráficos não esticarem. */}
+        <div className="mx-auto w-full min-w-0 max-w-[1800px]">
+          <AnimatedOutlet />
+        </div>
       </main>
     </motion.div>
   );

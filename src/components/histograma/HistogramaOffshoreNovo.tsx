@@ -7,7 +7,10 @@ import { notify } from "@/lib/notify";
 import { planilhaComCabecalho } from "@/lib/reportHeader";
 import { useAuth } from "@/hooks/useAuth";
 import { useRascunho, RascunhoAviso } from "@/hooks/useRascunho";
-import { hasOperatorAccess } from "@/lib/access-roles";
+import { canEditMoPlanejamento, hasOperatorAccess } from "@/lib/access-roles";
+import { MoPlanejamentoTab } from "@/components/histograma/mo/MoPlanejamentoTab";
+import { useMoPodeEditar } from "@/components/histograma/mo/usePlanejadoXDisponivel";
+import { MoPlanejadoDashboardSection } from "@/components/histograma/mo/MoPlanejadoGraficos";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -107,10 +110,10 @@ import {
   Download,
   BedDouble,
   Info,
-  Building2,
   ChevronLeft,
   ChevronRight,
   Lock,
+  Briefcase,
 } from "lucide-react";
 import { cn, matchesNameSearch, useOrdemComSelecionadosFixados } from "@/lib/utils";
 import {
@@ -166,9 +169,16 @@ import {
   type DayStatusResult,
   type HistoricoOcupacaoColaborador,
 } from "@/lib/histogramaNovo";
+import {
+  corrigirStatusPelaLogistica,
+  indexarLogistica,
+  type LinhaLogisticaDb,
+} from "@/lib/drake-logistica";
 import type { TimesheetEmbarque, TimesheetSemana } from "@/lib/timesheetOffshore";
 import { UNIDADES_OPERACIONAIS_FIXAS, resolverFuncaoEmbarque } from "@/lib/timesheetOffshore";
 import { DrakeUpdateCard } from "@/components/histograma/DrakeUpdateCard";
+import { MoDisponivelDiaCard } from "@/components/histograma/MoDisponivelDiaCard";
+import { ClientCascadeView } from "@/components/nominations/NominationsPage";
 import {
   PlanejamentoEmbarqueTab,
   usePlanejamentoEmbarqueQuery,
@@ -176,17 +186,24 @@ import {
   isStatusNaBase,
   isStatusProgramado,
   isStatusEmbarcado,
-  isStatusFolga,
-  isStatusDisponivel,
-  isStatusBloqueioTemporario,
   isStatusBloqueioRH,
   type PlanejamentoEmbarqueSnapshotRow,
 } from "@/components/histograma/PlanejamentoEmbarqueTab";
+import {
+  classificarStatusPlanejamento,
+  statusPlanejamentoBloqueado,
+  statusPlanejamentoForaDaContagem,
+  statusPlanejamentoOcupado,
+} from "@/lib/dashboard-status-planejamento";
 import { KpiValue } from "@/components/KpiValue";
 import { ProximosEventosCard } from "@/components/histograma/ProximosEventosCard";
 import { DrakeSyncLogList } from "@/components/histograma/DrakeSyncLogList";
 import { selectAllPages } from "@/lib/supabasePaginate";
-import { dashboardPlanningRows, dashboardStatusDates } from "@/lib/histograma/dashboard-planning-source";
+import {
+  criarBuscaFotoDoDia,
+  dashboardPlanningRows,
+  dashboardStatusDates,
+} from "@/lib/histograma/dashboard-planning-source";
 import {
   fetchHistogramCollaborators,
   fetchHistogramEmbarkations,
@@ -357,7 +374,7 @@ function HistogramaOffshoreNovoContent({
   periodos: HistNovoPeriodo[];
   initialTab?: string;
 }) {
-  const { role } = useAuth();
+  const { role, roleLoaded } = useAuth();
   const isOperator = hasOperatorAccess(role);
   // Todo mundo que chega nessa página (operador, visitante, solicitante e os papéis de etapa
   // de Nomeações) vê Dashboard + Histograma — só a aba Lançamentos (lança/edita de verdade)
@@ -367,6 +384,13 @@ function HistogramaOffshoreNovoContent({
   // Planejamento de Transporte é uma ferramenta operacional pra logística programar
   // carro/passagem de quem embarca ou desembarca — mesma exclusividade de Lançamentos.
   const canSeePlanejamento = isOperator;
+  // M.O — Mão de Obra Planejada (pedido dela, 2026-11-09): só ADM (ver canEditMoPlanejamento);
+  // pros demais a aba não existe, e o deep-link ?tab=mo cai no Dashboard.
+  // Desde 2026-11-12: só quem está em mo_editores no banco (Bruna e Diego); enquanto o SQL novo
+  // não roda, vale a regra antiga (qualquer ADM).
+  const { podeEditar: canSeeMo, carregado: moAcessoCarregado } = useMoPodeEditar(
+    canEditMoPlanejamento(role),
+  );
 
   // "Offshore" = só quem está cadastrado na aba Planejamento de Embarque, casando por matrícula
   // com o Drake (pedido dela, 2026-09-29 — antes era baseado em quem estava marcado como
@@ -378,6 +402,10 @@ function HistogramaOffshoreNovoContent({
   // Planejamento de Embarque.
   const [origem, setOrigem] = useState<"geral" | "offshore">("offshore");
   const [innerTab, setInnerTab] = useState(initialTab ?? "dashboard");
+  useEffect(() => {
+    if (innerTab === "mo" && roleLoaded && moAcessoCarregado && !canSeeMo)
+      setInnerTab("dashboard");
+  }, [innerTab, roleLoaded, moAcessoCarregado, canSeeMo]);
   const { data: planejamentoEmbarqueOffshore = [] } = usePlanejamentoEmbarqueQuery();
   const matriculasPlanejamento = useMemo(
     () =>
@@ -409,7 +437,7 @@ function HistogramaOffshoreNovoContent({
             </p>
           )}
         </div>
-        {innerTab !== "dashboard" && innerTab !== "planejamento" && (
+        {innerTab !== "dashboard" && innerTab !== "planejamento" && innerTab !== "mo" && (
           <Tabs value={origem} onValueChange={(v) => setOrigem(v as "geral" | "offshore")}>
             <TabsList>
               <TabsTrigger value="offshore">Offshore</TabsTrigger>
@@ -420,16 +448,17 @@ function HistogramaOffshoreNovoContent({
       </div>
 
       <Tabs value={innerTab} onValueChange={setInnerTab}>
-        <TabsList>
+        <TabsList className="max-w-full justify-start overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           {canSeeHistograma && <TabsTrigger value="histograma">Histograma</TabsTrigger>}
           {canSeeLancamentos && <TabsTrigger value="lancamentos">Lançamentos</TabsTrigger>}
           {canSeePlanejamento && (
             <TabsTrigger value="planejamento">Planejamento de Embarque</TabsTrigger>
           )}
+          {canSeeMo && <TabsTrigger value="mo">M.O</TabsTrigger>}
         </TabsList>
         <TabsContent value="dashboard" className="mt-4">
-          <DashboardTab colaboradores={colaboradores} periodos={periodos} />
+          <DashboardTab colaboradores={colaboradores} periodos={periodos} podeImportarMo={canSeeMo} />
         </TabsContent>
         {canSeeHistograma && (
           <TabsContent value="histograma" className="mt-4">
@@ -444,6 +473,11 @@ function HistogramaOffshoreNovoContent({
         {canSeePlanejamento && (
           <TabsContent value="planejamento" className="mt-4">
             <PlanejamentoEmbarqueTab />
+          </TabsContent>
+        )}
+        {canSeeMo && (
+          <TabsContent value="mo" className="mt-4">
+            <MoPlanejamentoTab />
           </TabsContent>
         )}
       </Tabs>
@@ -2382,7 +2416,7 @@ function LancamentosTab({
           className="flex flex-wrap items-end gap-2"
           onKeyDown={(e) => e.key === "Enter" && aplicarFiltro()}
         >
-          <div className="space-y-0.5 w-56">
+          <div className="w-full space-y-0.5 sm:w-56">
             <Label className="text-[10px] uppercase tracking-wide text-muted-foreground/70">
               Colaborador
             </Label>
@@ -3955,7 +3989,7 @@ function MiniStatusBarChart({ data }: { data: DonutStatusDatum[] }) {
   return (
     <ChartContainer
       config={donutChartConfig}
-      className="h-[180px] w-[150px] shrink-0 [&_.recharts-wrapper]:drop-shadow-md"
+      className="h-[180px] w-full min-w-[110px] max-w-[150px] [&_.recharts-wrapper]:drop-shadow-md"
     >
       <BarChart data={data} margin={{ top: 22, right: 6, left: 6, bottom: 0 }}>
         <XAxis dataKey="name" hide />
@@ -4069,10 +4103,8 @@ function ehUnidadeBase(unidade: string | null | undefined): boolean {
 // Offshore mexe nela, via rh_set_bloqueio_planejamento) — o texto do Status pode ser sobrescrito
 // depois por uma edição direta da célula (ex.: alguém troca o Status por engano sem desbloquear
 // primeiro), então checar só isStatusBloqueioRH(status) pode perder gente que continua bloqueada
-// de verdade. Conta como bloqueado se qualquer um dos dois disser que sim.
-function ehBloqueioRH(r: { status: string | null; rh_bloqueado: boolean }): boolean {
-  return r.rh_bloqueado || isStatusBloqueioRH(r.status);
-}
+// de verdade. Conta como bloqueado se qualquer um dos dois disser que sim — regra hoje em
+// classificarStatusPlanejamento (src/lib/dashboard-status-planejamento.ts).
 
 // Arredondar 3 % de forma independente (Math.round em cada uma) pode não somar 100 mesmo quando
 // as contagens originais somam certinho — sobra de arredondamento. "Maior resto" (Hare-Niemeyer)
@@ -4097,12 +4129,33 @@ function distribuirPercentuais100(valores: number[]): number[] {
 function DashboardTab({
   colaboradores,
   periodos,
+  podeImportarMo = false,
 }: {
   colaboradores: HistNovoColaborador[];
   periodos: HistNovoPeriodo[];
+  /** Botão temporário de importar a planilha da M.O no card Planejado x Disponível. */
+  podeImportarMo?: boolean;
 }) {
   const today = todayStr();
   const anoAtual = new Date().getFullYear();
+  // Embarques confirmados pela programação logística do Drake (pedido dela, 2026-11-12 — ver
+  // src/lib/drake-logistica.ts): corrigem a Ficha Anual atrasada SÓ nos gráficos do Drake deste
+  // Dashboard ("Mão de Obra por Semana" e "POB por Mês"). Sem a tabela/dados, nada muda.
+  const { data: logisticaDrake = null } = useQuery({
+    queryKey: ["drake-logistica-embarques"],
+    queryFn: async () => {
+      const linhas = await selectAllPages<LinhaLogisticaDb>((from, to) =>
+        supabase
+          .from("drake_logistica_embarques" as never)
+          .select("colaborador_id, data_inicio, data_fim, unidade")
+          .order("id")
+          .range(from, to),
+      );
+      return indexarLogistica(linhas);
+    },
+    retry: false,
+    staleTime: 5 * 60_000,
+  });
   // Só entra nesta aba quem já teve MAIS DE UM embarque confirmado — um único embarque
   // isolado ainda não conta como "efetivo offshore de verdade" aqui (mesma regra aplicada na
   // importação da planilha "Na Base"; ver getColaboradoresComMultiploEmbarque). Histograma e
@@ -4296,11 +4349,17 @@ function DashboardTab({
   // cartões/rosquinha baterem entre si) e têm seu PRÓPRIO filtro De/Até, discreto, mostrado
   // só em cima delas — nasce sempre no mês atual inteiro (pedido dela), mas continua editável
   // se ela quiser ver outro período, sem afetar os gráficos "por dia" de cima.
-  const inicioMesAtualDefault = `${today.slice(0, 7)}-01`;
-  const [anoMesAtualDefault, mesMesAtualDefault] = today.slice(0, 7).split("-").map(Number);
-  const fimMesAtualDefault = `${today.slice(0, 7)}-${String(new Date(anoMesAtualDefault, mesMesAtualDefault, 0).getDate()).padStart(2, "0")}`;
-  const [inicioMesAtual, setInicioMesAtual] = useState(inicioMesAtualDefault);
-  const [fimMesAtual, setFimMesAtual] = useState(fimMesAtualDefault);
+  // "Mão de Obra por Semana" (pedido dela, 2026-11-12: "puxe a realidade que vem do Drake"):
+  // abre nas últimas 6 semanas até hoje (segunda de 5 semanas atrás → hoje) e nunca conta dia
+  // depois de hoje — só o que o Drake já registrou, sem projeção.
+  const inicioSeisSemanasDefault = (() => {
+    const d = new Date(`${today}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() || 7) - 1) - 35);
+    return d.toISOString().slice(0, 10);
+  })();
+  // Sem filtro na tela (pedido dela, 2026-11-12): sempre as últimas 6 semanas até hoje.
+  const inicioMesAtual = inicioSeisSemanasDefault;
+  const fimMesAtual = today;
   const datesMesAtual = useMemo(
     () =>
       inicioMesAtual && fimMesAtual && inicioMesAtual <= fimMesAtual
@@ -4367,15 +4426,22 @@ function DashboardTab({
       porMes.get(chave)!.push(d);
     });
 
-    const snapshotsPorDia = new Map<string, PlanejamentoEmbarqueSnapshotRow[]>();
-    planejamentoSnapshots.forEach((s) => {
-      if (!snapshotsPorDia.has(s.snapshot_date)) snapshotsPorDia.set(s.snapshot_date, []);
-      snapshotsPorDia.get(s.snapshot_date)!.push(s);
-    });
-    const ocupadoPlanejamentoStatus = (status: string | null) =>
-      isStatusEmbarcado(status) || isStatusProgramado(status) || isStatusFolga(status);
-    const totalHojeVivo = planejamentoEmbarque.length;
-    const ocupadosHojeVivo = planejamentoEmbarque.filter((r) =>
+    // Foto do dia ou, sem foto, a anterior mais recente (pedido dela, 2026-11-10). Hoje usa
+    // sempre a lista viva (a foto de hoje é tirada na 1ª abertura e pode estar desatualizada).
+    const fotoDoDia = criarBuscaFotoDoDia(planejamentoSnapshots);
+    // Embarcado, Programado, Folga e Trabalho Externo (pedido dela, 2026-11-10) — mesma régua
+    // da rosquinha "Ocupação" (ver src/lib/dashboard-status-planejamento.ts).
+    const ocupadoPlanejamentoStatus = (status: string | null) => statusPlanejamentoOcupado(status);
+    // Terceirizado fica fora de toda contagem (pedido dela, 2026-11-10). Bloqueados (Base
+    // Henrique, Bloqueio Base Henrique, Na Base, Bloqueio Temporário, Bloqueio RH) também saem
+    // da taxa (pedido dela, 2026-11-12) — continuam só no gráfico vermelho, à parte.
+    const foraDaTaxa = (status: string | null, rh?: boolean | null) =>
+      statusPlanejamentoForaDaContagem(status) || statusPlanejamentoBloqueado(status, rh);
+    const planejamentoContavel = planejamentoEmbarque.filter(
+      (r) => !foraDaTaxa(r.status, r.rh_bloqueado),
+    );
+    const totalHojeVivo = planejamentoContavel.length;
+    const ocupadosHojeVivo = planejamentoContavel.filter((r) =>
       ocupadoPlanejamentoStatus(r.status),
     ).length;
     const pctHojeVivo = totalHojeVivo > 0 ? (ocupadosHojeVivo / totalHojeVivo) * 100 : 0;
@@ -4408,7 +4474,8 @@ function DashboardTab({
             if (!result.periodo) return;
             const bucket = toOldBucket(result.status);
             // Trabalho Externo desconsiderado do gráfico (pedido dela) — nem entra no total do dia.
-            if (bucket === "TE") return;
+            // Na Base (Bloqueados) também fica fora da taxa (pedido dela, 2026-11-12).
+            if (bucket === "TE" || bucket === "BASE") return;
             totalDia++;
             // Mesmo critério de "Ocupação" das outras 3 rosquinhas (Embarcado + Programado +
             // Folga de Embarque + Hotel) — Na Base virou "Bloqueados". Desembarque ("D") conta
@@ -4429,10 +4496,16 @@ function DashboardTab({
           somaOcupados += ocupados;
         });
       } else {
-        // Set/2026 em diante — Planejamento de Embarque (foto do dia, ou a lista viva de hoje
-        // pros dias que ainda não têm foto).
+        // Set/2026 em diante — Planejamento de Embarque (foto do dia, ou a anterior mais recente
+        // quando o dia não tem foto; hoje e antes da 1ª foto, a lista viva).
         diasDoMes.forEach((dia) => {
-          const fotos = snapshotsPorDia.get(dia);
+          const fotos =
+            dia === today
+              ? null
+              : fotoDoDia(dia)?.filter(
+                  (f) =>
+                    !foraDaTaxa(f.status, (f as { rh_bloqueado?: boolean | null }).rh_bloqueado),
+                );
           if (fotos && fotos.length > 0) {
             const ocupados = fotos.filter((f) => ocupadoPlanejamentoStatus(f.status)).length;
             somaPct += (ocupados / fotos.length) * 100;
@@ -4509,8 +4582,11 @@ function DashboardTab({
       embarcados: 0,
       programados: 0,
       folga: 0,
+      trabalhoExterno: 0,
       disponivel: 0,
       naBase: 0,
+      baseHenrique: 0,
+      bloqueioBaseHenrique: 0,
       bloqueioTemporario: 0,
       bloqueioRH: 0,
     };
@@ -4518,8 +4594,11 @@ function DashboardTab({
       embarcados: new Set<string>(),
       programados: new Set<string>(),
       folga: new Set<string>(),
+      trabalhoExterno: new Set<string>(),
       disponivel: new Set<string>(),
       naBase: new Set<string>(),
+      baseHenrique: new Set<string>(),
+      bloqueioBaseHenrique: new Set<string>(),
       bloqueioTemporario: new Set<string>(),
       bloqueioRH: new Set<string>(),
     };
@@ -4540,9 +4619,6 @@ function DashboardTab({
       if (!outrosNomesPorLabel.has(label)) outrosNomesPorLabel.set(label, new Set());
       outrosNomesPorLabel.get(label)!.add(nome);
     };
-    const normalizaStatus = (s: string | null | undefined) =>
-      (s ?? "").trim().toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-
     diasFiltro.forEach((dia) => {
       if (dia < CORTE_PLANEJAMENTO) {
         colaboradoresComMultiploEmbarque.forEach((c) => {
@@ -4582,7 +4658,7 @@ function DashboardTab({
         });
       } else {
         const fonte = dashboardPlanningRows(dia, today, planejamentoEmbarque, planejamentoSnapshots);
-        const linhas: { nome: string; status: string | null; rh_bloqueado: boolean }[] =
+        const linhasDia: { nome: string; status: string | null; rh_bloqueado: boolean }[] =
           fonte.source === "snapshot"
             ? fonte.rows.map((f) => ({ nome: f.colaborador_nome, status: f.status, rh_bloqueado: false }))
             : fonte.rows.map((r) => ({
@@ -4590,39 +4666,54 @@ function DashboardTab({
                 status: r.status,
                 rh_bloqueado: r.rh_bloqueado,
               }));
+        // Terceirizado fica fora de toda contagem (pedido dela, 2026-11-10): nem Headcount, nem
+        // rosquinha. Volta a contar assim que o Status muda para qualquer outro.
+        const linhas = linhasDia.filter(
+          (l) => classificarStatusPlanejamento(l.status, l.rh_bloqueado) !== "terceirizado",
+        );
         soma.total += linhas.length;
+        // Balde de cada Status em src/lib/dashboard-status-planejamento.ts (com testes):
+        // Ocupação = Embarcado/Programado/Folga/Trabalho Externo; Fora da Ocupação = Stand By
+        // (Disponível), Indisponível, Férias/Atestado/Afastamento e Outros (Terceirizado e texto
+        // livre); Bloqueados Henrique = Base Henrique/Bloqueio Base Henrique (+ Na Base, outros
+        // "Base - Fulano" e Bloqueio RH, se aparecerem).
         linhas.forEach((l) => {
-          const statusNormalizado = normalizaStatus(l.status);
-          if (isStatusEmbarcado(l.status)) {
-            soma.embarcados++;
-            nomes.embarcados.add(l.nome);
-          } else if (isStatusProgramado(l.status)) {
-            soma.programados++;
-            nomes.programados.add(l.nome);
-          } else if (isStatusFolga(l.status)) {
-            soma.folga++;
-            nomes.folga.add(l.nome);
-          } else if (isStatusDisponivel(l.status)) {
-            soma.disponivel++;
-            nomes.disponivel.add(l.nome);
-          } else if (isStatusNaBase(l.status)) {
-            soma.naBase++;
-            nomes.naBase.add(l.nome);
-          } else if (isStatusBloqueioTemporario(l.status)) {
-            soma.bloqueioTemporario++;
-            nomes.bloqueioTemporario.add(l.nome);
-          } else if (ehBloqueioRH(l)) {
-            soma.bloqueioRH++;
-            nomes.bloqueioRH.add(l.nome);
+          const add = (k: keyof typeof nomes) => {
+            soma[k]++;
+            nomes[k].add(l.nome);
+          };
+          switch (classificarStatusPlanejamento(l.status, l.rh_bloqueado)) {
+            case "embarcado":
+              return add("embarcados");
+            case "programado":
+              return add("programados");
+            case "folga":
+              return add("folga");
+            case "trabalhoExterno":
+              return add("trabalhoExterno");
+            case "standBy":
+              return add("disponivel");
+            case "naBase":
+              return add("naBase");
+            case "baseHenrique":
+              return add("baseHenrique");
+            case "bloqueioBaseHenrique":
+              return add("bloqueioBaseHenrique");
+            case "bloqueioTemporario":
+              return add("bloqueioTemporario");
+            case "bloqueioRH":
+              return add("bloqueioRH");
+            case "ferias":
+              return addEspecial("Férias", l.nome);
+            case "atestado":
+              return addEspecial("Atestado", l.nome);
+            case "afastamento":
+              return addEspecial("Afastamento", l.nome);
+            case "indisponivel":
+              return addEspecial("Indisponível", l.nome);
+            default:
+              return addOutros(l.status?.trim() || "Sem status", l.nome);
           }
-          // Se alguém digitar "Férias"/"Atestado"/"Afastamento" direto na célula do Planejamento
-          // (mesmo dentro de um texto maior, tipo "Atestado médico"), continua com fatia própria
-          // — mesmo critério do Drake acima. "includes" em vez de igualdade exata pra não perder
-          // variações de texto livre.
-          else if (statusNormalizado.includes("FERIAS")) addEspecial("Férias", l.nome);
-          else if (statusNormalizado.includes("ATESTADO")) addEspecial("Atestado", l.nome);
-          else if (statusNormalizado.includes("AFASTAMENTO")) addEspecial("Afastamento", l.nome);
-          else addOutros(l.status?.trim() || "Sem status", l.nome);
         });
       }
     });
@@ -4675,7 +4766,6 @@ function DashboardTab({
       somaEspeciaisTotal += especiaisSomaPorLabel.get(label) ?? 0;
       s.forEach((nome) => naoDispComStatus.push(`${nome} — ${label}`));
     });
-    nomes.bloqueioRH.forEach((nome) => naoDispComStatus.push(`${nome} — Bloqueio RH`));
 
     return {
       embarcados: porNome(nomes.embarcados),
@@ -4684,6 +4774,12 @@ function DashboardTab({
       programadosMedia: media(soma.programados),
       folga: porNome(nomes.folga),
       folgaMedia: media(soma.folga),
+      trabalhoExterno: porNome(nomes.trabalhoExterno),
+      trabalhoExternoMedia: media(soma.trabalhoExterno),
+      baseHenrique: porNome(nomes.baseHenrique),
+      baseHenriqueMedia: media(soma.baseHenrique),
+      bloqueioBaseHenrique: porNome(nomes.bloqueioBaseHenrique),
+      bloqueioBaseHenriqueMedia: media(soma.bloqueioBaseHenrique),
       disponivel: porNome(nomes.disponivel),
       disponivelMedia: media(soma.disponivel),
       naBase: porNome(nomes.naBase),
@@ -4694,7 +4790,8 @@ function DashboardTab({
       bloqueioRHMedia: media(soma.bloqueioRH),
       especiaisDetalhado,
       outros,
-      naoDisponiveisMedia: media(somaEspeciaisTotal + somaOutrosTotal + soma.bloqueioRH),
+      // Bloqueio RH fica só em Bloqueados (pedido dela, 2026-11-12 — antes contava nos dois).
+      naoDisponiveisMedia: media(somaEspeciaisTotal + somaOutrosTotal),
       naoDispComStatus,
     };
   }, [
@@ -4781,10 +4878,17 @@ function DashboardTab({
       bsp: string | null;
       nome: string;
       bspDoPlanejamento: boolean;
+      colaboradorId?: string;
     }[] = [];
     datesMesAtual.forEach((d) => {
       activeColaboradoresMesAtual.forEach((c) => {
-        const result = computeStatusParaDashboard(periodosByColaborador.get(c.id) ?? [], d);
+        const result = corrigirStatusPelaLogistica(
+          computeStatusParaDashboard(periodosByColaborador.get(c.id) ?? [], d),
+          c.id,
+          d,
+          today,
+          logisticaDrake,
+        );
         const bspDrake = result.periodo ? bspDoPeriodo(result.periodo) : null;
         const bspDrakeLimpo = bspDrake?.trim() || null;
         const unidade = result.periodo?.unidade_operacional ?? null;
@@ -4802,6 +4906,7 @@ function DashboardTab({
           bsp: bspFinal,
           nome: c.nome,
           bspDoPlanejamento: !!bspPlanejamento,
+          colaboradorId: c.id,
         });
       });
     });
@@ -4812,6 +4917,8 @@ function DashboardTab({
     periodosByColaborador,
     bspPorNomePlanejamento,
     periodosOrdenadosPorColaborador,
+    logisticaDrake,
+    today,
   ]);
 
   // Mesmo cálculo de dailyRecords acima, só que a partir de activeColaboradoresMesAtualPob (sem
@@ -4882,6 +4989,12 @@ function DashboardTab({
         value: statusReferenceDate.folgaMedia,
         nomes: folgaDoPlanejamento,
       },
+      // Trabalho Externo entra na Ocupação (pedido dela, 2026-11-10).
+      {
+        name: "Trabalho Externo",
+        value: statusReferenceDate.trabalhoExternoMedia,
+        nomes: statusReferenceDate.trabalhoExterno,
+      },
     ]
       .filter((d) => d.value > 0)
       .map((d, i) => ({ ...d, color: OCUPACAO_BLUE_PALETTE[i % OCUPACAO_BLUE_PALETTE.length] }));
@@ -4895,23 +5008,35 @@ function DashboardTab({
   const naoOcupacaoData = useMemo(() => {
     return [
       {
-        name: "Aguardando Escala",
+        // "Disponíveis" (pedido dela, 2026-11-12; antes "Stand By", e antes "Aguardando Escala").
+        name: "Disponíveis",
         value: statusReferenceDate.disponivelMedia,
         nomes: disponivelDoPlanejamento,
       },
-      // Férias/Atestado/Afastamento continuam com fatia própria (pedido dela).
+      // Indisponível e Férias/Atestado/Afastamento com fatia própria (pedido dela).
       ...statusReferenceDate.especiaisDetalhado,
-      // Qualquer Status sem nada definido (Indisponível, Terceirizado, Casa, texto livre digitado
-      // direto no Planejamento, etc.) — uma fatia só "Outros" (pedido dela), com o Status real de
-      // cada um no hover — garante que as 3 rosquinhas sempre somem 100% do Headcount.
+      // Terceirizado e qualquer outro texto livre — uma fatia só "Outros" (pedido dela), com o
+      // Status real de cada um no hover — garante que as 3 rosquinhas sempre somem 100%.
       statusReferenceDate.outros,
     ]
       .filter((d) => d.value > 0)
       .map((d, i) => ({ ...d, color: OCUPACAO_WARM_PALETTE[i % OCUPACAO_WARM_PALETTE.length] }));
   }, [statusReferenceDate, disponivelDoPlanejamento]);
 
+  // "Bloqueados Henrique" (pedido dela, 2026-11-10): Base Henrique e Bloqueio Base Henrique; Na
+  // Base, outros "Base - Fulano" e Bloqueio RH continuam aqui se aparecerem.
   const baseData = useMemo(() => {
     return [
+      {
+        name: "Base Henrique",
+        value: statusReferenceDate.baseHenriqueMedia,
+        nomes: statusReferenceDate.baseHenrique,
+      },
+      {
+        name: "Bloqueio Base Henrique",
+        value: statusReferenceDate.bloqueioBaseHenriqueMedia,
+        nomes: statusReferenceDate.bloqueioBaseHenrique,
+      },
       {
         name: "Na Base",
         value: statusReferenceDate.naBaseMedia,
@@ -4947,15 +5072,42 @@ function DashboardTab({
   const ocupadoCards = ocupacaoData.reduce((sum, d) => sum + d.value, 0);
   const foraOcupacaoCards = naoOcupacaoData.reduce((sum, d) => sum + d.value, 0);
   const baseCards = baseData.reduce((sum, d) => sum + d.value, 0);
-  const headcountTotalReferenceDate = ocupadoCards + foraOcupacaoCards + baseCards;
-  const [pctOcupacaoCards, pctForaOcupacaoCards, pctBaseCards] = distribuirPercentuais100([
+  // Bloqueados saem da taxa (pedido dela, 2026-11-12): Headcount e as rosquinhas Ocupação/Fora da
+  // Ocupação fecham 100% só entre Ocupado + Fora; os Bloqueados ficam à parte, no gráfico
+  // vermelho, com o peso deles no quadro total (Headcount + Bloqueados) só como informação.
+  const headcountTotalReferenceDate = ocupadoCards + foraOcupacaoCards;
+  const quadroTotalReferenceDate = headcountTotalReferenceDate + baseCards;
+  const [pctOcupacaoCards, pctForaOcupacaoCards] = distribuirPercentuais100([
     ocupadoCards,
     foraOcupacaoCards,
-    baseCards,
   ]);
+  const pctBaseNoQuadro =
+    quadroTotalReferenceDate > 0 ? Math.round((baseCards / quadroTotalReferenceDate) * 100) : 0;
 
   const kpiCards = [
-    { label: "Headcount Total", value: headcountTotalReferenceDate, icon: Users },
+    // Headcount Total = quadro inteiro (com os Bloqueados); Headcount Offshore = base da Taxa de
+    // Ocupação, sem os Bloqueados (pedido dela, 2026-11-12). Os cartões de status abaixo somam
+    // exatamente o Headcount Offshore (Trabalho Externo ganhou cartão próprio pra isso).
+    { label: "Headcount Total", value: quadroTotalReferenceDate, icon: Users },
+    {
+      label: "Headcount Offshore",
+      value: headcountTotalReferenceDate,
+      icon: Users,
+      sub: baseCards > 0 ? `sem os ${baseCards} bloqueados` : undefined,
+    },
+    // Headcount Ativo (pedido dela, 2026-11-16) = Embarcados + Folga + Programados + Disponíveis +
+    // Trabalho Externo — mesmos valores dos cartões ao lado (fica fora só quem é Indisponível).
+    {
+      label: "Headcount Ativo",
+      value:
+        statusReferenceDate.embarcadosMedia +
+        statusReferenceDate.folgaMedia +
+        statusReferenceDate.programadosMedia +
+        statusReferenceDate.disponivelMedia +
+        statusReferenceDate.trabalhoExternoMedia,
+      icon: Users,
+      sub: "embarc. + folga + prog. + disp. + trab. ext.",
+    },
     {
       label: "Embarcados",
       value: statusReferenceDate.embarcadosMedia,
@@ -4969,37 +5121,45 @@ function DashboardTab({
       hoverNames: programadosDoPlanejamento,
     },
     {
+      label: "Trabalho Externo",
+      value: statusReferenceDate.trabalhoExternoMedia,
+      icon: Briefcase,
+      hoverNames: statusReferenceDate.trabalhoExterno,
+    },
+    {
       label: "Folga de Embarque",
       value: statusReferenceDate.folgaMedia,
       icon: BedDouble,
       hoverNames: folgaDoPlanejamento,
     },
     {
-      label: "Na Base",
-      value: statusReferenceDate.naBaseMedia,
-      icon: Building2,
-      hoverNames: colaboradoresNaBaseDoPlanejamento,
-    },
-    {
-      label: "Bloqueados",
-      value: statusReferenceDate.bloqueioTemporarioMedia + statusReferenceDate.bloqueioRHMedia,
-      icon: Lock,
-      hoverNames: [
-        ...bloqueioRHDoPlanejamento.map((nome) => `${nome} — Bloqueio RH`),
-        ...bloqueioTemporarioDoPlanejamento.map((nome) => `${nome} — Bloqueio Temporário`),
-      ],
-    },
-    {
-      label: "Aguardando Escala",
+      label: "Disponíveis",
       value: statusReferenceDate.disponivelMedia,
       icon: CheckCircle2,
       hoverNames: disponivelDoPlanejamento,
     },
     {
-      label: "Não Disponíveis",
+      label: "Indisponíveis",
       value: statusReferenceDate.naoDisponiveisMedia,
       icon: AlertCircle,
       hoverNames: statusReferenceDate.naoDispComStatus,
+    },
+    {
+      label: "Bloqueados Henrique",
+      value:
+        statusReferenceDate.baseHenriqueMedia +
+        statusReferenceDate.bloqueioBaseHenriqueMedia +
+        statusReferenceDate.bloqueioTemporarioMedia +
+        statusReferenceDate.bloqueioRHMedia,
+      icon: Lock,
+      hoverNames: [
+        ...statusReferenceDate.baseHenrique.map((nome) => `${nome} — Base Henrique`),
+        ...statusReferenceDate.bloqueioBaseHenrique.map(
+          (nome) => `${nome} — Bloqueio Base Henrique`,
+        ),
+        ...bloqueioRHDoPlanejamento.map((nome) => `${nome} — Bloqueio RH`),
+        ...bloqueioTemporarioDoPlanejamento.map((nome) => `${nome} — Bloqueio Temporário`),
+      ],
     },
     { label: "Utilização", value: pctOcupacaoCards, suffix: "%", icon: TrendingUp },
   ];
@@ -5165,7 +5325,7 @@ function DashboardTab({
   const weeklyData = useMemo(() => {
     const weekMap = new Map<string, { label: string; dates: string[] }>();
     const weekOrder: string[] = [];
-    datesMesAtual.forEach((d) => {
+    datesMesAtual.filter((d) => d <= today).forEach((d) => {
       const dt = new Date(d + "T12:00:00");
       const dow = dt.getDay() || 7;
       const mon = new Date(dt);
@@ -5182,9 +5342,16 @@ function DashboardTab({
       weekMap.get(key)!.dates.push(d);
     });
     const recsByDate = new Map<string, OldBucket[]>();
+    // Pessoas diferentes embarcadas em algum dia da semana (pedido dela, 2026-11-12) — mesma
+    // conta do "POB por Mês", só que por semana; as barras continuam sendo a média diária.
+    const embarcadosPorDia = new Map<string, string[]>();
     dailyRecords.forEach((r) => {
       if (!recsByDate.has(r.date)) recsByDate.set(r.date, []);
       recsByDate.get(r.date)!.push(r.bucket);
+      if (r.bucket === "E") {
+        if (!embarcadosPorDia.has(r.date)) embarcadosPorDia.set(r.date, []);
+        embarcadosPorDia.get(r.date)!.push(r.colaboradorId ?? r.nome);
+      }
     });
     return weekOrder.map((key) => {
       const { label, dates: wd } = weekMap.get(key)!;
@@ -5199,39 +5366,53 @@ function DashboardTab({
           else if (bucket === "B") disp++;
         });
       });
+      const pessoas = new Set<string>();
+      wd.forEach((d) => (embarcadosPorDia.get(d) ?? []).forEach((id) => pessoas.add(id)));
       return {
         label,
         Embarcado: Math.round(emb / n),
         FolgaFerias: Math.round(folga / n),
         Disponível: Math.round(disp / n),
+        EmbarcadosSemana: pessoas.size,
+        diasSemana: wd.length,
       };
     });
-  }, [datesMesAtual, dailyRecords]);
+  }, [datesMesAtual, dailyRecords, today]);
 
   // ── NOVO: POB por Mês (do início do ano até hoje, agregado — independente do filtro
   // De/Até acima, que serve só pros KPIs e pros gráficos de unidade/semana) ──
   const datesYTD = useMemo(() => generateDateRange(`${anoAtual}-01-01`, today), [anoAtual, today]);
 
-  // Quantidade exata de pessoas diferentes que estiveram embarcadas em algum dia daquele mês
-  // (não é média — é a contagem real de colaboradores únicos), com o detalhe por unidade
-  // guardado à parte só pra aparecer no tooltip ao passar o mouse.
+  // Quantidade exata de pessoas diferentes que estiveram EMBARCADAS em algum dia daquele mês
+  // (não é média — é a contagem de colaboradores únicos), com o detalhe por unidade no tooltip.
+  // Todos os meses pelo Drake (pedido dela, 2026-11-12: "volte a trazer do Drake o quantitativo
+  // mensal") — status do dia por computeStatusParaDashboard, a mesma régua usada até Ago/26.
   const pobByMonth = useMemo(() => {
     const colaboradoresPorMes = new Map<string, Set<string>>();
     const colaboradoresPorMesUnidade = new Map<string, Map<string, Set<string>>>();
+    const add = (mk: string, chave: string, unidade: string | null | undefined) => {
+      if (!colaboradoresPorMes.has(mk)) colaboradoresPorMes.set(mk, new Set());
+      colaboradoresPorMes.get(mk)!.add(chave);
+      const u = unidade?.trim();
+      if (!u) return;
+      if (!colaboradoresPorMesUnidade.has(mk)) colaboradoresPorMesUnidade.set(mk, new Map());
+      const um = colaboradoresPorMesUnidade.get(mk)!;
+      if (!um.has(u)) um.set(u, new Set());
+      um.get(u)!.add(chave);
+    };
+
     datesYTD.forEach((d) => {
       const mk = d.slice(0, 7);
-      colaboradoresFiltrados.forEach((c) => {
-        const result = computeDayStatus(periodosByColaborador.get(c.id) ?? [], d);
-        if (pobBucket(result) !== "E") return;
-        if (!colaboradoresPorMes.has(mk)) colaboradoresPorMes.set(mk, new Set());
-        colaboradoresPorMes.get(mk)!.add(c.id);
-        const u = result.periodo?.unidade_operacional;
-        if (u) {
-          if (!colaboradoresPorMesUnidade.has(mk)) colaboradoresPorMesUnidade.set(mk, new Map());
-          const um = colaboradoresPorMesUnidade.get(mk)!;
-          if (!um.has(u)) um.set(u, new Set());
-          um.get(u)!.add(c.id);
-        }
+      colaboradoresComMultiploEmbarque.forEach((c) => {
+        const result = corrigirStatusPelaLogistica(
+          computeStatusParaDashboard(periodosByColaborador.get(c.id) ?? [], d),
+          c.id,
+          d,
+          today,
+          logisticaDrake,
+        );
+        if (!result.periodo || toOldBucket(result.status) !== "E") return;
+        add(mk, c.id, result.periodo.unidade_operacional);
       });
     });
     const monthKeys = Array.from(new Set(datesYTD.map((d) => d.slice(0, 7)))).sort();
@@ -5246,7 +5427,7 @@ function DashboardTab({
         porUnidade,
       };
     });
-  }, [datesYTD, colaboradoresFiltrados, periodosByColaborador]);
+  }, [datesYTD, colaboradoresComMultiploEmbarque, periodosByColaborador, logisticaDrake, today]);
 
   const renderPobMesTooltip = (props: unknown) => {
     const { active, payload } = props as {
@@ -5310,7 +5491,7 @@ function DashboardTab({
               onChange={(e) => setDataFim(e.target.value)}
             />
           </div>
-          <div className="space-y-0.5 w-56">
+          <div className="w-full space-y-0.5 sm:w-56">
             <Label className="text-[10px] uppercase tracking-wide text-muted-foreground/70">
               Colaborador
             </Label>
@@ -5321,7 +5502,7 @@ function DashboardTab({
               compact
             />
           </div>
-          <div className="space-y-0.5 w-48">
+          <div className="w-full space-y-0.5 sm:w-48">
             <Label className="text-[10px] uppercase tracking-wide text-muted-foreground/70">
               Unidade
             </Label>
@@ -5337,7 +5518,7 @@ function DashboardTab({
               emptyLabel="Nenhuma unidade encontrada."
             />
           </div>
-          <div className="space-y-0.5 w-40">
+          <div className="w-full space-y-0.5 sm:w-40">
             <Label className="text-[10px] uppercase tracking-wide text-muted-foreground/70">
               BSP
             </Label>
@@ -5356,24 +5537,30 @@ function DashboardTab({
       </Card>
 
       {/* ── KPIs ── */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-9">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:auto-cols-fr xl:grid-flow-col xl:grid-cols-none">
         {kpiCards.map((k, i) => {
           const card = (
             <Card
               className={cn(
-                "bg-gradient-to-br from-white to-slate-50 p-4",
+                "neon-onda neon-suave h-full min-w-0 bg-gradient-to-br from-white to-slate-50 p-3 sm:p-4",
+                k.label === "Bloqueados Henrique" && "neon-vermelho",
                 k.hoverNames && "cursor-default",
               )}
             >
-              <div className="flex items-center justify-between">
-                <span className="text-xs uppercase tracking-wide text-muted-foreground">
+              <div className="flex min-w-0 items-start justify-between gap-1">
+                <span className="min-w-0 text-[11px] uppercase leading-tight tracking-wide text-muted-foreground 2xl:text-xs">
                   {k.label}
                 </span>
-                <k.icon className="h-4 w-4 text-muted-foreground" />
+                <k.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
               </div>
-              <div className="mt-2 text-3xl font-semibold text-slate-800">
+              <div className="mt-2 whitespace-nowrap text-[clamp(1.375rem,1rem+1.2vw,1.875rem)] font-semibold leading-tight text-slate-800">
                 <KpiValue value={k.value} suffix={k.suffix} />
               </div>
+              {"sub" in k && k.sub && (
+                <p className="mt-0.5 truncate text-[10px] text-muted-foreground" title={k.sub}>
+                  {k.sub}
+                </p>
+              )}
             </Card>
           );
 
@@ -5408,7 +5595,7 @@ function DashboardTab({
       </div>
 
       {/* ── Ocupação ── */}
-      <Card className="p-4">
+      <Card className="neon-onda neon-suave p-4">
         {/* Recharts descarta filhos que não reconhece dentro de PieChart/BarChart — por isso os
             gradientes do "auto relevo" não podem morar dentro deles; ficam aqui uma única vez,
             num <svg> escondido, e cada Cell só referencia o id por fill="url(#...)". */}
@@ -5436,28 +5623,29 @@ function DashboardTab({
                 <span className="font-semibold" style={{ color: DASH_COLORS.navy }}>
                   Ocupado
                 </span>{" "}
-                (fatia azul): Embarcado, Programado e Folga de Embarque — vaga comprometida no ciclo
-                de rotação, mesmo quando a pessoa não está fisicamente a bordo naquele dia (folga do
-                ciclo ou mobilização já lançada).
+                (fatia azul): Embarcado, Programado, Folga de Embarque e Trabalho Externo — vaga
+                comprometida no ciclo de rotação, mesmo quando a pessoa não está fisicamente a bordo
+                naquele dia (folga do ciclo ou mobilização já lançada).
               </p>
               <p>
                 <span className="font-semibold" style={{ color: "#c2410c" }}>
                   Fora da ocupação
                 </span>{" "}
-                (fatia laranja): Aguardando Escala, Férias e Atestado — sem vaga reservada em
-                nenhuma unidade no momento.
+                (fatia laranja): Disponíveis, Indisponível, Férias/Atestado e Outros
+                (Terceirizado) — sem vaga reservada em nenhuma unidade no momento.
               </p>
               <p>
                 <span className="font-semibold" style={{ color: "#7f1d1d" }}>
-                  Na Base / Bloqueio Temporário / Bloqueio RH
+                  Bloqueados - Henrique
                 </span>{" "}
-                (fatia vermelha): dentro do Headcount Total, mas numa categoria à parte — não entram
-                nem em "Ocupado" nem em "Fora da ocupação".
+                (Base Henrique e Bloqueio Base Henrique; também Na Base e Bloqueio RH, se houver)
+                (gráfico vermelho): fora da Taxa de Ocupação e do Headcount Total — aparecem à
+                parte, só para acompanhar quantos são e o peso deles no quadro.
               </p>
             </PopoverContent>
           </Popover>
         </div>
-        <div className="mt-3 grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+        <div className="mt-3 grid min-w-0 gap-6 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
           {/* Resumo "Quantidade de Pessoas Embarcadas" (pedido dela, 2026-10-28) — formato do
               e-mail diário (Unidade | Quantidade | TOTAL), lado a lado com as rosquinhas e em
               destaque; mesmos números do "POB x Unidade", em ordem alfabética. */}
@@ -5471,7 +5659,7 @@ function DashboardTab({
             {byUnitStatus.length === 0 ? (
               <p className="py-10 text-xs text-muted-foreground">Ninguém embarcado</p>
             ) : (
-              <div className="w-full max-w-[300px] overflow-hidden rounded-lg border-2 border-[#1e3a5f] shadow-md">
+              <div className="w-full max-w-[300px] overflow-x-auto rounded-lg border-2 border-[#1e3a5f] shadow-md">
                 <table className="w-full border-collapse text-[13px]">
                   <thead>
                     <tr className="bg-gradient-to-b from-[#2c5282] via-[#1e3a5f] to-[#0f2744] text-white">
@@ -5503,23 +5691,23 @@ function DashboardTab({
               </div>
             )}
           </div>
-          <div className="flex flex-col items-center gap-2 lg:border-l lg:pl-6">
+          <div className="neon-onda neon-suave flex flex-col items-center gap-2 p-4">
             <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Ocupação
             </h4>
-            <div className="flex flex-1 flex-wrap items-center justify-center gap-4">
-              <div className="relative h-[180px] w-[180px] shrink-0">
+            <div className="flex w-full min-w-0 flex-1 flex-wrap items-center justify-center gap-4">
+              <div className="relative aspect-square w-full min-w-[140px] max-w-[180px] shrink">
                 <ChartContainer
                   config={donutChartConfig}
-                  className="aspect-square h-[180px] w-[180px] [&_.recharts-wrapper]:drop-shadow-md"
+                  className="aspect-square h-full w-full [&_.recharts-wrapper]:drop-shadow-md"
                 >
                   <PieChart>
                     <Pie
                       data={ocupacaoData}
-                      cx={90}
-                      cy={90}
-                      innerRadius={58}
-                      outerRadius={82}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius="64%"
+                      outerRadius="91%"
                       dataKey="value"
                       startAngle={90}
                       endAngle={-270}
@@ -5557,23 +5745,23 @@ function DashboardTab({
             </div>
             <StatusLegendRow data={ocupacaoData} />
           </div>
-          <div className="flex flex-col items-center gap-2 lg:border-l lg:pl-6">
+          <div className="neon-onda neon-suave flex flex-col items-center gap-2 p-4">
             <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Fora da Ocupação
             </h4>
-            <div className="flex flex-1 flex-wrap items-center justify-center gap-4">
-              <div className="relative h-[180px] w-[180px] shrink-0">
+            <div className="flex w-full min-w-0 flex-1 flex-wrap items-center justify-center gap-4">
+              <div className="relative aspect-square w-full min-w-[140px] max-w-[180px] shrink">
                 <ChartContainer
                   config={donutChartConfig}
-                  className="aspect-square h-[180px] w-[180px] [&_.recharts-wrapper]:drop-shadow-md"
+                  className="aspect-square h-full w-full [&_.recharts-wrapper]:drop-shadow-md"
                 >
                   <PieChart>
                     <Pie
                       data={naoOcupacaoData}
-                      cx={90}
-                      cy={90}
-                      innerRadius={58}
-                      outerRadius={82}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius="64%"
+                      outerRadius="91%"
                       dataKey="value"
                       startAngle={90}
                       endAngle={-270}
@@ -5611,23 +5799,26 @@ function DashboardTab({
             </div>
             <StatusLegendRow data={naoOcupacaoData} />
           </div>
-          <div className="flex flex-col items-center gap-2 lg:border-l lg:pl-6">
+          <div className="neon-onda neon-suave neon-vermelho flex flex-col items-center gap-2 p-4">
             <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Bloqueados
+              Bloqueados - Henrique
             </h4>
-            <div className="flex flex-1 flex-wrap items-center justify-center gap-4">
-              <div className="relative h-[180px] w-[180px] shrink-0">
+            <p className="-mt-1 text-center text-[10px] text-muted-foreground">
+              Fora da Taxa de Ocupação ({pctBaseNoQuadro}% do quadro total)
+            </p>
+            <div className="flex w-full min-w-0 flex-1 flex-wrap items-center justify-center gap-4">
+              <div className="relative aspect-square w-full min-w-[140px] max-w-[180px] shrink">
                 <ChartContainer
                   config={donutChartConfig}
-                  className="aspect-square h-[180px] w-[180px] [&_.recharts-wrapper]:drop-shadow-md"
+                  className="aspect-square h-full w-full [&_.recharts-wrapper]:drop-shadow-md"
                 >
                   <PieChart>
                     <Pie
                       data={baseData}
-                      cx={90}
-                      cy={90}
-                      innerRadius={58}
-                      outerRadius={82}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius="64%"
+                      outerRadius="91%"
                       dataKey="value"
                       startAngle={90}
                       endAngle={-270}
@@ -5656,19 +5847,45 @@ function DashboardTab({
                       color: "transparent",
                     }}
                   >
-                    {pctBaseCards}%
+                    {baseCards}
                   </span>
-                  <span className="text-[10px] text-muted-foreground">na base / bloqueio</span>
+                  <span className="text-[10px] text-muted-foreground">bloqueados</span>
                 </div>
               </div>
               <MiniStatusBarChart data={baseData} />
             </div>
             <StatusLegendRow data={baseData} />
+            {/* Separação por Status embaixo do gráfico (pedido dela, 2026-11-10). */}
+            {baseData.length > 0 && (
+              <table className="w-full max-w-xs text-xs">
+                <tbody>
+                  {baseData.map((d) => (
+                    <tr key={d.name} className="border-b border-border/60">
+                      <td className="py-1">
+                        <span
+                          className="mr-1.5 inline-block h-2.5 w-2.5 rounded-full align-middle"
+                          style={{ backgroundColor: d.color }}
+                        />
+                        {d.name}
+                      </td>
+                      <td className="py-1 text-right font-semibold">{d.value}</td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <td className="py-1 font-semibold">Total</td>
+                    <td className="py-1 text-right font-bold">{baseCards}</td>
+                  </tr>
+                </tbody>
+              </table>
+            )}
           </div>
           <div className="flex flex-col items-center gap-2 lg:border-l lg:pl-6">
             <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Taxa de Ocupação por mês
             </h4>
+            <p className="-mt-1 text-center text-[10px] text-muted-foreground">
+              Sem Bloqueados (a partir de Set/26, com o Planejamento de Embarque)
+            </p>
             {/* Altura fixa centralizada (em vez de esticar até o fim do card) e largura total da
                 coluna — esticado, as barras ficavam finas/compridas e os % se encostavam. */}
             <div className="flex w-full flex-1 items-center justify-center">
@@ -5678,16 +5895,17 @@ function DashboardTab({
             >
               <BarChart
                 data={ocupacaoMensalData}
-                margin={{ top: 22, right: 2, left: 2, bottom: 2 }}
+                margin={{ top: 22, right: 4, left: 18, bottom: 8 }}
                 barCategoryGap="18%"
               >
                 <XAxis
                   dataKey="name"
-                  tick={{ fontSize: 12, fontWeight: 600 }}
-                  interval={0}
+                  tick={{ fontSize: 11, fontWeight: 600 }}
+                  interval="preserveStartEnd"
+                  minTickGap={6}
                   angle={-35}
                   textAnchor="end"
-                  height={40}
+                  height={48}
                 />
                 <YAxis hide domain={[0, 100]} />
                 <ChartTooltip content={renderMonthlyPctTooltip} />
@@ -5697,11 +5915,30 @@ function DashboardTab({
                   maxBarSize={30}
                   fill={`url(#${embossGradientId(DASH_COLORS.navy)})`}
                 >
+                  {/* Rótulo só quando a barra tem largura pra ele; sem espaço, o % fica no
+                      tooltip (evita "54%53%53%" sobrepostos em telas estreitas). */}
                   <LabelList
                     dataKey="value"
-                    position="top"
-                    formatter={(v: number) => `${v}%`}
-                    className="fill-foreground text-[13px] font-bold"
+                    content={(props) => {
+                      const { x, y, width, value } = props as {
+                        x?: number | string;
+                        y?: number | string;
+                        width?: number | string;
+                        value?: number | string;
+                      };
+                      const w = Number(width);
+                      if (!Number.isFinite(w) || w < 15) return null;
+                      return (
+                        <text
+                          x={Number(x) + w / 2}
+                          y={Number(y) - 5}
+                          textAnchor="middle"
+                          className="fill-foreground text-[9px] font-bold xl:text-[11px]"
+                        >
+                          {`${value}%`}
+                        </text>
+                      );
+                    }}
                   />
                 </Bar>
               </BarChart>
@@ -5711,241 +5948,35 @@ function DashboardTab({
         </div>
       </Card>
 
-      {/* ── Filtro discreto pros gráficos "por mês" abaixo (POB por Unidade × Dia e Mão de
-          Obra por Semana) — separado do De/Até de cima, que é só pros gráficos "por dia". ── */}
-      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        <span>Período dos gráficos por mês:</span>
-        <span>De:</span>
-        <Input
-          type="date"
-          value={inicioMesAtual}
-          onChange={(e) => setInicioMesAtual(e.target.value)}
-          className="h-6 w-auto px-1.5 text-xs"
-        />
-        <span>Até:</span>
-        <Input
-          type="date"
-          value={fimMesAtual}
-          onChange={(e) => setFimMesAtual(e.target.value)}
-          className="h-6 w-auto px-1.5 text-xs"
-        />
-      </div>
-
-      {/* ── POB por Unidade × Dia (com BSP) ── */}
-      <Card className="p-4">
-        <h3 className="text-sm font-semibold">POB por Unidade × Dia</h3>
-        <p className="text-xs text-muted-foreground mb-3">
-          Embarcados por dia, por unidade e por BSP, no período selecionado acima
-        </p>
-        {datesPobUnidadeDia.length === 0 ? (
-          <EmptyState icon={CalendarDays} title="Selecione um período válido" />
-        ) : unidadeBspRows.length === 0 ? (
-          <EmptyState icon={Ship} title="Nenhuma unidade com embarcado no período selecionado" />
-        ) : (
-          <div className="relative rounded border border-border">
-            {/* Linha vertical separando "Unidade/BSP" do dia 01 desenhada por cima da tabela
-                (position absolute, do topo ao fim), em vez de border em cada célula — border
-                normal por célula, com border-collapse, ficava inconsistente entre os tipos de
-                linha (cabeçalho/grupo de unidade/BSP/Total), dando a impressão de linha
-                cortada/quebrada (pedido dela: tem que ser inteira, sem cortes). */}
-            <div
-              className="pointer-events-none absolute inset-y-0 z-20 w-0 border-r border-r-border"
-              style={{ left: 150 }}
-            />
-            {/* table-fixed + sem min-w: as colunas de dia dividem o espaço disponível em partes
-                iguais, então a tabela nunca precisa de scroll horizontal, independente de quantos
-                dias tiver no período. */}
-            <table className="w-full table-fixed border-collapse text-xs">
-              <colgroup>
-                <col className="w-[150px]" />
-                {datesPobUnidadeDia.map((d) => (
-                  <col key={d} />
-                ))}
-              </colgroup>
-              <thead className="sticky top-0 z-10">
-                <tr>
-                  <th className="border border-border bg-muted px-2 py-1.5 text-left font-medium">
-                    Unidade / BSP
-                  </th>
-                  {datesPobUnidadeDia.map((d) => (
-                    <th
-                      key={d}
-                      className="border border-border px-0.5 py-1 text-center font-normal overflow-hidden"
-                      style={{ backgroundColor: "var(--muted)" }}
-                    >
-                      {d.slice(8, 10)}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {(() => {
-                  let lastUnidade = "";
-                  return unidadeBspRows.map((row) => {
-                    const isFirstDaUnidade = row.unidade !== lastUnidade;
-                    lastUnidade = row.unidade;
-                    return (
-                      <Fragment key={`${row.unidade}::${row.bsp}`}>
-                        {isFirstDaUnidade && (
-                          <tr>
-                            <td
-                              colSpan={1 + datesPobUnidadeDia.length}
-                              className="border border-border bg-muted/70 px-2 py-1 font-semibold"
-                            >
-                              <div className="max-w-[142px] truncate" title={row.unidade}>
-                                {row.unidade}
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                        <tr className="hover:bg-muted/40">
-                          <td
-                            className={cn(
-                              "bg-background border border-border px-2 py-1 pl-5 truncate",
-                              row.bsp === "Sem BSP"
-                                ? "text-amber-600 font-medium"
-                                : "text-muted-foreground",
-                            )}
-                            title={
-                              row.bsp === "Sem BSP"
-                                ? `Sem BSP no Drake nem no Planejamento de Embarque: ${Array.from(
-                                    new Set(Array.from(row.nomesByDate.values()).flat()),
-                                  )
-                                    .sort((a, b) => a.localeCompare(b, "pt-BR"))
-                                    .join(", ")}`
-                                : undefined
-                            }
-                          >
-                            {row.bsp}
-                          </td>
-                          {datesPobUnidadeDia.map((d) => {
-                            const count = row.countByDate.get(d) ?? 0;
-                            const nomes = row.nomesByDate.get(d) ?? [];
-                            return (
-                              <td
-                                key={d}
-                                className="border border-border p-0 text-center overflow-hidden"
-                                style={
-                                  count > 0
-                                    ? {
-                                        backgroundColor: "#22c55e33",
-                                        color: "#166534",
-                                        fontWeight: 700,
-                                      }
-                                    : { backgroundColor: "#f1f5f9" }
-                                }
-                                title={nomes.length > 0 ? nomes.join(", ") : undefined}
-                              >
-                                {count > 0 ? count : ""}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      </Fragment>
-                    );
-                  });
-                })()}
-                {/* Total geral do dia (soma de todas as unidades/BSP) — pedido dela, pra não
-                    precisar somar a coluna manualmente. */}
-                <tr className="border-t-2 border-t-border">
-                  <td className="border border-border bg-muted px-2 py-1 font-semibold">Total</td>
-                  {datesPobUnidadeDia.map((d) => {
-                    const total = unidadeBspRows.reduce(
-                      (sum, row) => sum + (row.countByDate.get(d) ?? 0),
-                      0,
-                    );
-                    return (
-                      <td
-                        key={d}
-                        className="border border-border bg-muted px-0.5 py-1 text-center font-bold"
-                      >
-                        {total > 0 ? total : ""}
-                      </td>
-                    );
-                  })}
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        )}
+      {/* ── Equipes Embarcadas por Unidade (pedido dela, 2026-11-11; substituiu o "POB por
+          Unidade × Dia") — mesma base da aba Equipes Embarcadas de Nomeações. ── */}
+      {/* Em cascata, igual à aba Equipes Embarcadas de Nomeações (pedido dela, 2026-11-12 — o
+          mesmo componente, no lugar do gráfico de barras EquipesEmbarcadasUnidadeCard). */}
+      <Card className="neon-onda neon-suave space-y-3 p-4">
+        <div>
+          <h3 className="text-sm font-semibold">Equipes Embarcadas por Unidade</h3>
+          <p className="text-xs text-muted-foreground">
+            Hoje, pelo Planejamento de Embarque — igual à aba Equipes Embarcadas de Nomeações
+            (Embarcados + Programados com embarque hoje).
+          </p>
+        </div>
+        <ClientCascadeView iniciarRecolhido />
       </Card>
 
-      {/* ── POB x Unidade ── */}
-      <Card className="p-4">
-        <h3 className="text-sm font-semibold">POB x Unidade</h3>
-        <p className="text-xs text-muted-foreground mb-3">
-          {pobReferenceDate === today
-            ? "Embarcados hoje, por unidade"
-            : `Embarcados em ${fmtDiaCurto(pobReferenceDate)}, por unidade`}
-        </p>
-        {byUnitStatus.length === 0 ? (
-          <EmptyState
-            icon={Ship}
-            title={
-              pobReferenceDate === today
-                ? "Nenhuma unidade com colaborador embarcado hoje"
-                : `Nenhuma unidade com colaborador embarcado em ${fmtDiaCurto(pobReferenceDate)}`
-            }
-          />
-        ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {byUnitStatus.map((u) => (
-              <div
-                key={u.name}
-                className="rounded-lg border border-border bg-gradient-to-br from-white to-slate-50 p-4"
-              >
-                <p className="truncate text-sm font-medium text-muted-foreground" title={u.name}>
-                  {u.name}
-                </p>
-                <p
-                  className="mt-1 text-3xl font-bold"
-                  style={{
-                    backgroundImage: `linear-gradient(135deg, ${DASH_COLORS.orange}, #fdba74)`,
-                    WebkitBackgroundClip: "text",
-                    backgroundClip: "text",
-                    color: "transparent",
-                  }}
-                >
-                  {u.Embarcado}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {pobReferenceDate === today
-                    ? "embarcado(s) hoje"
-                    : `embarcado(s) em ${fmtDiaCurto(pobReferenceDate)}`}
-                </p>
-                {u.porFuncao.length > 0 && (
-                  <div className="mt-3 flex h-8 items-end gap-1">
-                    {u.porFuncao.map((f) => {
-                      const maxCount = Math.max(...u.porFuncao.map((x) => x.count));
-                      return (
-                        <div
-                          key={f.funcao}
-                          className="w-2 rounded-sm"
-                          style={{
-                            height: `${(f.count / maxCount) * 100}%`,
-                            backgroundColor: funcaoColor.get(f.funcao) ?? DASH_COLORS.slate,
-                          }}
-                          title={`${f.funcao}: ${f.count}\n${f.nomes.join(", ")}`}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
+      {/* ── M.O disponível x Dia (pedido dela, 2026-11-10; substituiu o "POB x Unidade") ── */}
+      <MoDisponivelDiaCard linhas={planejamentoEmbarque} hoje={today} podeImportar={podeImportarMo} />
 
       {/* ── Mão de Obra por Semana ── */}
-      <Card className="p-4">
+      <Card className="neon-onda neon-suave p-4">
         <h3 className="text-sm font-semibold">Mão de Obra por Semana</h3>
-        <p className="text-xs text-muted-foreground mb-3">Média diária de pessoas por semana</p>
+        <p className="text-xs text-muted-foreground mb-3">
+          Barras = média diária de pessoas por semana; em cima = pessoas diferentes embarcadas na semana. Pelo Drake (Ficha Anual corrigida pela programação logística), só dias até hoje (sem projeção)
+        </p>
         {weeklyData.length === 0 ? (
           <EmptyState icon={TrendingUp} title="Nenhum dado no período selecionado" />
         ) : (
           <ChartContainer config={weeklyChartConfig} className="aspect-auto h-[200px] w-full">
-            <BarChart data={weeklyData} margin={{ top: 16, right: 8, bottom: 4, left: 0 }}>
+            <BarChart data={weeklyData} margin={{ top: 28, right: 8, bottom: 4, left: 0 }}>
               <CartesianGrid vertical={false} />
               <XAxis
                 dataKey="label"
@@ -5957,27 +5988,63 @@ function DashboardTab({
               <YAxis hide />
               <ChartTooltip
                 cursor={{ fill: "var(--color-muted)" }}
-                content={<ChartTooltipContent indicator="dot" />}
+                content={
+                  <ChartTooltipContent
+                    indicator="dot"
+                    labelFormatter={(label, payload) => {
+                      const row = payload?.[0]?.payload as
+                        | { EmbarcadosSemana?: number; diasSemana?: number }
+                        | undefined;
+                      return (
+                        <div>
+                          <div>{label} · média diária</div>
+                          {row?.EmbarcadosSemana != null && (
+                            <div className="font-normal text-muted-foreground">
+                              {row.EmbarcadosSemana} pessoa(s) diferentes embarcadas na semana
+                              {row.diasSemana && row.diasSemana < 7
+                                ? ` (${row.diasSemana} dia(s) até hoje)`
+                                : ""}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }}
+                  />
+                }
               />
               <ChartLegend content={<ChartLegendContent />} />
-              <Bar dataKey="Embarcado" stackId="a" fill="var(--color-Embarcado)" />
-              <Bar dataKey="FolgaFerias" stackId="a" fill="var(--color-FolgaFerias)" />
+              {/* Números em cada faixa (pedido dela, 2026-11-12). */}
+              <Bar dataKey="Embarcado" stackId="a" fill="var(--color-Embarcado)">
+                <LabelList dataKey="Embarcado" position="center" className="fill-white text-xs font-bold" />
+              </Bar>
+              <Bar dataKey="FolgaFerias" stackId="a" fill="var(--color-FolgaFerias)">
+                <LabelList dataKey="FolgaFerias" position="center" className="fill-white text-xs font-bold" />
+              </Bar>
               <Bar
                 dataKey="Disponível"
                 stackId="a"
                 fill="var(--color-Disponível)"
                 radius={[6, 6, 0, 0]}
-              />
+              >
+                <LabelList dataKey="Disponível" position="center" className="fill-white text-xs font-bold" />
+                {/* Em cima da barra: pessoas diferentes embarcadas na semana. */}
+                <LabelList
+                  dataKey="EmbarcadosSemana"
+                  position="top"
+                  className="fill-foreground text-[11px] font-semibold"
+                  formatter={(v: number) => `${v} embarcados na semana`}
+                />
+              </Bar>
             </BarChart>
           </ChartContainer>
         )}
       </Card>
 
       {/* ── NOVO: POB por Mês ── */}
-      <Card className="p-4">
+      <Card className="neon-onda neon-suave p-4">
         <h3 className="text-sm font-semibold">POB por Mês</h3>
         <p className="text-xs text-muted-foreground mb-3">
-          Quantidade de pessoas embarcadas por mês, do início do ano até o mês atual
+          Pessoas diferentes que estiveram embarcadas em algum dia do mês — pelo Drake
         </p>
         {pobByMonth.length === 0 ? (
           <EmptyState icon={TrendingUp} title="Nenhum dado no período selecionado" />
@@ -6005,6 +6072,9 @@ function DashboardTab({
           </ChartContainer>
         )}
       </Card>
+
+      {/* ── PLANEJADO — M.O (pedido dela, 2026-11-09): sempre por último, separado do realizado ── */}
+      <MoPlanejadoDashboardSection />
     </div>
   );
 }

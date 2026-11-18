@@ -365,3 +365,99 @@
   --chart-scale-05: oklch(0.68 0.07 270);
   --chart-scale-pattern-color: oklch(0.145 0 0);
 }
+
+/* Moldura neon com "onda" de luz correndo pela borda (pedido dela, 2026-11-12) — usada nas
+   rosquinhas Ocupação e Fora da Ocupação do Dashboard do Histograma. Azul-escuro suave: um
+   brilho fixo em volta (box-shadow) + um trecho mais claro da borda que gira (conic-gradient
+   animado via @property). Sem animação para quem pede movimento reduzido. */
+@property --neon-onda-angulo {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.neon-onda {
+  position: relative;
+  border-radius: 1rem;
+  box-shadow:
+    0 0 14px rgb(30 58 138 / 0.22),
+    0 0 3px rgb(30 58 138 / 0.25),
+    inset 0 0 12px rgb(30 58 138 / 0.06);
+}
+
+.neon-onda::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--neon-onda-angulo),
+    rgb(30 58 138 / 0.18) 0deg,
+    rgb(30 58 138 / 0.18) 220deg,
+    rgb(37 99 235 / 0.55) 280deg,
+    rgb(96 165 250 / 0.95) 320deg,
+    rgb(30 64 175 / 0.6) 345deg,
+    rgb(30 58 138 / 0.18) 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: neon-onda-gira 5s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes neon-onda-gira {
+  to {
+    --neon-onda-angulo: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .neon-onda::before {
+    animation: none;
+  }
+}
+
+/* Versão mais suave (pedido dela, 2026-11-12) — cartões de KPI do Dashboard: brilho fixo bem
+   leve e a onda mais lenta e mais clara. */
+.neon-onda.neon-suave {
+  box-shadow:
+    0 0 8px rgb(30 58 138 / 0.12),
+    0 0 2px rgb(30 58 138 / 0.14);
+}
+
+.neon-onda.neon-suave::before {
+  padding: 1px;
+  background: conic-gradient(
+    from var(--neon-onda-angulo),
+    rgb(30 58 138 / 0.1) 0deg,
+    rgb(30 58 138 / 0.1) 240deg,
+    rgb(59 130 246 / 0.3) 295deg,
+    rgb(147 197 253 / 0.6) 325deg,
+    rgb(30 64 175 / 0.3) 345deg,
+    rgb(30 58 138 / 0.1) 360deg
+  );
+  animation-duration: 9s;
+}
+
+/* Variante vermelha (pedido dela, 2026-11-12) — Bloqueados (cartão e gráfico vermelho). */
+.neon-onda.neon-vermelho {
+  box-shadow:
+    0 0 10px rgb(185 28 28 / 0.16),
+    0 0 2px rgb(185 28 28 / 0.18);
+}
+
+.neon-onda.neon-vermelho::before {
+  background: conic-gradient(
+    from var(--neon-onda-angulo),
+    rgb(153 27 27 / 0.12) 0deg,
+    rgb(153 27 27 / 0.12) 240deg,
+    rgb(239 68 68 / 0.35) 295deg,
+    rgb(252 165 165 / 0.75) 325deg,
+    rgb(185 28 28 / 0.35) 345deg,
+    rgb(153 27 27 / 0.12) 360deg
+  );
+}

@@ -70,6 +70,25 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRascunho, RascunhoAviso } from "@/hooks/useRascunho";
 import { PlanejamentoStatusAuditoria } from "@/components/histograma/PlanejamentoStatusAuditoria";
 import {
+  PreencherMatriculasBotao,
+  enderecoDaLinha,
+  useEnderecosDrake,
+} from "@/components/histograma/PlanejamentoDrakeCadastro";
+import {
+  acaoEdicao,
+  camposAlteradosDepois,
+  empilhar,
+  linhaParaRestaurar,
+  rotuloAcao,
+  type AcaoPlanejamento,
+  type LinhaPlanejamento,
+} from "@/lib/planejamento-desfazer";
+import {
+  statusPlanejamentoBloqueado,
+  statusPlanejamentoForaDaContagem,
+} from "@/lib/dashboard-status-planejamento";
+import {
+  Undo2,
   Search,
   X,
   Download,
@@ -712,9 +731,11 @@ function NumeroPlanejamentoCell({
 function PlanejamentoEditDialog({
   row,
   onClose,
+  onAcao,
 }: {
   row: PlanejamentoEmbarqueRow | null;
   onClose: () => void;
+  onAcao: (acao: AcaoPlanejamento | null) => void;
 }) {
   const qc = useQueryClient();
   const registrarLog = useRegistrarLogPlanejamento();
@@ -796,9 +817,26 @@ function PlanejamentoEditDialog({
           .update(patch)
           .eq("id", row.id);
         if (error) throw error;
+        onAcao(
+          acaoEdicao(
+            row as unknown as LinhaPlanejamento,
+            patch,
+            `Editou registro de ${patch.nome}`,
+          ),
+        );
       } else {
-        const { error } = await supabase.from("planejamento_embarque").insert(patch);
+        const { data, error } = await supabase
+          .from("planejamento_embarque")
+          .insert(patch)
+          .select("id")
+          .single();
         if (error) throw error;
+        onAcao({
+          tipo: "criar",
+          id: data.id,
+          nome: patch.nome,
+          descricao: `Cadastrou ${patch.nome}`,
+        });
       }
     },
     onSuccess: () => {
@@ -1186,12 +1224,15 @@ function validatePlanejamentoRows(rows: PlanejamentoImportRow[]): {
 type ImportarPlanejamentoStep = "escolher" | "conferindo" | "confirmado";
 
 function ImportarPlanejamentoDialog({
-  totalAtual,
+  registrosAtuais,
   onClose,
+  onAcao,
 }: {
-  totalAtual: number;
+  registrosAtuais: PlanejamentoEmbarqueRow[];
   onClose: () => void;
+  onAcao: (acao: AcaoPlanejamento | null) => void;
 }) {
+  const totalAtual = registrosAtuais.length;
   const qc = useQueryClient();
   const registrarLog = useRegistrarLogPlanejamento();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -1219,11 +1260,18 @@ function ImportarPlanejamentoDialog({
 
   const importar = useMutation({
     mutationFn: async () => {
+      // Foto da lista de antes, para o "Desfazer" conseguir voltar a importação.
+      const anteriores = registrosAtuais.map((r) => ({ ...r }) as unknown as LinhaPlanejamento);
       const { error: delErro } = await supabase
         .from("planejamento_embarque")
         .delete()
         .not("id", "is", null);
       if (delErro) throw delErro;
+      onAcao({
+        tipo: "importar",
+        linhas: anteriores,
+        descricao: `Importação de planilha (${aceitas.length} registro(s))`,
+      });
 
       // Duração (dias) já vem preenchida sozinha quando a planilha tem Embarque e Desembarque
       // — mesmo intervalo que ela hoje calcula na mão via fórmula, sem precisar retypar pra
@@ -1289,8 +1337,9 @@ function ImportarPlanejamentoDialog({
               Status entra exatamente como está na planilha, sem nenhum cálculo por cima.
             </p>
             <p className="text-sm font-medium text-destructive">
-              Importar substitui TODOS os {totalAtual} registro(s) atuais pelos da planilha. Essa
-              ação não pode ser desfeita.
+              Importar substitui TODOS os {totalAtual} registro(s) atuais pelos da planilha. Se
+              precisar, o botão "Desfazer" volta a lista anterior enquanto esta página estiver
+              aberta.
             </p>
             <input
               ref={fileRef}
@@ -1447,6 +1496,8 @@ export function PlanejamentoEmbarqueTab() {
   const registrarLog = useRegistrarLogPlanejamento();
   const { data: registros = [], isLoading } = usePlanejamentoEmbarqueQuery();
   const { data: colaboradoresVistos = [] } = usePlanejamentoColaboradoresVistosQuery();
+  // Endereço do Drake (logística de deslocamento — pedido dela, 2026-11-18). null = sem acesso.
+  const { data: enderecos = null } = useEnderecosDrake();
   const primeiraVezPorNome = useMemo(
     () => new Map(colaboradoresVistos.map((v) => [v.nome_normalizado, v.primeira_vez_em])),
     [colaboradoresVistos],
@@ -1461,17 +1512,97 @@ export function PlanejamentoEmbarqueTab() {
   // (/admin/planejamento-embarque-historico) só lê o que já foi gravado.
   useCapturarSnapshotDiarioPlanejamento(registros);
 
+  // "Desfazer" (pedido dela, 2026-11-10): pilha das últimas ações feitas nesta aba, nesta
+  // sessão (some ao recarregar a página). Ver src/lib/planejamento-desfazer.ts.
+  const [pilhaDesfazer, setPilhaDesfazer] = useState<AcaoPlanejamento[]>([]);
+  const registrarAcao = (acao: AcaoPlanejamento | null) =>
+    setPilhaDesfazer((p) => empilhar(p, acao));
+  const ultimaAcao = pilhaDesfazer[pilhaDesfazer.length - 1] ?? null;
+  const [confirmarDesfazerImport, setConfirmarDesfazerImport] = useState(false);
+
+  const desfazer = useMutation({
+    mutationFn: async (acao: AcaoPlanejamento) => {
+      const tabela = () => supabase.from("planejamento_embarque");
+      if (acao.tipo === "editar") {
+        const { data: atual, error } = await tabela().select("*").eq("id", acao.id).maybeSingle();
+        if (error) throw error;
+        if (!atual) throw new Error(`O registro de ${acao.nome} não existe mais.`);
+        const mudados = camposAlteradosDepois(atual, acao.depois);
+        if (mudados.length > 0) {
+          throw new Error(
+            `Não dá para desfazer: ${acao.nome} foi alterado de novo depois (${mudados.join(", ")}).`,
+          );
+        }
+        const { error: e2 } = await tabela().update(acao.antes).eq("id", acao.id);
+        if (e2) throw e2;
+      } else if (acao.tipo === "criar") {
+        const { error } = await tabela().delete().eq("id", acao.id);
+        if (error) throw error;
+      } else if (acao.tipo === "excluir") {
+        const { error } = await tabela().insert(linhaParaRestaurar(acao.linha));
+        if (error) throw error;
+      } else {
+        const { error: delErro } = await tabela().delete().not("id", "is", null);
+        if (delErro) throw delErro;
+        const linhas = acao.linhas.map(linhaParaRestaurar);
+        for (let i = 0; i < linhas.length; i += 500) {
+          const { error } = await tabela().insert(linhas.slice(i, i + 500));
+          if (error) throw error;
+        }
+      }
+    },
+    onSuccess: (_d, acao) => {
+      setPilhaDesfazer((p) => p.slice(0, -1));
+      notify.success(`Desfeito: ${rotuloAcao(acao)}`);
+      registrarLog(`Desfez: ${acao.descricao}`);
+    },
+    onError: (e: Error) => notify.error(e.message || "Erro ao desfazer."),
+    onSettled: () => qc.invalidateQueries({ queryKey: ["planejamento-embarque"] }),
+  });
+  const pedirDesfazer = () => {
+    if (!ultimaAcao || desfazer.isPending) return;
+    if (ultimaAcao.tipo === "importar") setConfirmarDesfazerImport(true);
+    else desfazer.mutate(ultimaAcao);
+  };
+  // Ctrl+Z fora de campos de texto e de janelas abertas (dentro deles continua o Ctrl+Z normal).
+  const pedirDesfazerRef = useRef(pedirDesfazer);
+  pedirDesfazerRef.current = pedirDesfazer;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.shiftKey || e.key.toLowerCase() !== "z") return;
+      const alvo = e.target as HTMLElement | null;
+      if (alvo?.closest("input, textarea, select, [contenteditable='true'], [role='dialog']"))
+        return;
+      if (document.querySelector("[role='dialog'], [role='alertdialog']")) return;
+      e.preventDefault();
+      pedirDesfazerRef.current();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   const updateCampo = useMutation({
     mutationFn: async ({
       id,
       patch,
+      descricao,
     }: {
       id: string;
       patch: Record<string, unknown>;
       descricao?: string;
     }) => {
+      const linha = registros.find((r) => r.id === id);
       const { error } = await supabase.from("planejamento_embarque").update(patch).eq("id", id);
       if (error) throw error;
+      if (linha) {
+        registrarAcao(
+          acaoEdicao(
+            linha as unknown as LinhaPlanejamento,
+            patch,
+            descricao ?? `Editou registro de ${linha.nome}`,
+          ),
+        );
+      }
     },
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ["planejamento-embarque"] });
@@ -1483,8 +1614,16 @@ export function PlanejamentoEmbarqueTab() {
 
   const excluirRegistro = useMutation({
     mutationFn: async (id: string) => {
+      const linha = registros.find((r) => r.id === id);
       const { error } = await supabase.from("planejamento_embarque").delete().eq("id", id);
       if (error) throw error;
+      if (linha) {
+        registrarAcao({
+          tipo: "excluir",
+          linha: { ...linha } as unknown as LinhaPlanejamento,
+          descricao: `Excluiu registro de ${linha.nome}`,
+        });
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["planejamento-embarque"] });
@@ -1718,6 +1857,20 @@ export function PlanejamentoEmbarqueTab() {
         return a.nome.localeCompare(b.nome, "pt-BR");
       });
   }, [linhasSemStatus, filterStatus, sortRules]);
+  // Terceirizados ficam na lista só para consulta, fora de toda contagem (pedido dela,
+  // 2026-11-10) — voltam a contar assim que o Status muda.
+  const terceirizadosNaLista = useMemo(
+    () => linhas.filter((r) => statusPlanejamentoForaDaContagem(r.status)).length,
+    [linhas],
+  );
+  // Headcount Total / Headcount Offshore, mesma regra dos cartões do Dashboard (pedido dela,
+  // 2026-11-16), mas sobre a lista FILTRADA: Total = sem Terceirizados; Offshore = Total sem os
+  // Bloqueados (Base Henrique, Bloqueio - Base - Henrique, Na Base, Bloqueio Temporário/RH).
+  const headcount = useMemo(() => {
+    const quadro = linhas.filter((r) => !statusPlanejamentoForaDaContagem(r.status));
+    const bloqueados = quadro.filter((r) => statusPlanejamentoBloqueado(r.status, r.rh_bloqueado)).length;
+    return { total: quadro.length, bloqueados, offshore: quadro.length - bloqueados };
+  }, [linhas]);
 
   const exportarPlanejamento = () => {
     const rows = linhas.map((r) => ({
@@ -1896,6 +2049,25 @@ export function PlanejamentoEmbarqueTab() {
             <X className="mr-1.5 h-3.5 w-3.5" />
             Limpar filtros
           </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8"
+            onClick={pedirDesfazer}
+            disabled={!ultimaAcao}
+            loading={desfazer.isPending}
+            title={
+              ultimaAcao
+                ? `Desfazer: ${rotuloAcao(ultimaAcao)} (Ctrl+Z)`
+                : "Nenhuma ação para desfazer nesta sessão"
+            }
+          >
+            <Undo2 className="mr-1.5 h-3.5 w-3.5" />
+            Desfazer
+            {pilhaDesfazer.length > 0 && (
+              <span className="ml-1 text-muted-foreground">({pilhaDesfazer.length})</span>
+            )}
+          </Button>
           <Button size="sm" variant="outline" className="h-8" onClick={exportarPlanejamento}>
             <Download className="mr-1.5 h-3.5 w-3.5" />
             Exportar
@@ -1908,13 +2080,31 @@ export function PlanejamentoEmbarqueTab() {
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             Novo colaborador
           </Button>
+          <PreencherMatriculasBotao
+            registros={registros}
+            onLinhaAtualizada={(linha, matricula) =>
+              registrarAcao(
+                acaoEdicao(
+                  linha as unknown as LinhaPlanejamento,
+                  { matricula },
+                  `Preencheu a matrícula de ${linha.nome} (${matricula})`,
+                ),
+              )
+            }
+            onConcluido={registrarLog}
+          />
           <div
             className="flex items-center gap-1.5 rounded px-2 py-0.5 h-8 text-[11px] bg-muted border border-border/60"
-            title="Total de registros na lista filtrada"
+            title="Total de registros na lista filtrada (Terceirizados ficam fora da contagem)"
           >
             <Users className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="font-bold">{linhas.length}</span>
+            <span className="font-bold">{linhas.length - terceirizadosNaLista}</span>
             <span className="text-muted-foreground">colaborador(es)</span>
+            {terceirizadosNaLista > 0 && (
+              <span className="text-muted-foreground">
+                · +{terceirizadosNaLista} terceirizado(s) fora da contagem
+              </span>
+            )}
           </div>
           <Button asChild type="button" size="sm" variant="outline" className="h-8">
             <Link
@@ -1972,6 +2162,34 @@ export function PlanejamentoEmbarqueTab() {
         </SheetContent>
       </Sheet>
 
+      {/* Mesmos totais do Dashboard, respeitando os filtros acima (pedido dela, 2026-11-16). */}
+      <div className="grid grid-cols-2 gap-2">
+        <Card
+          className="p-3"
+          title="Todos da lista filtrada, inclusive os Bloqueados (Terceirizados ficam fora)"
+        >
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <Users className="h-3.5 w-3.5" /> Headcount Total
+          </div>
+          <div className="text-2xl font-bold tabular-nums">{headcount.total}</div>
+          <div className="text-[10px] text-muted-foreground">com os Bloqueados</div>
+        </Card>
+        <Card
+          className="border-sky-300 bg-sky-50/60 p-3 dark:border-sky-800 dark:bg-sky-950/30"
+          title="Headcount Total sem os Bloqueados — mesma base da Taxa de Ocupação do Dashboard"
+        >
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <Users className="h-3.5 w-3.5" /> Headcount Offshore
+          </div>
+          <div className="text-2xl font-bold tabular-nums">{headcount.offshore}</div>
+          <div className="text-[10px] text-muted-foreground">
+            {headcount.bloqueados > 0
+              ? `sem os ${headcount.bloqueados} bloqueados`
+              : "nenhum bloqueado na lista"}
+          </div>
+        </Card>
+      </div>
+
       {contagemStatus.length > 0 && (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
           {contagemStatus.map(([status, total]) => {
@@ -1991,7 +2209,12 @@ export function PlanejamentoEmbarqueTab() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") e.currentTarget.click();
                 }}
-                className={`cursor-pointer p-3 transition-colors hover:bg-muted/60 ${ativo ? "border-primary bg-primary/5" : ""}`}
+                className={`cursor-pointer p-3 transition-colors hover:bg-muted/60 ${ativo ? "border-primary bg-primary/5" : ""} ${statusPlanejamentoForaDaContagem(status) ? "border-dashed opacity-70" : ""}`}
+                title={
+                  statusPlanejamentoForaDaContagem(status)
+                    ? "Só para consulta — Terceirizados não entram em nenhuma contagem"
+                    : undefined
+                }
               >
                 <div
                   className="text-[10px] uppercase tracking-wide text-muted-foreground truncate"
@@ -2000,6 +2223,9 @@ export function PlanejamentoEmbarqueTab() {
                   {status}
                 </div>
                 <div className="text-xl font-bold tabular-nums">{total}</div>
+                {statusPlanejamentoForaDaContagem(status) && (
+                  <div className="text-[10px] text-muted-foreground">fora da contagem</div>
+                )}
               </Card>
             );
           })}
@@ -2106,6 +2332,11 @@ export function PlanejamentoEmbarqueTab() {
                 sortRules={sortRules}
                 onSort={toggleSort}
               />
+              {enderecos && (
+                <TableHead title="Endereço cadastrado no Drake (pela matrícula) — logística de deslocamento">
+                  Endereço
+                </TableHead>
+              )}
               <TableHead className="w-20">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -2397,6 +2628,24 @@ export function PlanejamentoEmbarqueTab() {
                     }
                   />
                 </TableCell>
+                {enderecos && (
+                  <TableCell className="text-xs">
+                    {(() => {
+                      if (!r.matricula?.trim())
+                        return <span className="text-muted-foreground">sem matrícula</span>;
+                      const e = enderecoDaLinha(enderecos, r.matricula);
+                      return e ? (
+                        <span className="block max-w-[280px] truncate" title={e}>
+                          {e}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground" title="Sem endereço cadastrado no Drake">
+                          —
+                        </span>
+                      );
+                    })()}
+                  </TableCell>
+                )}
                 <TableCell>
                   <div className="flex gap-1">
                     <Button
@@ -2421,7 +2670,7 @@ export function PlanejamentoEmbarqueTab() {
             ))}
             {linhas.length === 0 && (
               <EmptyStateRow
-                colSpan={17}
+                colSpan={enderecos ? 18 : 17}
                 icon={Users}
                 title="Nenhum registro encontrado"
                 description="Importe uma planilha ou ajuste os filtros de busca."
@@ -2434,6 +2683,7 @@ export function PlanejamentoEmbarqueTab() {
       {(editing || criando) && (
         <PlanejamentoEditDialog
           row={editing}
+          onAcao={registrarAcao}
           onClose={() => {
             setEditing(null);
             setCriando(false);
@@ -2442,7 +2692,8 @@ export function PlanejamentoEmbarqueTab() {
       )}
       {showImportar && (
         <ImportarPlanejamentoDialog
-          totalAtual={registros.length}
+          registrosAtuais={registros}
+          onAcao={registrarAcao}
           onClose={() => setShowImportar(false)}
         />
       )}
@@ -2452,7 +2703,8 @@ export function PlanejamentoEmbarqueTab() {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir registro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Excluir o registro de {excluindo?.nome}? Essa ação não pode ser desfeita.
+              Excluir o registro de {excluindo?.nome}? Se precisar, dá para voltar pelo botão
+              "Desfazer" enquanto esta página estiver aberta.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -2462,6 +2714,28 @@ export function PlanejamentoEmbarqueTab() {
               onClick={() => excluindo && excluirRegistro.mutate(excluindo.id)}
             >
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmarDesfazerImport} onOpenChange={setConfirmarDesfazerImport}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desfazer a importação?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A lista atual ({registros.length} registro(s)) será substituída pela lista de antes da
+              importação ({ultimaAcao?.tipo === "importar" ? ultimaAcao.linhas.length : 0}{" "}
+              registro(s)). Alterações feitas por qualquer pessoa depois da importação serão
+              perdidas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => ultimaAcao?.tipo === "importar" && desfazer.mutate(ultimaAcao)}
+            >
+              Desfazer importação
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

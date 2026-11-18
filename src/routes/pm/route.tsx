@@ -36,7 +36,7 @@ function PmLayout() {
       data-app-shell
       className="min-h-dvh min-w-0 max-w-full bg-gradient-to-br from-slate-50 to-slate-100/60"
     >
-      <header className="sticky top-0 z-10 border-b bg-[#0f2744]/90 backdrop-blur-md border-white/10">
+      <header className="sticky top-0 z-40 border-b bg-[#0f2744]/90 backdrop-blur-md border-white/10">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-3 py-3 sm:flex sm:justify-between sm:px-4 lg:px-6">
           <div className="flex min-w-0 items-center gap-4">
             <BrandLogo className="h-9 w-auto shrink-0 sm:h-11" />

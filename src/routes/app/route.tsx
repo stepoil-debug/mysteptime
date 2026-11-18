@@ -52,7 +52,7 @@ function AppLayout() {
       data-app-shell
       className="flex min-h-dvh min-w-0 max-w-full flex-col bg-gradient-to-b from-background to-muted/40 pb-20"
     >
-      <header className="sticky top-0 z-10 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 bg-[#0f2744]/90 backdrop-blur-md border-b border-white/10 px-3 py-3 text-sidebar-foreground sm:flex sm:justify-between sm:px-4">
+      <header className="sticky top-0 z-40 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 bg-[#0f2744]/90 backdrop-blur-md border-b border-white/10 px-3 py-3 text-sidebar-foreground sm:flex sm:justify-between sm:px-4">
         <div className="flex min-w-0 items-center gap-3">
           <BrandLogo className="h-9 w-auto shrink-0" />
           <div className="min-w-0 leading-tight">

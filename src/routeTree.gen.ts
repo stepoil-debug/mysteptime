@@ -49,6 +49,7 @@ import { Route as ApiAuthIntranetRouteImport } from './routes/api/auth/intranet'
 import { Route as ApiPublicFlowTrackDemandasSyncRouteImport } from './routes/api/public/flow-track-demandas-sync'
 import { Route as ApiPublicLgpFlowMonitoringRouteImport } from './routes/api/public/lgp-flow-monitoring'
 import { Route as ApiPublicMontadoresAndaimeHabitatRouteImport } from './routes/api/public/montadores-andaime-habitat'
+import { Route as ApiIntegrationsDrakeCronRouteImport } from './routes/api/integrations/drake/cron'
 import { Route as ApiIntegrationsDrakeQualificationEligibilityRouteImport } from './routes/api/integrations/drake/qualification-eligibility'
 import { Route as ApiIntegrationsDrakeQualificationUpdateRouteImport } from './routes/api/integrations/drake/qualification-update'
 import { Route as ApiIntegrationsDrakeUpdateRouteImport } from './routes/api/integrations/drake/update'
@@ -260,6 +261,12 @@ const ApiPublicMontadoresAndaimeHabitatRoute =
     path: '/api/public/montadores-andaime-habitat',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiIntegrationsDrakeCronRoute =
+  ApiIntegrationsDrakeCronRouteImport.update({
+    id: '/api/integrations/drake/cron',
+    path: '/api/integrations/drake/cron',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiIntegrationsDrakeQualificationEligibilityRoute =
   ApiIntegrationsDrakeQualificationEligibilityRouteImport.update({
     id: '/api/integrations/drake/qualification-eligibility',
@@ -338,6 +345,7 @@ export interface FileRoutesByFullPath {
   '/api/public/flow-track-demandas-sync': typeof ApiPublicFlowTrackDemandasSyncRoute
   '/api/public/lgp-flow-monitoring': typeof ApiPublicLgpFlowMonitoringRoute
   '/api/public/montadores-andaime-habitat': typeof ApiPublicMontadoresAndaimeHabitatRoute
+  '/api/integrations/drake/cron': typeof ApiIntegrationsDrakeCronRoute
   '/api/integrations/drake/qualification-eligibility': typeof ApiIntegrationsDrakeQualificationEligibilityRoute
   '/api/integrations/drake/qualification-update': typeof ApiIntegrationsDrakeQualificationUpdateRoute
   '/api/integrations/drake/update': typeof ApiIntegrationsDrakeUpdateRoute
@@ -383,6 +391,7 @@ export interface FileRoutesByTo {
   '/api/public/flow-track-demandas-sync': typeof ApiPublicFlowTrackDemandasSyncRoute
   '/api/public/lgp-flow-monitoring': typeof ApiPublicLgpFlowMonitoringRoute
   '/api/public/montadores-andaime-habitat': typeof ApiPublicMontadoresAndaimeHabitatRoute
+  '/api/integrations/drake/cron': typeof ApiIntegrationsDrakeCronRoute
   '/api/integrations/drake/qualification-eligibility': typeof ApiIntegrationsDrakeQualificationEligibilityRoute
   '/api/integrations/drake/qualification-update': typeof ApiIntegrationsDrakeQualificationUpdateRoute
   '/api/integrations/drake/update': typeof ApiIntegrationsDrakeUpdateRoute
@@ -432,6 +441,7 @@ export interface FileRoutesById {
   '/api/public/flow-track-demandas-sync': typeof ApiPublicFlowTrackDemandasSyncRoute
   '/api/public/lgp-flow-monitoring': typeof ApiPublicLgpFlowMonitoringRoute
   '/api/public/montadores-andaime-habitat': typeof ApiPublicMontadoresAndaimeHabitatRoute
+  '/api/integrations/drake/cron': typeof ApiIntegrationsDrakeCronRoute
   '/api/integrations/drake/qualification-eligibility': typeof ApiIntegrationsDrakeQualificationEligibilityRoute
   '/api/integrations/drake/qualification-update': typeof ApiIntegrationsDrakeQualificationUpdateRoute
   '/api/integrations/drake/update': typeof ApiIntegrationsDrakeUpdateRoute
@@ -482,6 +492,7 @@ export interface FileRouteTypes {
     | '/api/public/flow-track-demandas-sync'
     | '/api/public/lgp-flow-monitoring'
     | '/api/public/montadores-andaime-habitat'
+    | '/api/integrations/drake/cron'
     | '/api/integrations/drake/qualification-eligibility'
     | '/api/integrations/drake/qualification-update'
     | '/api/integrations/drake/update'
@@ -527,6 +538,7 @@ export interface FileRouteTypes {
     | '/api/public/flow-track-demandas-sync'
     | '/api/public/lgp-flow-monitoring'
     | '/api/public/montadores-andaime-habitat'
+    | '/api/integrations/drake/cron'
     | '/api/integrations/drake/qualification-eligibility'
     | '/api/integrations/drake/qualification-update'
     | '/api/integrations/drake/update'
@@ -575,6 +587,7 @@ export interface FileRouteTypes {
     | '/api/public/flow-track-demandas-sync'
     | '/api/public/lgp-flow-monitoring'
     | '/api/public/montadores-andaime-habitat'
+    | '/api/integrations/drake/cron'
     | '/api/integrations/drake/qualification-eligibility'
     | '/api/integrations/drake/qualification-update'
     | '/api/integrations/drake/update'
@@ -596,6 +609,7 @@ export interface RootRouteChildren {
   ApiPublicFlowTrackDemandasSyncRoute: typeof ApiPublicFlowTrackDemandasSyncRoute
   ApiPublicLgpFlowMonitoringRoute: typeof ApiPublicLgpFlowMonitoringRoute
   ApiPublicMontadoresAndaimeHabitatRoute: typeof ApiPublicMontadoresAndaimeHabitatRoute
+  ApiIntegrationsDrakeCronRoute: typeof ApiIntegrationsDrakeCronRoute
   ApiIntegrationsDrakeQualificationEligibilityRoute: typeof ApiIntegrationsDrakeQualificationEligibilityRoute
   ApiIntegrationsDrakeQualificationUpdateRoute: typeof ApiIntegrationsDrakeQualificationUpdateRoute
   ApiIntegrationsDrakeUpdateRoute: typeof ApiIntegrationsDrakeUpdateRoute
@@ -886,6 +900,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMontadoresAndaimeHabitatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/integrations/drake/cron': {
+      id: '/api/integrations/drake/cron'
+      path: '/api/integrations/drake/cron'
+      fullPath: '/api/integrations/drake/cron'
+      preLoaderRoute: typeof ApiIntegrationsDrakeCronRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/integrations/drake/qualification-eligibility': {
       id: '/api/integrations/drake/qualification-eligibility'
       path: '/api/integrations/drake/qualification-eligibility'
@@ -1041,6 +1062,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicLgpFlowMonitoringRoute: ApiPublicLgpFlowMonitoringRoute,
   ApiPublicMontadoresAndaimeHabitatRoute:
     ApiPublicMontadoresAndaimeHabitatRoute,
+  ApiIntegrationsDrakeCronRoute: ApiIntegrationsDrakeCronRoute,
   ApiIntegrationsDrakeQualificationEligibilityRoute:
     ApiIntegrationsDrakeQualificationEligibilityRoute,
   ApiIntegrationsDrakeQualificationUpdateRoute:
