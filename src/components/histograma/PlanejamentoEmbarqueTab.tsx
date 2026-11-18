@@ -1890,6 +1890,9 @@ export function PlanejamentoEmbarqueTab() {
       "Início Férias": r.ferias_inicio ? fmtDateHeadcount(r.ferias_inicio) : "—",
       "Fim Férias": r.ferias_fim ? fmtDateHeadcount(r.ferias_fim) : "—",
       Observações: r.observacoes ?? "—",
+      // Endereço do Drake (pedido dela, 2026-11-18) — só sai pra quem enxerga a coluna na tela
+      // (operadores/admins; dado pessoal, LGPD).
+      ...(enderecos ? { Endereço: enderecoDaLinha(enderecos, r.matricula) ?? "—" } : {}),
     }));
     if (rows.length === 0) {
       notify.error("Nenhum registro pra exportar com os filtros atuais.");
