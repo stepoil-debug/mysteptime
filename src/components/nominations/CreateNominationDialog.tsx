@@ -96,6 +96,7 @@ const FUNCOES_FIXAS = [
   "Inspetor de Pintura",
   "Hidrojatista",
   "Mecânico de Hidrojato",
+  "Coordenador",
   "Técnico de Segurança",
 ];
 // BSPs cadastradas manualmente por unidade (pedido dela, 2026-10-30: SEMCO / Deep Blue).
