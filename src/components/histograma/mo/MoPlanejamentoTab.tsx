@@ -6,6 +6,8 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  ChevronsDownUp,
+  ChevronsUpDown,
   Copy,
   Download,
   History,
@@ -774,7 +776,9 @@ export function MoPlanejamentoTab() {
   const [de, setDe] = useState("");
   const [ate, setAte] = useState("");
   const [ocultarEncerradas, setOcultarEncerradas] = useState(false);
-  const [recolhidas, setRecolhidas] = useState<Set<string>>(new Set());
+  // Cascatas por unidade abrem SEMPRE recolhidas (pedido dela, 2026-11-18); só abre o que ela
+  // expandir. Guarda as ABERTAS (e não as recolhidas) para unidade nova também nascer fechada.
+  const [abertas, setAbertas] = useState<Set<string>>(new Set());
   const [adicionando, setAdicionando] = useState(false);
   const [importacao, setImportacao] = useState<{
     linhas: MoLinhaImportada[];
@@ -888,6 +892,9 @@ export function MoPlanejamentoTab() {
     ]);
   const novaLinha = () => {
     const base = filtrados[filtrados.length - 1];
+    // A linha nova aparece dentro da cascata dela — abre essa unidade.
+    const unidadeNova = base?.unidade ?? "NOVA UNIDADE";
+    setAbertas((s) => new Set(s).add(unidadeNova));
     inserir.mutate([
       {
         qtd: 1,
@@ -1047,6 +1054,22 @@ export function MoPlanejamentoTab() {
         >
           <Download className="mr-1.5 h-3.5 w-3.5" /> Exportar .xlsx
         </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={grupos.length === 0}
+          onClick={() => setAbertas(new Set(grupos.map(([u]) => u)))}
+        >
+          <ChevronsUpDown className="mr-1.5 h-3.5 w-3.5" /> Expandir tudo
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={abertas.size === 0}
+          onClick={() => setAbertas(new Set())}
+        >
+          <ChevronsDownUp className="mr-1.5 h-3.5 w-3.5" /> Recolher tudo
+        </Button>
         <p className="self-center text-[11px] text-muted-foreground">
           Dica: copie as colunas B:H da aba M.O no Excel e cole aqui (Ctrl+V). Enter desce de linha;
           Tab passa de célula; tudo salva sozinho.
@@ -1084,7 +1107,7 @@ export function MoPlanejamentoTab() {
               </tr>
             )}
             {grupos.map(([unidade, linhas]) => {
-              const fechado = recolhidas.has(unidade);
+              const fechado = !abertas.has(unidade);
               const subtotal = linhas
                 .filter((l) => !ehOnHold(l.bsp))
                 .reduce((s, l) => s + l.qtd, 0);
@@ -1096,7 +1119,7 @@ export function MoPlanejamentoTab() {
                         type="button"
                         className="flex items-center gap-1.5 font-semibold"
                         onClick={() =>
-                          setRecolhidas((s) => {
+                          setAbertas((s) => {
                             const n = new Set(s);
                             if (n.has(unidade)) n.delete(unidade);
                             else n.add(unidade);

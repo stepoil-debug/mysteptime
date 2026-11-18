@@ -91,7 +91,13 @@ export async function uploadScopeDocument(file: File): Promise<{ path: string; n
 const UNIDADES_FIXAS = ["Bravo", "Deep Blue"];
 // Funções que entram na lista mesmo sem ninguém no Planejamento de Embarque ainda (pedido dela,
 // 2026-11-12: futuras contratações).
-const FUNCOES_FIXAS = ["Inspetor de Pintura", "Hidrojatista", "Mecânico de Hidrojato"];
+// 2026-11-18: + Técnico de Segurança.
+const FUNCOES_FIXAS = [
+  "Inspetor de Pintura",
+  "Hidrojatista",
+  "Mecânico de Hidrojato",
+  "Técnico de Segurança",
+];
 // BSPs cadastradas manualmente por unidade (pedido dela, 2026-10-30: SEMCO / Deep Blue).
 const BSPS_FIXAS_POR_UNIDADE: Record<string, string[]> = { "Deep Blue": ["26-894-02"] };
 
