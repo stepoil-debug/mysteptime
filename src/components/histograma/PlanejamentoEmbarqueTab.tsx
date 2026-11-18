@@ -70,6 +70,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRascunho, RascunhoAviso } from "@/hooks/useRascunho";
 import { PlanejamentoStatusAuditoria } from "@/components/histograma/PlanejamentoStatusAuditoria";
 import {
+  PreencherMatriculasBotao,
+  enderecoDaLinha,
+  useEnderecosDrake,
+} from "@/components/histograma/PlanejamentoDrakeCadastro";
+import {
   acaoEdicao,
   camposAlteradosDepois,
   empilhar,
@@ -1491,6 +1496,8 @@ export function PlanejamentoEmbarqueTab() {
   const registrarLog = useRegistrarLogPlanejamento();
   const { data: registros = [], isLoading } = usePlanejamentoEmbarqueQuery();
   const { data: colaboradoresVistos = [] } = usePlanejamentoColaboradoresVistosQuery();
+  // Endereço do Drake (logística de deslocamento — pedido dela, 2026-11-18). null = sem acesso.
+  const { data: enderecos = null } = useEnderecosDrake();
   const primeiraVezPorNome = useMemo(
     () => new Map(colaboradoresVistos.map((v) => [v.nome_normalizado, v.primeira_vez_em])),
     [colaboradoresVistos],
@@ -2073,6 +2080,19 @@ export function PlanejamentoEmbarqueTab() {
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             Novo colaborador
           </Button>
+          <PreencherMatriculasBotao
+            registros={registros}
+            onLinhaAtualizada={(linha, matricula) =>
+              registrarAcao(
+                acaoEdicao(
+                  linha as unknown as LinhaPlanejamento,
+                  { matricula },
+                  `Preencheu a matrícula de ${linha.nome} (${matricula})`,
+                ),
+              )
+            }
+            onConcluido={registrarLog}
+          />
           <div
             className="flex items-center gap-1.5 rounded px-2 py-0.5 h-8 text-[11px] bg-muted border border-border/60"
             title="Total de registros na lista filtrada (Terceirizados ficam fora da contagem)"
@@ -2312,6 +2332,11 @@ export function PlanejamentoEmbarqueTab() {
                 sortRules={sortRules}
                 onSort={toggleSort}
               />
+              {enderecos && (
+                <TableHead title="Endereço cadastrado no Drake (pela matrícula) — logística de deslocamento">
+                  Endereço
+                </TableHead>
+              )}
               <TableHead className="w-20">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -2603,6 +2628,24 @@ export function PlanejamentoEmbarqueTab() {
                     }
                   />
                 </TableCell>
+                {enderecos && (
+                  <TableCell className="text-xs">
+                    {(() => {
+                      if (!r.matricula?.trim())
+                        return <span className="text-muted-foreground">sem matrícula</span>;
+                      const e = enderecoDaLinha(enderecos, r.matricula);
+                      return e ? (
+                        <span className="block max-w-[280px] truncate" title={e}>
+                          {e}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground" title="Sem endereço cadastrado no Drake">
+                          —
+                        </span>
+                      );
+                    })()}
+                  </TableCell>
+                )}
                 <TableCell>
                   <div className="flex gap-1">
                     <Button
@@ -2627,7 +2670,7 @@ export function PlanejamentoEmbarqueTab() {
             ))}
             {linhas.length === 0 && (
               <EmptyStateRow
-                colSpan={17}
+                colSpan={enderecos ? 18 : 17}
                 icon={Users}
                 title="Nenhum registro encontrado"
                 description="Importe uma planilha ou ajuste os filtros de busca."

@@ -229,6 +229,30 @@ async function updateDrakeDataInner(
       });
     }
 
+    // Etapas extras (pedido dela, 2026-11-18): 1) matrícula automática de quem está sem ela no
+    // Planejamento (só nome igual e cadastro único); 2) endereço do Drake de quem está no
+    // Planejamento (coluna "Endereço"). Mesma regra: falha aqui é só aviso.
+    try {
+      const { preencherMatriculasPlanejamento } = await import(
+        "./matriculas-planejamento-sync.server"
+      );
+      await preencherMatriculasPlanejamento(db);
+    } catch (error: unknown) {
+      logger.warn("drake-update", "Matriculas do Planejamento nao preenchidas (seguindo sem elas)", {
+        sanitizedMessage:
+          error instanceof Error ? error.message.slice(0, 300) : String(error).slice(0, 300),
+      });
+    }
+    try {
+      const { synchronizeDrakeEnderecos } = await import("./enderecos-sync.server");
+      await withSessionRetry((ctx) => synchronizeDrakeEnderecos(db, ctx));
+    } catch (error: unknown) {
+      logger.warn("drake-update", "Enderecos nao sincronizados (seguindo sem eles)", {
+        sanitizedMessage:
+          error instanceof Error ? error.message.slice(0, 300) : String(error).slice(0, 300),
+      });
+    }
+
     await emit("annual-position-completed", { status: "completed" });
     await emit("finalizing", { status: "completed" });
 
