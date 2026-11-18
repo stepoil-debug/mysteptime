@@ -2,8 +2,7 @@ import { serve } from "https://deno.land/std/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Ações administrativas de usuário (criar usuário / redefinir senha) exigem a service_role
-// key do Supabase. Via Lovable Cloud o projeto nunca expõe essa chave pro app (não existe
-// service_role no .env local nem no painel da Lovable) — só as Edge Functions recebem essa
+// key do Supabase, que nunca vai para o navegador — só as Edge Functions recebem essa
 // chave automaticamente em tempo de execução (SUPABASE_SERVICE_ROLE_KEY injetada pelo
 // runtime). Por isso a ação em si mora aqui, e o backend do app (adminUserManagement.
 // functions.ts) só encaminha a chamada, repassando o token de quem está logado.

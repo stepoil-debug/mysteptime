@@ -8,9 +8,9 @@ const NO_STORE = {
 };
 const failure = (status: number, error: string) => Response.json({ ok: false, error }, { status, headers: NO_STORE });
 
-// O Mysteptime agora roda no próprio Supabase da Intranet: a RPC de consumo do ticket é do mesmo projeto.
-const INTRANET_SUPABASE_URL = process.env.SUPABASE_URL || "https://qxmxtbjxkhecqilpnhgq.supabase.co";
-const INTRANET_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || "sb_publishable_TiGdrzZ6H7TCjQ8wPaAkzA_cQxVxdvr";
+// O Mysteptime tem Supabase próprio; o ticket é consumido na RPC do Supabase da Intranet (projeto separado).
+const INTRANET_SUPABASE_URL = process.env.INTRANET_SUPABASE_URL || "https://qxmxtbjxkhecqilpnhgq.supabase.co";
+const INTRANET_PUBLISHABLE_KEY = process.env.INTRANET_SUPABASE_PUBLISHABLE_KEY || "sb_publishable_TiGdrzZ6H7TCjQ8wPaAkzA_cQxVxdvr";
 
 /**
  * This route is server-only. It never accepts an email or a user id from the

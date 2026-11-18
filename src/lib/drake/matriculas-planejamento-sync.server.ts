@@ -12,7 +12,7 @@ import { logger } from "./logger";
 // Registra no Histórico do Planejamento. Quem chama trata falha como aviso.
 
 export async function preencherMatriculasPlanejamento(
-  db: SupabaseClient,
+  db: SupabaseClient<any, "mysteptime", "mysteptime">,
 ): Promise<{ preenchidas: number }> {
   const [planejamento, cadastros] = await Promise.all([
     selectAllPages<{ id: string; nome: string; matricula: string | null }>((from, to) =>

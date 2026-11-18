@@ -1,5 +1,5 @@
 // Extrai o número da nota fiscal de um texto OCR. IA própria (API da Anthropic) no lugar do gateway
-// do Lovable. Secret da função: ANTHROPIC_API_KEY. Publicada na Intranet como mysteptime-extract-invoice-number-ai.
+// antigo. Secret da função: ANTHROPIC_API_KEY. Publicada no Supabase próprio do Mysteptime (knzszyxsspdjzgqkfrdt).
 import Anthropic from "npm:@anthropic-ai/sdk@1.6.0";
 
 const corsHeaders = {

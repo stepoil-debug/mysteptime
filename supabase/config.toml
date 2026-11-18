@@ -1,4 +1,4 @@
-project_id = "lzahnaekoiervgqxmouv"
+project_id = "knzszyxsspdjzgqkfrdt"
 
 # Chamada pelo pg_cron via pg_net (ver migration 20260826000000_schedule_turma_alerts.sql),
 # não por um usuário logado — não tem JWT de sessão pra verificar. A função valida sozinha um
@@ -7,11 +7,6 @@ project_id = "lzahnaekoiervgqxmouv"
 verify_jwt = false
 
 [functions.create-fixed-nominations]
-verify_jwt = false
-
-# Entrada direta pelo Intranet STEP One: chamada pelo servidor do Intranet com um ticket de uso
-# único validado na própria função (RPC do Intranet), não por usuário logado aqui.
-[functions.intranet-bridge]
 verify_jwt = false
 
 # Mesmo esquema (pg_cron via pg_net) — ver migration 20260929000000_schedule_planejamento_snapshot.sql.

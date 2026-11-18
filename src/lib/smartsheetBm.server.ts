@@ -6,7 +6,7 @@ import process from "node:process";
 // VITE_SMARTSHEET_TOKEN e vaza pro bundle — problema separado, não corrigido aqui).
 //
 // Credencial: SMARTSHEET_API_TOKEN (sem prefixo VITE_) configurada como secret no
-// Lovable Cloud / Supabase, lida via process.env dentro de cada handler (não no escopo
+// Supabase / Vercel, lida via process.env dentro de cada handler (não no escopo
 // do módulo — em runtimes tipo Cloudflare Workers, env só resolve por request).
 
 const SMARTSHEET_BASE = "https://api.smartsheet.com/2.0";

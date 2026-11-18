@@ -61,3 +61,17 @@ Secretas, cadastradas pelo responsável e nunca no repositório: `SUPABASE_SERVI
 ## Testes
 
 `npx vitest run`: 14 falhas, as mesmas que já existiam na `main` antes da migração (filtros `ativo=true` e cookie jar do Drake); nenhuma falha nova.
+
+## Mudança de 2026-11-18: Supabase próprio do Mysteptime
+
+Para não sobrecarregar o Supabase da Intranet, o Mysteptime passou para um projeto Supabase **separado**:
+`knzszyxsspdjzgqkfrdt` (schema `mysteptime`). A Intranet só valida o ticket de entrada.
+
+- Schema: 89 tabelas, 60 funções, 251 policies, 13 enums (202 migrations, incluindo as da `main` até 18/11), sem divergência de colunas.
+- Dados: copiados do schema `mysteptime` da Intranet — 84 tabelas, contagens iguais à origem; 43 contas de Auth com os mesmos UUIDs.
+- Storage: 3 buckets, 20 arquivos (tamanhos conferidos), 5 policies iguais às da origem.
+- Edge Functions publicadas sem prefixo: admin-user-management, capture-planejamento-snapshot, check-turma-alerts,
+  create-fixed-nominations, extract-invoice-number-ai, get-bm-smartsheet-data.
+- Cron: **não aplicado** até a virada (`supabase/cutover/cron.sql`).
+- Na virada: sincronização final a partir do Lovable apontando os scripts para `MYSTEPTIME_DB_URL`; depois apagar o schema
+  `mysteptime` da Intranet (destrutivo, com confirmação).

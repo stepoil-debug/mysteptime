@@ -4,7 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 // (migration 20261112010000_schedule_drake_sync.sql), com o header x-cron-secret igual ao
 // segredo 'drake_cron_secret' do Vault do banco. A conferência é feita no próprio banco pela
 // RPC drake_cron_secret_ok (migration 20261112030000) — assim não depende de configurar secret
-// no Lovable. Se CRON_SECRET existir no ambiente do app, ele também vale (conferido aqui mesmo).
+// na hospedagem. Se CRON_SECRET existir no ambiente do app, ele também vale (conferido aqui mesmo).
 // Senha errada ou ausente = 401 e nada acontece. Não muda a sincronização em si: roda a mesma
 // janela automática de drake-scheduler.server.ts.
 
@@ -29,7 +29,7 @@ async function segredoValido(recebido: string): Promise<boolean> {
   if (!url || !key) return false;
   const resp = await fetch(`${url}/rest/v1/rpc/drake_cron_secret_ok`, {
     method: "POST",
-    headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json", "Content-Profile": "mysteptime" },
     body: JSON.stringify({ p_secret: recebido }),
   });
   if (!resp.ok) return false;

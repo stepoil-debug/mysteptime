@@ -23,7 +23,7 @@ export const diagnoseEmailAlert = createServerFn({ method: "POST" })
     const roleAtual = roleRow?.role as string | undefined;
     if (!hasOperatorAccess(roleAtual)) throw new Error("Sem permissão.");
 
-    // IA própria (API da Anthropic) no lugar do gateway do Lovable. Chave: ANTHROPIC_API_KEY na Vercel.
+    // IA própria (API da Anthropic). Chave: ANTHROPIC_API_KEY na Vercel.
     if (!process.env["ANTHROPIC_API_KEY"]) throw new Error("Serviço de IA não configurado.");
     const { default: Anthropic } = await import("@anthropic-ai/sdk");
     const client = new Anthropic();

@@ -134,7 +134,7 @@ export function isTlsCertificateError(error: unknown): boolean {
 export function formatTlsCertificateErrorMessage(): string {
   return [
     "Falha de validacao TLS ao acessar o Drake.",
-    "O certificado HTTPS apresentado ao runtime do Lovable nao foi reconhecido.",
+    "O certificado HTTPS apresentado ao servidor nao foi reconhecido.",
   ].join("\n");
 }
 

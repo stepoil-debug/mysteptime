@@ -53,7 +53,7 @@ export interface DrakeSignalRSession {
 }
 
 /**
- * HttpClient SignalR baseado no fetch nativo do runtime Lovable.
+ * HttpClient SignalR baseado no fetch nativo do runtime do servidor.
  */
 class DrakeSignalRHttpClient extends HttpClient {
   override async send(request: HttpRequest): Promise<HttpResponse> {
@@ -180,7 +180,7 @@ async function resolveAccessToken(request: DrakeHttpClient): Promise<string> {
   return token;
 }
 
-// A conexão com o canal falha de forma intermitente no runtime do Lovable (16/11/2026: duas
+// A conexão com o canal falha de forma intermitente no servidor (16/11/2026: duas
 // falhas seguidas, enquanto do computador local abria em ~1,5 s). Tenta de novo antes de
 // desistir — só para falha de CONEXÃO; o resto do fluxo não muda.
 const SIGNALR_TENTATIVAS = 3;

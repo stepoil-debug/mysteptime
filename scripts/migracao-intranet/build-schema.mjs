@@ -6,7 +6,8 @@ import path from "node:path";
 import { splitSql } from "./split.mjs";
 
 const [dir, out] = process.argv.slice(2);
-const INTRANET_FN = "https://qxmxtbjxkhecqilpnhgq.supabase.co/functions/v1/mysteptime-";
+// Destino das Edge Functions (padrão: Supabase próprio do Mysteptime, funções sem prefixo).
+const INTRANET_FN = process.env.TARGET_FN_URL || "https://knzszyxsspdjzgqkfrdt.supabase.co/functions/v1/";
 
 export function transform(sql) {
   let s = sql;

@@ -17,7 +17,7 @@ type DueSchedule = {
   trigger: ScheduledTrigger;
 };
 
-const GLOBAL_KEY = "__drakeLovableSchedulerState" as const;
+const GLOBAL_KEY = "__drakeSchedulerState" as const;
 
 type GlobalSchedulerState = {
   attemptedSlots: Set<string>;
@@ -85,7 +85,7 @@ async function safeRunScheduled(schedule: DueSchedule): Promise<void> {
 }
 
 /**
- * Scheduler oportunista do runtime Lovable. A primeira requisicao depois de cada
+ * Scheduler oportunista do servidor. A primeira requisicao depois de cada
  * janela dispara a atualizacao em background, sem processo residente ou servico extra.
  */
 export async function runDueDrakeSchedule(now = new Date()): Promise<boolean> {
@@ -103,7 +103,7 @@ export async function runDueDrakeSchedule(now = new Date()): Promise<boolean> {
     state.attemptedSlots.delete(oldest);
   }
 
-  logger.info("drake-scheduler", "Janela automatica iniciada pelo Lovable", {
+  logger.info("drake-scheduler", "Janela automatica iniciada pelo servidor", {
     trigger: due.trigger,
     intervalMinutes: config.intervalMinutes,
     scheduledFor: due.scheduledFor,
