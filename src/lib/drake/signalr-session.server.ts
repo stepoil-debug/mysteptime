@@ -180,7 +180,35 @@ async function resolveAccessToken(request: DrakeHttpClient): Promise<string> {
   return token;
 }
 
+// A conexão com o canal falha de forma intermitente no runtime do Lovable (16/11/2026: duas
+// falhas seguidas, enquanto do computador local abria em ~1,5 s). Tenta de novo antes de
+// desistir — só para falha de CONEXÃO; o resto do fluxo não muda.
+const SIGNALR_TENTATIVAS = 3;
+const SIGNALR_ESPERA_MS = [5_000, 15_000];
+
 export async function openDrakeSignalRSession(
+  request: DrakeHttpClient,
+  queryEvents?: {
+    executed: (payload: Record<string, unknown>) => void;
+    failed: (payload: Record<string, unknown>) => void;
+  },
+): Promise<DrakeSignalRSession> {
+  for (let tentativa = 1; ; tentativa++) {
+    try {
+      return await openDrakeSignalRSessionOnce(request, queryEvents);
+    } catch (error) {
+      const code = error instanceof DrakeIntegrationError ? error.code : "";
+      if (code !== DRAKE_SIGNALR_CONNECTION_FAILED || tentativa >= SIGNALR_TENTATIVAS) throw error;
+      logger.warn("drake-signalr", "Falha ao conectar; tentando de novo", {
+        tentativa,
+        motivo: error instanceof Error ? error.message.slice(0, 300) : String(error).slice(0, 300),
+      });
+      await new Promise((r) => setTimeout(r, SIGNALR_ESPERA_MS[tentativa - 1] ?? 15_000));
+    }
+  }
+}
+
+async function openDrakeSignalRSessionOnce(
   request: DrakeHttpClient,
   queryEvents?: {
     executed: (payload: Record<string, unknown>) => void;
@@ -383,9 +411,13 @@ export async function openDrakeSignalRSession(
   } catch (error) {
     if (connection) await connection.stop().catch(() => undefined);
     if (error instanceof DrakeIntegrationError) throw error;
+    // O motivo real vai junto na mensagem (fica no Log de Sincronização) para dar diagnóstico.
+    const motivo = (error instanceof Error ? error.message : String(error ?? "")).trim();
     throw new DrakeIntegrationError({
       code: DRAKE_SIGNALR_CONNECTION_FAILED,
-      message: "Falha ao conectar o canal de processamento do Drake.",
+      message: motivo
+        ? `Falha ao conectar o canal de processamento do Drake (${motivo.slice(0, 200)}).`
+        : "Falha ao conectar o canal de processamento do Drake.",
       stage: "signalr-connect",
       cause: error,
       details: {
