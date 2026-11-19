@@ -6,7 +6,8 @@
 --      select vault.create_secret(encode(extensions.gen_random_bytes(32),'hex'), 'drake_cron_secret');
 --   2. Edge Functions → Secrets: CRON_SECRET = mesmo valor de 'cron_secret'
 --      (select decrypted_secret from vault.decrypted_secrets where name='cron_secret').
---   3. Secrets das funções: SMTP_*, RESEND_API_KEY, RESEND_FROM, ANTHROPIC_API_KEY, SMARTSHEET_TOKEN, SMARTSHEET_ID_1/2.
+--   3. Vault: flow_track_sync_secret, com o mesmo valor de FLOW_TRACK_SYNC_SECRET na Vercel.
+--   4. Secrets das funções: SMTP_*, RESEND_API_KEY, RESEND_FROM, ANTHROPIC_API_KEY, SMARTSHEET_TOKEN, SMARTSHEET_ID_1/2.
 
 create extension if not exists pg_cron with schema extensions;
 create extension if not exists pg_net with schema extensions;
@@ -35,8 +36,11 @@ select cron.schedule('mysteptime-flow-track-demandas-sync', '*/15 * * * *', $$
   select net.http_post(
     url := 'https://mysteptime.vercel.app/mysteptime/api/public/flow-track-demandas-sync',
     headers := jsonb_build_object('Content-Type','application/json',
-      'x-flow-track-sync-token','b18a4d2afd13fbe329b0355b15a6d62c63f5e4fe2071f92e93e805416f5c0384'),
-    body := '{}'::jsonb);
+      'x-flow-track-sync-token',
+      (select decrypted_secret from vault.decrypted_secrets where name='flow_track_sync_secret' limit 1)),
+    body := '{}'::jsonb)
+  where exists (select 1 from vault.decrypted_secrets
+    where name='flow_track_sync_secret' and nullif(btrim(decrypted_secret), '') is not null);
 $$);
 
 select cron.schedule('mysteptime-drake-sync-horario-fixo', '5 9-23/2 * * *', $$

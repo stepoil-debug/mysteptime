@@ -49,8 +49,15 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
-    // A rota do cron já roda a janela automática ela mesma (e espera terminar).
-    if (!new URL(request.url).pathname.startsWith("/api/integrations/drake/cron")) {
+    // Disparo da sincronização do Drake "por visita" DESLIGADO (2026-11-18): no Lovable ele
+    // reservava a janela da hora (drake_scheduler_slots) e era interrompido no meio — as janelas
+    // ficavam "running" para sempre, sem sincronizar, e ainda bloqueavam o cron (que usa a mesma
+    // janela). Agora quem sincroniza é só o cron (/api/integrations/drake/cron, a cada 2 h) e o
+    // botão "Atualizar dados do Drake". Para religar: DRAKE_SCHEDULER_POR_VISITA=true.
+    if (
+      (process.env.DRAKE_SCHEDULER_POR_VISITA ?? "").trim().toLowerCase() === "true" &&
+      !new URL(request.url).pathname.startsWith("/api/integrations/drake/cron")
+    ) {
       scheduleDrakeUpdateForRequest(ctx);
     }
     try {
