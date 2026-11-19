@@ -138,20 +138,21 @@ describe("DrakeCookieJar", () => {
 
   it("atualiza jar com Set-Cookie em redirects sem quebrar Expires", () => {
     const jar = new DrakeCookieJar();
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toUTCString();
     jar.absorbSetCookieHeaders(
       [
-        "SapiensiaAuth=abc; Path=/; Domain=.drake.bz; Secure; HttpOnly; Expires=Wed, 21 Oct 2026 07:28:00 GMT",
+        `SapiensiaAuth=abc; Path=/; Domain=.drake.bz; Secure; HttpOnly; Expires=${expires}`,
       ],
       "https://drake.bz/logon",
     );
     const header = jar.cookieHeaderFor("https://drake.bz/api/v2/Authorization/Menu");
     expect(header).toContain("SapiensiaAuth=abc");
     const parsed = parseSingleSetCookie(
-      "X=1; Expires=Wed, 21 Oct 2026 07:28:00 GMT; Path=/",
+      `X=1; Expires=${expires}; Path=/`,
       "drake.bz",
     );
     expect(parsed?.name).toBe("X");
-    expect(parsed?.expires).toBeGreaterThan(0);
+    expect(parsed?.expires).toBe(Date.parse(expires) / 1000);
   });
 
   it("nao sobrescreve cookies com mesmo nome e paths diferentes", () => {

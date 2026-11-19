@@ -264,7 +264,7 @@ function usePassagensQuery() {
 
 function usePeriodosEQuery() {
   return useQuery<HistNovoPeriodo[]>({
-    queryKey: ["hist-novo-periodos"],
+    queryKey: ["hist-novo-periodos", "cadastro"],
     queryFn: () =>
       selectAllPages<HistNovoPeriodo>((from, to) =>
         supabase
@@ -285,7 +285,7 @@ interface ColaboradorBasico {
 }
 function useColaboradoresQuery() {
   return useQuery<ColaboradorBasico[]>({
-    queryKey: ["hist-novo-colaboradores"],
+    queryKey: ["hist-novo-colaboradores", "passagens-aereas"],
     queryFn: () =>
       selectAllPages<ColaboradorBasico>((from, to) =>
         supabase

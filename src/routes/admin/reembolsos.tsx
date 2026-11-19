@@ -74,7 +74,7 @@ function useReembolsosQuery() {
 
 function usePeriodosEQuery() {
   return useQuery<HistNovoPeriodo[]>({
-    queryKey: ["hist-novo-periodos"],
+    queryKey: ["hist-novo-periodos", "cadastro"],
     queryFn: () => selectAllPages<HistNovoPeriodo>((from, to) =>
       supabase.from("hist_novo_periodos").select("*").gte("data_fim", DRAKE_DATA_CUTOFF).order("id").range(from, to),
     ),
@@ -84,7 +84,7 @@ function usePeriodosEQuery() {
 interface ColaboradorBasico { id: string; nome: string; funcao: string | null; funcao_operacao: string | null; }
 function useColaboradoresQuery() {
   return useQuery<ColaboradorBasico[]>({
-    queryKey: ["hist-novo-colaboradores"],
+    queryKey: ["hist-novo-colaboradores", "nomes-e-funcoes"],
     queryFn: () => selectAllPages<ColaboradorBasico>((from, to) =>
       supabase.from("hist_novo_colaboradores").select("id, nome, funcao, funcao_operacao").order("nome").range(from, to),
     ),

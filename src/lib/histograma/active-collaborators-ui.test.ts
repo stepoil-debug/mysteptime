@@ -46,10 +46,10 @@ describe("visibilidade de colaboradores inativos", () => {
     const hotels = readFileSync(resolve("src/routes/admin/hospedagem.tsx"), "utf8");
     const flights = readFileSync(resolve("src/routes/admin/passagens-aereas.tsx"), "utf8");
 
-    expect(histogram).toContain('["hist-novo-colaboradores", "ativos", "completo"]');
-    expect(timesheet).toContain('["hist-novo-colaboradores", "ativos", "completo"]');
-    expect(hotels).toContain('["hist-novo-colaboradores", "ativos", "nomes"]');
-    expect(flights).toContain('["hist-novo-colaboradores", "ativos", "nomes"]');
+    expect(histogram).toContain('["hist-novo-colaboradores", "histograma"]');
+    expect(timesheet).toContain('["hist-novo-colaboradores", "cadastro"]');
+    expect(hotels).toContain('["hist-novo-colaboradores", "nomes"]');
+    expect(flights).toContain('["hist-novo-colaboradores", "passagens-aereas"]');
   });
 
   it("não permite que a sincronização Drake reative um cadastro local", () => {

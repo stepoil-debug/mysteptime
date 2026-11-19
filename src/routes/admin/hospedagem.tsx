@@ -259,7 +259,7 @@ function useHospedagensQuery() {
 
 function usePeriodosEQuery() {
   return useQuery<HistNovoPeriodo[]>({
-    queryKey: ["hist-novo-periodos"],
+    queryKey: ["hist-novo-periodos", "cadastro"],
     queryFn: () =>
       selectAllPages<HistNovoPeriodo>((from, to) =>
         supabase
@@ -274,7 +274,7 @@ function usePeriodosEQuery() {
 
 function useColaboradoresQuery() {
   return useQuery<{ id: string; nome: string }[]>({
-    queryKey: ["hist-novo-colaboradores"],
+    queryKey: ["hist-novo-colaboradores", "nomes"],
     queryFn: () =>
       selectAllPages<{ id: string; nome: string }>((from, to) =>
         supabase.from("hist_novo_colaboradores").select("id, nome").order("nome").range(from, to),

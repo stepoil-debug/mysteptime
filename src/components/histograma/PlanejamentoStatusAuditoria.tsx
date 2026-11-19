@@ -81,12 +81,12 @@ export function PlanejamentoStatusAuditoria({ registros }: { registros: Planejam
   const [somenteDivergentes, setSomenteDivergentes] = useState(true);
 
   const { data: colaboradores = [] } = useQuery({
-    queryKey: ["hist-novo-colaboradores"],
+    queryKey: ["hist-novo-colaboradores", "histograma"],
     queryFn: fetchHistogramCollaborators,
     enabled: aberto,
   });
   const { data: periodos = [] } = useQuery({
-    queryKey: ["hist-novo-periodos"],
+    queryKey: ["hist-novo-periodos", "histograma"],
     queryFn: fetchHistogramPeriods,
     enabled: aberto,
   });

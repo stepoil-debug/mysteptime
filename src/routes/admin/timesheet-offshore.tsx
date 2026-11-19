@@ -516,12 +516,12 @@ function TimesheetOffshore() {
   // Todas as tabelas abaixo já passam de 1000 linhas — sem paginação o Supabase corta em
   // silêncio (era o motivo real de "sumiu" BSP/colaborador/dia em várias telas).
   const { data: colaboradores = [], isLoading: l1 } = useQuery({
-    queryKey: ["hist-novo-colaboradores"],
+    queryKey: ["hist-novo-colaboradores", "cadastro"],
     queryFn: () => selectAllPages<HistNovoColaborador>((from, to) => supabase.from("hist_novo_colaboradores").select("*").order("nome").order("id").range(from, to)),
   });
 
   const { data: periodos = [], isLoading: l2 } = useQuery({
-    queryKey: ["hist-novo-periodos"],
+    queryKey: ["hist-novo-periodos", "cadastro"],
     queryFn: () => selectAllPages<HistNovoPeriodo>((from, to) => supabase.from("hist_novo_periodos").select("*").gte("data_fim", DRAKE_DATA_CUTOFF).order("id").range(from, to)),
   });
 
