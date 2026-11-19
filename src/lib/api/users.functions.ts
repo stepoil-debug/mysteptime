@@ -21,27 +21,13 @@ export const createAppUser = createServerFn({ method: "POST" })
     if (roleError) throw new Error(roleError.message);
     if (!isOperator) throw new Error("Apenas operadores logísticos podem criar usuários.");
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
+    const { createManagedUser } = await import("./managed-user.server");
+    const id = await createManagedUser({
       email: data.email,
       password: data.password,
-      email_confirm: true,
-      user_metadata: { full_name: data.full_name },
+      fullName: data.full_name,
+      role: data.role,
+      mustChangePassword: false,
     });
-    if (error) throw new Error(error.message);
-    const userId = created.user?.id;
-    if (!userId) throw new Error("Não foi possível criar o usuário.");
-
-    await supabaseAdmin
-      .from("profiles")
-      .upsert({ id: userId, email: data.email, full_name: data.full_name }, { onConflict: "id" });
-
-    await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
-    const { error: urErr } = await supabaseAdmin
-      .from("user_roles")
-      .insert({ user_id: userId, role: data.role });
-    if (urErr) throw new Error(urErr.message);
-
-    return { id: userId };
+    return { id };
   });

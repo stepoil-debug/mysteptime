@@ -73,15 +73,14 @@ export const Route = createFileRoute("/api/auth/intranet")({
             // Primeiro acesso: o admin da Intranet já liberou o card (validado antes de emitir o ticket).
             // Cria a conta sem senha (entrada só pela Intranet) com papel "pending"; a administração do
             // Mysteptime define o papel depois (mesmo fluxo do antigo trigger handle_new_user).
-            const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
+            const { createManagedUser } = await import("@/lib/api/managed-user.server");
+            const id = await createManagedUser({
               email,
-              email_confirm: true,
-              user_metadata: { full_name: identity.name || email, step_one_user_id: identity.step_one_user_id },
+              fullName: identity.name || email,
+              role: "pending",
+              stepOneUserId: identity.step_one_user_id,
             });
-            if (createError || !created.user) return failure(503, "Não foi possível criar o acesso ao Mysteptime.");
-            matched = { id: created.user.id, email };
-            await supabaseAdmin.from("profiles").upsert({ id: matched.id, email, full_name: identity.name || email });
-            await supabaseAdmin.from("user_roles").insert({ user_id: matched.id, role: "pending" });
+            matched = { id, email };
           }
           if (matched.banned_until && new Date(matched.banned_until).getTime() > Date.now()) {
             return failure(403, "Conta do Mysteptime bloqueada.");
