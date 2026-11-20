@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import nodemailer from "https://esm.sh/nodemailer@6";
 
 // Roda 1x por dia via pg_cron (ver migration 20260826000000_schedule_turma_alerts.sql).
 // Avisa logisticapessoal@step-og.com quando alguma equipe embarcada está a exatamente 5 dias
@@ -26,7 +25,7 @@ serve(async (req) => {
   // header (ver migration); sem ele, recusa. Não é verify_jwt normal porque quem chama é o
   // Postgres via pg_net, não um usuário logado.
   const cronSecret = Deno.env.get("CRON_SECRET");
-  if (cronSecret && req.headers.get("x-cron-secret") !== cronSecret) {
+  if (!cronSecret || req.headers.get("x-cron-secret") !== cronSecret) {
     return new Response("Unauthorized", { status: 401 });
   }
 
@@ -82,23 +81,34 @@ serve(async (req) => {
     ...linhas,
   ].join("\n");
 
-  const host = Deno.env.get("SMTP_HOST");
-  const port = Deno.env.get("SMTP_PORT");
-  const user = Deno.env.get("SMTP_USER");
-  const pass = Deno.env.get("SMTP_PASSWORD");
-  const from = Deno.env.get("SMTP_FROM") || user;
-  if (!host || !port || !user || !pass) {
-    return new Response(JSON.stringify({ error: "Credenciais SMTP não configuradas nos secrets da função" }), { status: 500 });
+  const apiKey = Deno.env.get("RESEND_API_KEY");
+  const from = Deno.env.get("RESEND_FROM");
+  if (!apiKey || !from) {
+    return Response.json({ error: "Configuração de e-mail indisponível." }, { status: 503 });
   }
 
-  const transporter = nodemailer.createTransport({
-    host, port: Number(port), secure: Number(port) === 465, auth: { user, pass },
+  const delivery = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "Idempotency-Key": `troca-de-turma/${targetDate}`,
+    },
+    body: JSON.stringify({
+      from,
+      to: ALERT_TO,
+      subject: `Troca de turma em ${DIAS_ANTECEDENCIA} dias — ${grupos.size} equipe(s)`,
+      text: corpo,
+    }),
+    signal: AbortSignal.timeout(15000),
   });
-  await transporter.sendMail({
-    from, to: ALERT_TO,
-    subject: `Troca de turma em ${DIAS_ANTECEDENCIA} dias — ${grupos.size} equipe(s)`,
-    text: corpo,
-  });
-
-  return new Response(JSON.stringify({ ok: true, alertas: grupos.size }), { headers: { "Content-Type": "application/json" } });
+  if (!delivery.ok) {
+    console.warn("Resend recusou o alerta de troca de turma", delivery.status);
+    return Response.json({ error: "O provedor não aceitou o alerta." }, { status: 502 });
+  }
+  const accepted = await delivery.json() as { id?: string };
+  if (!accepted.id) {
+    return Response.json({ error: "O provedor não retornou o identificador do envio." }, { status: 502 });
+  }
+  return Response.json({ ok: true, alertas: grupos.size, email_id: accepted.id });
 });
