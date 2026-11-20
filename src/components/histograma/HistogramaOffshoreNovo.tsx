@@ -4181,6 +4181,7 @@ function DashboardTab({
   // rodou) e dias futuros, que são só uma projeção do planejamento atual.
   const snapshotsQuery = usePlanejamentoEmbarqueSnapshotsQuery();
   const { data: planejamentoSnapshots = [] } = snapshotsQuery;
+  const snapshotsAvailable = snapshotsQuery.data !== undefined;
 
   // Função de embarque (não a cadastral) por colaborador na data de referência do retrato
   // (pobReferenceDate, mais abaixo) — ver resolverFuncaoEmbarque.
@@ -4404,6 +4405,7 @@ function DashboardTab({
   // início da captura) — mesmo padrão híbrido já usado em "POB por Unidade × Dia". Os meses daqui
   // pra frente vão se completando sozinhos conforme as fotos diárias forem se acumulando.
   const ocupacaoMensalData = useMemo(() => {
+    if (!snapshotsAvailable) return [];
     const inicio = "2026-01-01";
     const corteMesPlanejamento = "2026-09";
     if (today < inicio) return [];
@@ -4535,6 +4537,7 @@ function DashboardTab({
     colaboradoresComMultiploEmbarque,
     periodosByColaborador,
     today,
+    snapshotsAvailable,
     planejamentoSnapshots,
     planejamentoEmbarque,
   ]);
@@ -5467,7 +5470,7 @@ function DashboardTab({
     );
   };
 
-  if (planejamentoQuery.isLoadingError || snapshotsQuery.isLoadingError) {
+  if (planejamentoQuery.isLoadingError) {
     return (
       <Card className="flex flex-wrap items-center gap-3 p-4">
         <p role="alert" className="text-sm text-destructive">
@@ -5477,10 +5480,7 @@ function DashboardTab({
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => {
-            if (planejamentoQuery.isLoadingError) void planejamentoQuery.refetch();
-            if (snapshotsQuery.isLoadingError) void snapshotsQuery.refetch();
-          }}
+          onClick={() => void planejamentoQuery.refetch()}
         >
           Tentar novamente
         </Button>
@@ -5488,7 +5488,7 @@ function DashboardTab({
     );
   }
 
-  if (planejamentoQuery.isPending || snapshotsQuery.isPending) {
+  if (planejamentoQuery.isPending) {
     return (
       <div role="status" aria-busy="true" className="space-y-3">
         <p className="text-sm text-muted-foreground">Carregando os indicadores do Planejamento de Embarque…</p>
@@ -5497,6 +5497,21 @@ function DashboardTab({
       </div>
     );
   }
+
+  const historicoFeedback = !snapshotsAvailable && (
+    snapshotsQuery.isLoadingError ? (
+      <div className="space-y-2 py-6 text-center">
+        <p role="alert" className="text-xs text-destructive">Não foi possível carregar o histórico de embarque.</p>
+        <Button type="button" variant="outline" size="sm" onClick={() => void snapshotsQuery.refetch()}>
+          Tentar novamente
+        </Button>
+      </div>
+    ) : (
+      <p role="status" className="py-6 text-center text-xs text-muted-foreground">
+        Carregando o histórico de embarque…
+      </p>
+    )
+  );
 
   return (
     <div className="space-y-4">
@@ -5689,7 +5704,7 @@ function DashboardTab({
                 ({pobReferenceDate === today ? "hoje" : fmtDiaCurto(pobReferenceDate)})
               </span>
             </h4>
-            {byUnitStatus.length === 0 ? (
+            {pobReferenceDate < today && historicoFeedback ? historicoFeedback : byUnitStatus.length === 0 ? (
               <p className="py-10 text-xs text-muted-foreground">Ninguém embarcado</p>
             ) : (
               <div className="w-full max-w-[300px] overflow-x-auto rounded-lg border-2 border-[#1e3a5f] shadow-md">
@@ -5921,6 +5936,7 @@ function DashboardTab({
             </p>
             {/* Altura fixa centralizada (em vez de esticar até o fim do card) e largura total da
                 coluna — esticado, as barras ficavam finas/compridas e os % se encostavam. */}
+            {historicoFeedback || (
             <div className="flex w-full flex-1 items-center justify-center">
             <ChartContainer
               config={donutChartConfig}
@@ -5977,6 +5993,7 @@ function DashboardTab({
               </BarChart>
             </ChartContainer>
             </div>
+            )}
           </div>
         </div>
       </Card>
