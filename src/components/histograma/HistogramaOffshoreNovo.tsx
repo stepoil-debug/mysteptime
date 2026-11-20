@@ -4171,14 +4171,16 @@ function DashboardTab({
   // Histograma pra esse cartão específico. Lê a coluna Status exatamente como veio da planilha
   // (sem nenhum cálculo por cima — ver isStatusNaBase): quem inclui/edita um registro lá com
   // Status "Base"/"Na Base" já reflete direto aqui, sem esperar sincronização com o Drake.
-  const { data: planejamentoEmbarque = [] } = usePlanejamentoEmbarqueQuery();
+  const planejamentoQuery = usePlanejamentoEmbarqueQuery();
+  const { data: planejamentoEmbarque = [] } = planejamentoQuery;
   // Foto diária do Planejamento de Embarque (ver Histórico, na própria aba) — a listagem ao
   // vivo é editada o tempo todo (status/datas são sobrescritos na mesma linha), então pra dia
   // já fotografado o "POB por Unidade × Dia" usa a foto daquele dia (o que realmente estava
   // valendo então), em vez de recalcular com os dados de hoje. Só cai pro cálculo ao vivo (via
   // janela Embarque→Desembarque) nos dias que ainda não têm foto — hoje mesmo (se ainda não
   // rodou) e dias futuros, que são só uma projeção do planejamento atual.
-  const { data: planejamentoSnapshots = [] } = usePlanejamentoEmbarqueSnapshotsQuery();
+  const snapshotsQuery = usePlanejamentoEmbarqueSnapshotsQuery();
+  const { data: planejamentoSnapshots = [] } = snapshotsQuery;
 
   // Função de embarque (não a cadastral) por colaborador na data de referência do retrato
   // (pobReferenceDate, mais abaixo) — ver resolverFuncaoEmbarque.
@@ -5464,6 +5466,37 @@ function DashboardTab({
       </div>
     );
   };
+
+  if (planejamentoQuery.isLoadingError || snapshotsQuery.isLoadingError) {
+    return (
+      <Card className="flex flex-wrap items-center gap-3 p-4">
+        <p role="alert" className="text-sm text-destructive">
+          Não foi possível carregar os dados do Planejamento de Embarque.
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            if (planejamentoQuery.isLoadingError) void planejamentoQuery.refetch();
+            if (snapshotsQuery.isLoadingError) void snapshotsQuery.refetch();
+          }}
+        >
+          Tentar novamente
+        </Button>
+      </Card>
+    );
+  }
+
+  if (planejamentoQuery.isPending || snapshotsQuery.isPending) {
+    return (
+      <div role="status" aria-busy="true" className="space-y-3">
+        <p className="text-sm text-muted-foreground">Carregando os indicadores do Planejamento de Embarque…</p>
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-56 w-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
