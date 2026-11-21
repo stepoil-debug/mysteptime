@@ -1,4 +1,5 @@
 import process from "node:process";
+import { mailFlowConfigured, sendMailFlow } from "./mail-flow.server";
 
 // Chave do Resend fica cifrada (AES-GCM) no banco; só o servidor tem a chave de decifragem
 // (segredo EMAIL_SETTINGS_ENCRYPTION_KEY). O navegador nunca recebe a chave em claro.
@@ -68,6 +69,7 @@ export const EMAILS_PAUSED = false;
 
 export async function sendResendHtml(cfg: ResendConfig, to: string, subject: string, html: string, text: string) {
   if (EMAILS_PAUSED) return { id: null, paused: true } as any;
+  if (mailFlowConfigured()) return sendMailFlow({ to, subject, html, text });
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${cfg.apiKey}`, "Content-Type": "application/json" },

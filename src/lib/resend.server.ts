@@ -1,4 +1,5 @@
 import { loadResendConfig, EMAILS_PAUSED } from "./emailSettings.server";
+import { mailFlowConfigured, sendMailFlow } from "./mail-flow.server";
 import { acceptedEmailResult, type EmailSendResult } from "./nomination-email-delivery";
 
 const esc = (s: string) =>
@@ -66,6 +67,12 @@ export async function sendResendTemplateEmail(
 ) : Promise<EmailSendResult> {
   // PAUSA TEMPORÁRIA pedida pelo usuário (27/10/2026): nenhum e-mail é enviado até reativar.
   if (EMAILS_PAUSED) return { sent: false, id: null, reason: "paused" };
+  // Caixa noreply (fluxo do Power Automate, o mesmo da Intranet) tem prioridade quando configurada.
+  if (mailFlowConfigured()) {
+    const { html, text, subject } = renderAlert(variables);
+    const { id } = await sendMailFlow({ to, cc, subject, html, text });
+    return { sent: true, id };
+  }
   const cfg = await loadResendConfig(supabase);
   if (!cfg) throw new Error("Avisos por e-mail não configurados/ativados em Configurações.");
   const { html, text, subject } = renderAlert(variables);
