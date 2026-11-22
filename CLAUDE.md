@@ -1,6 +1,8 @@
 # Mysteptime — guia para desenvolvimento (Claude Code / VS Code)
 
-Leia também `AGENTS.md` (regras de arquitetura) e `docs/MIGRACAO_INTRANET.md` (histórico da migração).
+Leia também `AGENTS.md` (regras de arquitetura) e `docs/GUIA_DESENVOLVIMENTO.md` (passo a passo sem Lovable).
+
+**Comandos do Claude Code:** `/nova-tarefa <o que fazer>` → altera → `/migration <mudança de banco>` (se precisar) → `/publicar`.
 
 ## Stack
 - TanStack Start (React 19) + Nitro, build com Vite. App servido em `/mysteptime`.
@@ -10,12 +12,13 @@ Leia também `AGENTS.md` (regras de arquitetura) e `docs/MIGRACAO_INTRANET.md` (
 - Entrada dos usuários: só pela Intranet STEP One (ticket de 60 s consumido na RPC `mysteptime_bridge_consume` do Supabase da Intranet `qxmxtbjxkhecqilpnhgq`). Não há autocadastro.
 - O Lovable não é mais usado. Não reintroduzir `@lovable.dev/*`, `.lovable/` nem URLs `*.lovable.app`.
 
-## Fluxo de trabalho
-1. Criar branch a partir da `main` (nunca commitar direto na `main`).
+## Fluxo de trabalho (sem Lovable desde 22/11/2026)
+1. Criar branch a partir da `main` atualizada (nunca commitar direto na `main`).
 2. `npm install` e `npm run dev`.
 3. Antes do PR: `npm run typecheck`, `npx vitest run`, `npm run build`, `npm run check:server-boundaries`.
    Há 14 testes que já falhavam antes da migração (filtros `ativo=true` e cookie jar do Drake); não aumente esse número.
-4. Push → PR → conferir o preview da Vercel → merge na `main` (deploy automático).
+4. Push → PR (`gh pr create`) → conferir o preview da Vercel → merge na `main` = produção automática.
+5. Nunca pedir ao Lovable para aplicar PRs ou migrations: ele está desligado.
 
 ## Banco (migrations)
 - Novas migrations em `supabase/migrations/` escritas **no schema `mysteptime`** (`mysteptime.tabela`, `set search_path = mysteptime, public, extensions` em funções).
@@ -43,9 +46,9 @@ Leia também `AGENTS.md` (regras de arquitetura) e `docs/MIGRACAO_INTRANET.md` (
 - O Supabase CLI (`npx supabase`) e o servidor MCP do Claude usam autenticacoes diferentes. Autenticacao bem-sucedida no terminal nao garante que uma sessao antiga do Claude Desktop tenha atualizado sua lista de servidores; reabra a sessao existente no Desktop para atualizar os MCPs quando necessario.
 - Para validar: consulte `mysteptime` com `list_tables` e `get_project` via MCP; informe explicitamente quando MCP nao estiver acessivel. Nao modifique o banco.
 
-## Estado da migração Lovable → Supabase próprio (19/11/2026)
-- **Leia primeiro** `docs/MIGRACAO_EXECUTADA_2026-11-19.md` antes de qualquer importação adicional, sincronização do Lovable ou alteração de secrets.
-- A maior parte dos dados foi sincronizada por inserções incrementais. NÃO executar `import-data.mjs --commit` nem apagar/recarregar as tabelas: há registros novos no destino e isso poderia causar perda de dados.
-- Em `hist_novo_periodos`, 569 UUIDs diferem para os mesmos `drake_event_key`; não duplicar nem reescrever IDs sem análise dos vínculos.
-- Faltam validação de conteúdo, uma conta de Auth, quatro anexos privados, secrets de Edge Functions, Google email e testes de SSO, Cron e IA. Não ativar cutover/cron/deploy de produção automaticamente.
-- As variáveis SMTP Microsoft antigas foram neutralizadas na Vercel. O requisito do projeto é **e-mail via Google**, não reativar Microsoft SMTP.
+## Estado (22/11/2026): virada concluída
+- Dados do Lovable sincronizados (export 22/11, `sync-final.mjs` COMMIT). Lovable parado e intacto (rotinas pausadas), só como histórico.
+- Card da Intranet abre o app novo para todos (`MYSTEPTIME_NEW_APP_FOR_ALL` em `server/functions/auth-mysteptime-launch.mts` da Intranet; `false` volta ao Lovable).
+- NÃO rodar de novo `import-data.mjs`, `load-export.mjs` nem `sync-final.mjs --commit`: o banco novo é a fonte da verdade e isso sobrescreveria dados novos.
+- E-mail pela caixa noreply (Power Automate, `M365_FLOW_URL`). Não reativar SMTP Microsoft nem Resend.
+- Pendente: `FLOW_TRACK_SYNC_SECRET` na Vercel para ligar o cron do Flow Track.
