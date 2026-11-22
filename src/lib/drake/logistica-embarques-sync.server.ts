@@ -36,7 +36,7 @@ function addDias(iso: string, n: number): string {
 }
 
 export async function synchronizeDrakeLogisticaEmbarques(
-  db: SupabaseClient,
+  db: SupabaseClient<any, "mysteptime", "mysteptime">,
   http: DrakeHttpClient,
   timezone = "America/Sao_Paulo",
 ): Promise<LogisticaEmbarquesResult> {

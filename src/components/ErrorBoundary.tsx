@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
-import { reportLovableError } from "@/lib/lovable-error-reporting";
+import { reportClientError } from "@/lib/error-reporting";
 
 interface Props {
   children: ReactNode;
@@ -21,7 +21,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error(error, info);
-    reportLovableError(error, { boundary: "global_error_boundary", componentStack: info.componentStack });
+    reportClientError(error, { boundary: "global_error_boundary", componentStack: info.componentStack });
   }
 
   render() {

@@ -1,0 +1,4998 @@
+{
+"activity_log": {
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"descricao": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"modulo": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"user_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"app_email_settings": {
+"api_key_last4": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"enabled": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"id": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"resend_api_key_encrypted": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"sender_email": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"sender_name": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"updated_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"updated_by": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"validated_at": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"validation_message": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"validation_status": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"verified_domain": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"approval_requests": {
+"approver_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"collaborator_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"comment": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"decided_at": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"payload": {
+"ts": "Json | null",
+"nullable": true,
+"hasDefault": true
+},
+"request_type": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"requested_by": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"status": {
+"ts": "Database[\"public\"][\"Enums\"][\"approval_status\"]",
+"nullable": false,
+"hasDefault": true
+}
+},
+"approvers": {
+"active": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"department": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"email": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"full_name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"role_title": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"bm_lines_logistica": {
+"amount": {
+"ts": "number",
+"nullable": false,
+"hasDefault": false
+},
+"bm_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"collaborator_name": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"cost_log_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"cost_type": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"is_manual": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"notes": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"period_end": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"period_start": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"vendor_name": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"bm_lines_materiais": {
+"bm_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"bsp": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"categoria": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"descricao": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"period_end": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"period_start": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"qtd": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"tag": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"valor_diario": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"valor_total": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+}
+},
+"bm_lines_mo": {
+"bm_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"bsp": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"colaborador_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"colaborador_nome": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"dias_dobra": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"dias_embarque": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"dias_hotel": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"funcao": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"horas_adicional_noturno": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"horas_extras": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"rate_adicional_noturno": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"rate_dobra": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"rate_embarque": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"rate_hora_extra": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"rate_hotel": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"rate_missing": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"valor_total": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+}
+},
+"bm_medicoes": {
+"applied": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"applied_at": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"applied_bm_number": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"applied_bm_row_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"bsp": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"cliente": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"created_by": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"descricao": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"notes": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"period_end": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"period_start": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"qtd": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"tag": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"tipo": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"updated_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"valor_total": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"valor_unitario": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+}
+},
+"bm_mob_desmob_costs": {
+"applied": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"applied_at": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"applied_bm_number": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"bsp": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"categoria": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"created_by": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"data": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"import_batch": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"invoice_number": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"invoice_original_name": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"invoice_storage_path": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"invoice_uploaded_at": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"markup": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"nome": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"notes": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"period_end": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"period_start": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"qtd": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"total_cost": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"updated_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"valor": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+}
+},
+"bm_mob_desmob_markups": {
+"applied_bm_number": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"bsp": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"custo_ids": {
+"ts": "string[]",
+"nullable": false,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"incluiu_markup": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"percentual_imposto": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"percentual_lucro": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"tipo_markup": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"valor_final": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"valor_markup_calculado": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"valor_pendente_original": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+}
+},
+"bm_status_history": {
+"bm_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"changed_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"changed_by_name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"notes": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"status": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"bm_timesheet_dias": {
+"adicional_noturno": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"bsp": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"colaborador_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"colaborador_nome": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"data": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"descricao_tarefa": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"dia_semana": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"evento": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"feriado": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"funcao": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"hora_entrada": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"hora_entrada_extra": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"hora_saida": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"hora_saida_extra": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"horas_extras": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"horas_normais": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"numero_tarefa": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"original": {
+"ts": "Json | null",
+"nullable": true,
+"hasDefault": true
+},
+"source_dia_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"total_horas": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"unidade_operacional": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"updated_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+}
+},
+"bms": {
+"client_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"client_name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"created_by": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"current_status": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"internal_notes": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"ja_medido": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"logistica_manual": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"markup_enabled": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"markup_pct": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"numero_bm": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"period_end": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"period_start": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"po_balance_before": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"po_number": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"po_value": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"pos_processamento": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"project_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"project_name": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"rejection_reason": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"smartsheet_synced_at": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"team_mob_desmob": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"total_consumiveis": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"total_geral": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"total_habitat": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"total_locacao": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"total_logistica": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"total_materiais": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"total_mo": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"total_mob_desmob_materiais": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"updated_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"valor_bm_manual": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"vessel": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"clients": {
+"active": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"colaborador_funcoes_historico": {
+"cod_alocacao": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"colaborador_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"criado_em": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"data_fim": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"data_inicio": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"embarcacao": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"funcao": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+}
+},
+"collaborators": {
+"active": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"city": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"full_name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"is_offshore": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"role": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"unit": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"updated_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+}
+},
+"cost_logs": {
+"amount": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"billing": {
+"ts": "Database[\"public\"][\"Enums\"][\"billing_type\"]",
+"nullable": false,
+"hasDefault": true
+},
+"client_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"collaborator_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"cost_type": {
+"ts": "Database[\"public\"][\"Enums\"][\"cost_type\"]",
+"nullable": false,
+"hasDefault": false
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"created_by": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"notes": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"period_end": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"period_start": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"project_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"vendor_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"cost_simulations": {
+"ajustes": {
+"ts": "Json",
+"nullable": false,
+"hasDefault": false
+},
+"bsp": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"cliente": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"created_by": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"created_by_name": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"entradas": {
+"ts": "Json",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"metodo_calculo": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"nome_cenario": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"observacoes": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"periodo_referencia_fim": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"periodo_referencia_inicio": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"resultado": {
+"ts": "Json",
+"nullable": false,
+"hasDefault": false
+},
+"snapshot_custos": {
+"ts": "Json",
+"nullable": false,
+"hasDefault": false
+},
+"unidade": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"updated_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+}
+},
+"documents": {
+"collaborator_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"doc_name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"doc_type": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"expires_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"file_url": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"hist_colaborador_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"issued_at": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"drake_qualification_contexts": {
+"context_key": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"job_name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"matrix_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"matrix_name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"operational_unit_name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"sync_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"synced_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"drake_qualification_options": {
+"domain_identifier": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"option_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"option_name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"sort_order": {
+"ts": "number",
+"nullable": false,
+"hasDefault": false
+},
+"sync_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"synced_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"drake_qualification_requirements": {
+"context_key": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"indicated_course_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"indicated_course_name": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"is_mandatory": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": false
+},
+"qualification_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"qualification_name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"qualification_need_type_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"qualification_need_type_name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"relationship_set_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"relationship_set_name": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"sync_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"synced_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"drake_qualification_sync_state": {
+"context_count": {
+"ts": "number",
+"nullable": false,
+"hasDefault": false
+},
+"last_success_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"option_count": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"qualification_count": {
+"ts": "number",
+"nullable": false,
+"hasDefault": false
+},
+"requirement_count": {
+"ts": "number",
+"nullable": false,
+"hasDefault": false
+},
+"singleton": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"source_row_count": {
+"ts": "number",
+"nullable": false,
+"hasDefault": false
+},
+"worker_count": {
+"ts": "number",
+"nullable": false,
+"hasDefault": false
+}
+},
+"drake_qualification_workers": {
+"current_operational_unit_name": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"drake_worker_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"full_name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"job_name": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"registration": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"sync_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"synced_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"worker_state": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"worker_type": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"drake_scheduler_slots": {
+"claimed_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"claimed_by": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"error_message": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"finished_at": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"scheduled_for": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"slot_key": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"status": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"drake_sync_runs": {
+"base_ignored": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"base_inserted": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"base_not_found": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"disponibilidade_eventos": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"embarques_atualizados": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"embarques_criados": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"embarques_eventos": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"error_message": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"finished_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"skipped": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"source_file_name": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"source_type": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"started_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"status": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"triggered_by": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"triggered_by_label": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"drake_worker_qualifications": {
+"drake_worker_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"expiration_date": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"indicated_course_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"indicated_course_name": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"issue_date": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"qualification_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"qualification_name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"sync_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"synced_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"embarkations": {
+"client_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"collaborator_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"disembark_date": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"embark_date": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"notes": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"pre_embark_instructions": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"project_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"status": {
+"ts": "Database[\"public\"][\"Enums\"][\"embarkation_status\"]",
+"nullable": false,
+"hasDefault": true
+},
+"updated_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+}
+},
+"flow_track_demandas": {
+"cobranca_em": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"cobranca_texto": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"concluido_em": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"criado_em": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"descricao": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"lida_em": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"link_destino": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"modulo": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"prazo_em": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"registro_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"regra_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"responsavel_user_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"status": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"titulo": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"flow_track_events": {
+"acao": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"detalhe": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"dispositivo": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"duracao_ms": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"modulo": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"registro": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"session_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"tela": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"user_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"user_name": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"user_role": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"flow_track_presence": {
+"dispositivo": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"last_seen": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"modulo": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"sessao_inicio": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"session_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"tela": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"ultima_acao": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"ultima_acao_em": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"user_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"user_name": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"user_role": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"flow_track_regra_responsaveis": {
+"regra_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"user_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"flow_track_regras": {
+"ativo": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"atualizado_em": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"codigo": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"criado_em": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"descricao": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"modulo": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"nome": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"prazo_horas": {
+"ts": "number",
+"nullable": false,
+"hasDefault": false
+}
+},
+"form_drafts": {
+"data": {
+"ts": "Json",
+"nullable": false,
+"hasDefault": false
+},
+"form_key": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"updated_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"user_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+}
+},
+"hist_novo_colaboradores": {
+"ativo": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"empresa": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"funcao": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"funcao_operacao": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"matricula": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"nome": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"hist_novo_periodos": {
+"bsp": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"centro_de_custo": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"colaborador_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"data_fim": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"data_inicio": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"dias": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"drake_event_key": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"origem": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"tipo": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"unidade_operacional": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"hospedagens": {
+"bsp": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"bsp_2": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"bsp_3": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"check_in": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"check_out": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"cobrado": {
+"ts": "boolean | null",
+"nullable": true,
+"hasDefault": true
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"data_faturamento": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"data_lancamento": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"diarias": {
+"ts": "number",
+"nullable": false,
+"hasDefault": false
+},
+"faturado": {
+"ts": "boolean | null",
+"nullable": true,
+"hasDefault": true
+},
+"forma_pagamento": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"fornecedor": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"hotel_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"motivo": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"nf": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"nome_usuario": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"observacoes": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"status_lancamento": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"unidade": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"unidade_2": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"unidade_3": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"usuario_faturamento": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"valor_2": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"valor_3": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"valor_diaria": {
+"ts": "number",
+"nullable": false,
+"hasDefault": false
+},
+"valor_total": {
+"ts": "number",
+"nullable": false,
+"hasDefault": false
+}
+},
+"hoteis_fornecedores": {
+"aeroporto_proximo": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"cidade": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"endereco": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"estado": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"nome": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"regiao": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"telefone": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"hotel_bookings": {
+"check_in": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"check_out": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"collaborator_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"embarkation_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"hotel_name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"notes": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"vendor_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"lgp_flow_activity_log": {
+"acao": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"criado_em": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"etapa_anterior": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"etapa_nova": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"registro_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"tabela_origem": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"usuario_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"materials": {
+"active": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"categoria": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"code": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"descricao": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"qtd": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"updated_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"volume": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"nomination_aptitude_alerts": {
+"colaborador_nome": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"nomination_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"nomination_fixed_teams": {
+"antecedencia_dias_uteis": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"ativo": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"bsp": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"ciclo_dias": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"client": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"funcao": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"notes": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"periodo_dias": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"pm_name": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"pm_user_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"proxima_troca": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"quantidade": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"ultima_nomeacao_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"unidade": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"updated_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+}
+},
+"nomination_funcao_catalog": {
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"funcao": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"nomination_nominees": {
+"aptidao_checked": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"aptidao_checked_at": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"aptidao_checked_by": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"aptidao_divergence": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"aptidao_divergence_flagged_at": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"aptidao_divergence_text": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"colaborador_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"colaborador_nome": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"is_active": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"nomination_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"pm_decided_at": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"pm_decided_by": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"pm_decision": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"quality_apto_solda": {
+"ts": "boolean | null",
+"nullable": true,
+"hasDefault": true
+},
+"quality_apto_solda_obs": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"quality_checked_at": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"quality_checked_by": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"rejection_reason": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"rejection_stage": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"rh_documentacao_ok": {
+"ts": "boolean | null",
+"nullable": true,
+"hasDefault": true
+},
+"rh_validated": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"rh_validated_at": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"rh_validated_by": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"sms_aso_checked": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"sms_aso_checked_at": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"sms_aso_checked_by": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"sms_aso_em_dia": {
+"ts": "boolean | null",
+"nullable": true,
+"hasDefault": true
+},
+"sms_bloqueio_saude": {
+"ts": "boolean | null",
+"nullable": true,
+"hasDefault": true
+},
+"technical_selected_at": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"technical_selected_by": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"nomination_status_history": {
+"changed_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"changed_by_name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"nomination_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"nominee_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"notes": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"status": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"nominations": {
+"briefing_sms_realizado": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"briefing_sms_realizado_at": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"briefing_sms_realizado_by": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"bsp": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"bsp_request_number": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"cancel_reason": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"cancelled_at": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"cancelled_by": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"client": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"colaborador_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"colaborador_nome": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"current_status": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"funcao": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"logistics_received_at": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"logistics_received_by": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"notes": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"outcome": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"period_end": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"period_start": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"pm_name": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"pm_responsavel": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"pm_user_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"project": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"quality_rejection_reason": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"quality_status": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"quality_validated": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"quality_validated_at": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"quality_validated_by": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"quantidade": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"request_group_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"requires_quality_validation": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"scope_document_name": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"scope_document_path": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"scope_documents": {
+"ts": "Json | null",
+"nullable": true,
+"hasDefault": true
+},
+"sequence_number": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"unidade": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"updated_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"weld_material": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"weld_type": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"notas_debito": {
+"bsp": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"contato": {
+"ts": "string[] | null",
+"nullable": true,
+"hasDefault": true
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"data_lancamento": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"emitente_cidade": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"emitente_cnpj": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"emitente_endereco": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"emitente_inscricao_estadual": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"emitente_inscricao_municipal": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"emitente_razao_social": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"emitente_uf": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"forma_pagamento": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"numero_fornecedor": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"observacoes": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"sacado_cidade": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"sacado_cnpj": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"sacado_endereco": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"sacado_inscricao_estadual": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"sacado_razao_social": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"sacado_uf": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"unidade": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"valor_total": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"vencimento": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"notas_debito_anexos": {
+"enviado_em": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"enviado_por": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"nome_original": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"nota_debito_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"storage_path": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"notas_debito_itens": {
+"criado_em": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"descricao": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"nota_debito_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"valor": {
+"ts": "number",
+"nullable": false,
+"hasDefault": false
+}
+},
+"notifications": {
+"body": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"link": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"read": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"title": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"user_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"passagem_opcoes": {
+"bagagem": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"companhia": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"criado_em": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"data_hora_ida": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"numero": {
+"ts": "number",
+"nullable": false,
+"hasDefault": false
+},
+"passagem_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"valor": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"valor_alteracao": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"voo": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"passagem_status_history": {
+"changed_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"changed_by_name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"notes": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"passagem_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"status": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"passagens_aereas": {
+"aprovado_em": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"aprovado_por": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"bsp": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"bsp_2": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"bsp_3": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"cobrado": {
+"ts": "boolean | null",
+"nullable": true,
+"hasDefault": true
+},
+"comentario_aprovacao": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"companhia_aerea": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"data_faturamento": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"data_ida": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"data_lancamento": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"data_volta": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"destino": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"diferenca_preco": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"faturado": {
+"ts": "boolean | null",
+"nullable": true,
+"hasDefault": true
+},
+"forma_pagamento": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"internacional": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"motivo": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"motivo_cancelamento": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"nf": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"nome_usuario": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"observacoes": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"opcao_escolhida_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"opcoes_texto_agencia": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"origem": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"revalidado_em": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"revalidado_por": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"solicitante": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"solicitante_email": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"status": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"status_fluxo": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"status_lancamento": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"tipo": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"unidade": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"usuario_faturamento": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"valor": {
+"ts": "number",
+"nullable": false,
+"hasDefault": false
+},
+"valor_2": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"valor_3": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"payroll_summaries": {
+"collaborator_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"confirmed_at": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"cycle_end": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"cycle_start": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"days_onboard": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"overtime_hours": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"sent_at": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"sobreaviso_days": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"status": {
+"ts": "Database[\"public\"][\"Enums\"][\"payroll_status\"]",
+"nullable": false,
+"hasDefault": true
+},
+"total_hours": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+}
+},
+"planejamento_colaboradores_vistos": {
+"nome_normalizado": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"primeira_vez_em": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+}
+},
+"planejamento_embarque": {
+"bsp": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"desembarque": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"duracao_embarque_dias": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"embarque": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"especialidade": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"ferias_fim": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"ferias_inicio": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"folga_fim": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"folga_inicio": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"funcao": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"matricula": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"nome": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"observacoes": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"programado_1": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"programado_2": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"rh_bloqueado": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"rh_bloqueio_justificativa": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"rh_bloqueio_marcado_em": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"rh_bloqueio_marcado_por": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"rh_bloqueio_status_anterior": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"status": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"unidade": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"updated_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"updated_by": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"planejamento_embarque_log": {
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"descricao": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"user_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"planejamento_embarque_snapshots": {
+"bsp": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"colaborador_nome": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"desembarque": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"embarque": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"funcao": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"snapshot_date": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"status": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"unidade": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"profiles": {
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"email": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"embarkation_blocked": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"full_name": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"matricula": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"must_change_password": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"perfil": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"phone": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"updated_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+}
+},
+"projects": {
+"active": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"client_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"code": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"email": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"pm_user_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"rates": {
+"active": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"bsp": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"client": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"funcao": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"rate_adicional_noturno": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"rate_dobra": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"rate_embarque": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"rate_hora_extra": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"rate_hotel": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"updated_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"vessel": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"rdo_entries": {
+"activity": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"collaborator_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"hours": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"observations": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"project_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"report_date": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"status": {
+"ts": "Database[\"public\"][\"Enums\"][\"rdo_status\"]",
+"nullable": false,
+"hasDefault": true
+},
+"updated_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+}
+},
+"reembolso_anexos": {
+"enviado_em": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"enviado_por": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"item_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"nome_original": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"reembolso_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"storage_path": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"tipo": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"reembolso_itens": {
+"bsp": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"categoria": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"categoria_outro": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"criado_em": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"data_despesa": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"motivo": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"reembolso_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"valor": {
+"ts": "number",
+"nullable": false,
+"hasDefault": false
+}
+},
+"reembolso_status_history": {
+"changed_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"changed_by_name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"notes": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"reembolso_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"status": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"reembolsos": {
+"aprovado_em": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"aprovado_por": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"bsp": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"codigo": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"colaborador_beneficiario": {
+"ts": "string[]",
+"nullable": false,
+"hasDefault": true
+},
+"comentario_aprovacao": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"data_pagamento": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"numero_nota_debito": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"observacoes": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"periodo_fim": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"periodo_inicio": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"solicitante": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"status_fluxo": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"tipo": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"unidade": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"valor_total": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+}
+},
+"timesheet_dias": {
+"adicional_noturno": {
+"ts": "boolean | null",
+"nullable": true,
+"hasDefault": true
+},
+"bsp": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"criado_em": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"data": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"descricao_tarefa": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"dia_semana": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"evento": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"feriado": {
+"ts": "boolean | null",
+"nullable": true,
+"hasDefault": true
+},
+"hora_entrada": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"hora_entrada_extra": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"hora_saida": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"hora_saida_extra": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"horas_extras": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"horas_normais": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"numero_tarefa": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"semana_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"total_horas": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"timesheet_embarques": {
+"bsp": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"bsp_2": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"colaborador_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"criado_em": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"data_fim_embarque": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"data_inicio_embarque": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"funcao_embarque": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"periodo_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"source_event_key": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"status_entrega": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"unidade_operacional": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"timesheet_semanas": {
+"criado_em": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"data_fim_semana": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"data_inicio_semana": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"data_recebimento": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"embarque_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"funcao_override": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"recebido_em": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"recebido_fisico": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"recebido_por": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"timesheets": {
+"activity_type": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"collaborator_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"hours": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"project_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"reject_comment": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"status": {
+"ts": "Database[\"public\"][\"Enums\"][\"timesheet_status\"]",
+"nullable": false,
+"hasDefault": true
+},
+"updated_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"validated_at": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"validated_by": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"work_date": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"transport_columns": {
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"position": {
+"ts": "number",
+"nullable": false,
+"hasDefault": true
+}
+},
+"transport_requests": {
+"collaborator_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"destination": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"driver_name": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"embarkation_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"notes": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"origin": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"scheduled_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"status": {
+"ts": "Database[\"public\"][\"Enums\"][\"transport_status\"]",
+"nullable": false,
+"hasDefault": true
+},
+"transport_type": {
+"ts": "Database[\"public\"][\"Enums\"][\"transport_type\"]",
+"nullable": false,
+"hasDefault": false
+},
+"updated_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"vehicle": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"vendor_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"transport_solicitations": {
+"centro_custo": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"data_hora": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"destino": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"notes": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"origem": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"setor": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"solicitante": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"status": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"tipos_transporte": {
+"ts": "string[]",
+"nullable": false,
+"hasDefault": true
+},
+"updated_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"user_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"transport_tags": {
+"color": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"transport_trip_collaborators": {
+"collaborator_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"trip_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"transport_trip_materials": {
+"material_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"quantidade": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"trip_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"transport_trip_tags": {
+"tag_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"trip_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"transport_trips": {
+"arrival_time": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"bsp": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"bsp_2": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"bsp_3": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"cancelado": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"car_number": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"cliente": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"cliente_2": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"cliente_3": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"cobrado": {
+"ts": "boolean | null",
+"nullable": true,
+"hasDefault": true
+},
+"column_id": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"custo": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"custo_2": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"custo_3": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"data_faturamento": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"departure_time": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"destination": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"destinos_extras": {
+"ts": "string[]",
+"nullable": false,
+"hasDefault": true
+},
+"duracao_min": {
+"ts": "number | null",
+"nullable": true,
+"hasDefault": true
+},
+"external_ref": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"faturado": {
+"ts": "boolean | null",
+"nullable": true,
+"hasDefault": true
+},
+"forma_pagamento": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"fornecedor": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"motivo": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"nf": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"notes": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"origens_extras": {
+"ts": "string[]",
+"nullable": false,
+"hasDefault": true
+},
+"origin": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"realizado": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"scheduled_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"status": {
+"ts": "Database[\"public\"][\"Enums\"][\"transport_trip_status\"]",
+"nullable": false,
+"hasDefault": true
+},
+"status_lancamento": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"tipo": {
+"ts": "Database[\"public\"][\"Enums\"][\"transport_tipo\"]",
+"nullable": false,
+"hasDefault": true
+},
+"tipo_transporte": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"uber_solicitado_via": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"unidade": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"unidades": {
+"ts": "string[]",
+"nullable": false,
+"hasDefault": true
+},
+"updated_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"usuario_faturamento": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"user_roles": {
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"role": {
+"ts": "Database[\"public\"][\"Enums\"][\"app_role\"]",
+"nullable": false,
+"hasDefault": false
+},
+"user_id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"vendors": {
+"active": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"contact": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"email": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+},
+"vendor_type": {
+"ts": "string | null",
+"nullable": true,
+"hasDefault": true
+}
+},
+"weld_material_config": {
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"material_name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+},
+"weld_type_config": {
+"created_at": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"id": {
+"ts": "string",
+"nullable": false,
+"hasDefault": true
+},
+"requires_quality_validation": {
+"ts": "boolean",
+"nullable": false,
+"hasDefault": true
+},
+"weld_type_name": {
+"ts": "string",
+"nullable": false,
+"hasDefault": false
+}
+}
+}

@@ -120,7 +120,7 @@ export const adminResetPassword = createServerFn({ method: "POST" })
     await assertOperator(context.supabase, context.userId);
 
     // Mesmo motivo do adminCreateUser acima: redefinir senha de outro usuário exige
-    // service_role, que só a Edge Function recebe automaticamente no Lovable Cloud.
+    // service_role, que só a Edge Function recebe automaticamente do Supabase.
     const { data: result, error } = await context.supabase.functions.invoke("admin-user-management", {
       body: { action: "resetPassword", userId: data.userId, newPassword: data.newPassword },
     });

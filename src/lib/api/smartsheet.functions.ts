@@ -5,8 +5,9 @@ import {
 } from "../smartsheet";
 
 export const getOffshoreData = createServerFn({ method: "GET" }).handler(async (): Promise<OffshorePerson[]> => {
-  const token = import.meta.env.VITE_SMARTSHEET_TOKEN;
-  const sheetId = import.meta.env.VITE_SMARTSHEET_SHEET_ID;
+  // Só no servidor: token nunca em variável VITE_ (iria para o navegador).
+  const token = process.env.SMARTSHEET_API_TOKEN;
+  const sheetId = process.env.SMARTSHEET_OFFSHORE_SHEET_ID;
 
   if (!token || !sheetId) throw new Error("Credenciais do Smartsheet não configuradas.");
 

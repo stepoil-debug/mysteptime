@@ -14,7 +14,7 @@ import { sanitizeDrakeBsp } from "@/lib/drake/annual-position-embarkation";
 // dia em diante — mesmo ciclo que o próprio Drake já projeta automaticamente, mesmo sem
 // desembarque confirmado.
 export async function gerarSemanasEDias(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<any, "mysteptime", "mysteptime">,
   embarqueId: string,
   dataInicio: string,
   dataFim: string,
@@ -76,7 +76,7 @@ export interface DrakeTimesheetSourceDay {
  * semana com linhas vazias e não recalculamos Dobra pela duração do embarque.
  */
 async function gerarSemanasEDiasExatosDoDrake(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<any, "mysteptime", "mysteptime">,
   embarqueId: string,
   dataInicio: string,
   dataFim: string,
@@ -159,7 +159,7 @@ function dataFimEfetiva(dataInicio: string, dataFim: string): string {
 // semana e os 7 dias intactos (o período continua aparecendo inteiro no formulário) — só os
 // dias que ficaram fora do embarque real têm o evento/BSP limpos (voltam a "Nenhum"/em branco)
 // em vez de continuar mostrando Embarque/Dobra pra um dia que não aconteceu de verdade.
-async function trimSemanasEDiasApos(supabase: SupabaseClient, embarqueId: string, novoFim: string): Promise<void> {
+async function trimSemanasEDiasApos(supabase: SupabaseClient<any, "mysteptime", "mysteptime">, embarqueId: string, novoFim: string): Promise<void> {
   const { data: semanas, error: semErr } = await supabase
     .from("timesheet_semanas")
     .select("id, data_inicio_semana, data_fim_semana")
@@ -271,7 +271,7 @@ export function planTimesheetConsolidation(
 // origem="drake" de hist_novo_periodos (então o id do período muda a cada import — não dá
 // pra usar periodo_id como chave de dedup entre imports).
 export async function ensureTimesheetParaPeriodo(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<any, "mysteptime", "mysteptime">,
   params: EnsureTimesheetParams,
 ): Promise<{ criado: boolean }> {
   const fimEfetivo = dataFimEfetiva(params.dataInicio, params.dataFim);
@@ -336,7 +336,7 @@ export async function ensureTimesheetParaPeriodo(
 
 /** Sincroniza um único embarque do Timesheet pela chave estável da Ficha Anual. */
 export async function createTimesheetForNewPeriodIfAbsent(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<any, "mysteptime", "mysteptime">,
   params: DrakeEnsureTimesheetParams,
 ): Promise<{ criado: boolean }> {
   const { data: exact, error: exactError } = await supabase
@@ -472,7 +472,7 @@ export interface ExistingDrakeTimesheetDay {
 }
 
 async function reconcileDrakeTimesheet(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<any, "mysteptime", "mysteptime">,
   existing: ExistingDrakeEmbarkation,
   params: DrakeEnsureTimesheetParams,
 ): Promise<void> {
@@ -664,7 +664,7 @@ async function reconcileDrakeTimesheet(
 }
 
 async function consolidateAutomaticTimesheetDuplicates(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<any, "mysteptime", "mysteptime">,
   candidates: ExistingDrakeEmbarkation[],
   dataInicio: string,
   dataFim: string,

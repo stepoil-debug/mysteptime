@@ -98,7 +98,7 @@ const BATCH_SIZE = 300;
  * esta função não promete algo que o schema atual não consegue assegurar.
  */
 export async function importAnnualPositionSnapshot(
-  db: SupabaseClient,
+  db: SupabaseClient<any, "mysteptime", "mysteptime">,
   snapshot: DrakeHistogramSnapshot,
   window: AnnualPositionImportWindow,
 ): Promise<AnnualPositionImportResult> {
@@ -296,7 +296,7 @@ export function mapExistingAnnualWorkers(
   return collaboratorIdByWorkerKey;
 }
 
-async function mapExistingWorkersOnly(db: SupabaseClient, snapshot: DrakeHistogramSnapshot) {
+async function mapExistingWorkersOnly(db: SupabaseClient<any, "mysteptime", "mysteptime">, snapshot: DrakeHistogramSnapshot) {
   const matriculas = [...new Set(snapshot.workers.map((worker) => worker.matricula))];
 
   const existing = await loadWorkersByRegistrations(db, matriculas);
@@ -310,7 +310,7 @@ async function mapExistingWorkersOnly(db: SupabaseClient, snapshot: DrakeHistogr
 }
 
 async function loadWorkersByRegistrations(
-  db: SupabaseClient,
+  db: SupabaseClient<any, "mysteptime", "mysteptime">,
   registrations: string[],
 ): Promise<HistNovoColaborador[]> {
   const workers: HistNovoColaborador[] = [];
@@ -447,7 +447,7 @@ export function buildOutOfWindowAutomaticResiduals(
 }
 
 async function unlinkTimesheetsFromPeriodIds(
-  db: SupabaseClient,
+  db: SupabaseClient<any, "mysteptime", "mysteptime">,
   periodIds: string[],
 ): Promise<void> {
   for (const ids of chunk(periodIds, BATCH_SIZE)) {
@@ -460,7 +460,7 @@ async function unlinkTimesheetsFromPeriodIds(
   }
 }
 
-async function deleteHistogramPeriodsByIds(db: SupabaseClient, periodIds: string[]): Promise<void> {
+async function deleteHistogramPeriodsByIds(db: SupabaseClient<any, "mysteptime", "mysteptime">, periodIds: string[]): Promise<void> {
   for (const ids of chunk(periodIds, BATCH_SIZE)) {
     const { error } = await db.from("hist_novo_periodos").delete().in("id", ids);
 
@@ -469,7 +469,7 @@ async function deleteHistogramPeriodsByIds(db: SupabaseClient, periodIds: string
 }
 
 async function loadProtectedExistingPeriods(
-  db: SupabaseClient,
+  db: SupabaseClient<any, "mysteptime", "mysteptime">,
   collaboratorIds: string[],
   window: AnnualPositionImportWindow,
 ): Promise<ExistingProtectedPeriod[]> {

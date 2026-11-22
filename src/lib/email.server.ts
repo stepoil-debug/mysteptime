@@ -1,5 +1,6 @@
 import process from "node:process";
 import nodemailer from "nodemailer";
+import { mailFlowConfigured, sendMailFlow } from "./mail-flow.server";
 
 // Server-only SMTP helper. The .server.ts suffix keeps nodemailer and the
 // SMTP credentials out of the client bundle. Credentials come from plain
@@ -8,6 +9,11 @@ import nodemailer from "nodemailer";
 export async function sendEmail(
   { to, cc, subject, text }: { to: string; cc?: string; subject: string; text: string },
 ) {
+  // Caixa noreply (fluxo do Power Automate, o mesmo da Intranet) tem prioridade quando configurada.
+  if (mailFlowConfigured()) {
+    await sendMailFlow({ to, cc, subject, text });
+    return;
+  }
   const host = process.env.SMTP_HOST;
   const port = process.env.SMTP_PORT;
   const user = process.env.SMTP_USER;

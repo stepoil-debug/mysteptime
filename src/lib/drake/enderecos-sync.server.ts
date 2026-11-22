@@ -35,7 +35,7 @@ async function fetchEnderecos(http: DrakeHttpClient, workerId: string): Promise<
 }
 
 export async function synchronizeDrakeEnderecos(
-  db: SupabaseClient,
+  db: SupabaseClient<any, "mysteptime", "mysteptime">,
   http: DrakeHttpClient,
 ): Promise<EnderecosSyncResult> {
   const planejamento = await selectAllPages<{ matricula: string | null }>((from, to) =>

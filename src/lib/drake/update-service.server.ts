@@ -38,7 +38,7 @@ import {
   type DrakeUpdateStage,
 } from "./update-types";
 
-type DbClient = SupabaseClient;
+type DbClient = SupabaseClient<any, "mysteptime", "mysteptime">;
 
 export interface DrakeUpdateTrigger {
   triggeredBy: string | null;

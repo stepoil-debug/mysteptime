@@ -6,7 +6,7 @@ export async function createManagedUser(data: {
   email: string;
   password: string;
   fullName: string;
-  role: Database["public"]["Enums"]["app_role"];
+  role: Database["mysteptime"]["Enums"]["app_role"];
   perfil?: string;
 }): Promise<string> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

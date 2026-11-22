@@ -57,7 +57,7 @@ export interface AnnualPositionSyncHooks {
 const TIMESHEET_WORKER_CONCURRENCY = 8;
 
 export async function synchronizeCurrentDrakeAnnualPositions(
-  db: SupabaseClient,
+  db: SupabaseClient<any, "mysteptime", "mysteptime">,
   http: DrakeHttpClient,
   year: number,
   cutoffDate: string,
@@ -298,7 +298,7 @@ export async function synchronizeCurrentDrakeAnnualPositions(
 // já está lá, isso continua sendo papel do fluxo de embarque/cadastro manual. Roda com a MESMA
 // lista de ativos do Drake que a Ficha Anual já buscou acima, sem chamada nova ao Drake.
 async function backfillMissingColaboradores(
-  db: SupabaseClient,
+  db: SupabaseClient<any, "mysteptime", "mysteptime">,
   activeWorkers: Awaited<ReturnType<typeof fetchDrakeWorkers>>,
 ): Promise<number> {
   const porChave = new Map<string, (typeof activeWorkers)[number]>();
@@ -393,7 +393,7 @@ export async function runPlansGroupedByWorker<T extends { workerKey: string }>(
  * persistido antes desta limpeza e passa a representar o que aconteceu.
  */
 async function removeExpiredProgrammingPeriods(
-  db: SupabaseClient,
+  db: SupabaseClient<any, "mysteptime", "mysteptime">,
   collaboratorIds: string[],
   asOfDate: string,
   confirmedEmbarkations: Array<{
@@ -467,7 +467,7 @@ function addIsoDay(date: string, amount: number): string {
 }
 
 async function synchronizeDrakeWorkerActiveFlags(
-  db: SupabaseClient,
+  db: SupabaseClient<any, "mysteptime", "mysteptime">,
   activeWorkers: Awaited<ReturnType<typeof fetchDrakeWorkers>>,
   histogramWorkerKeys: ReadonlySet<string>,
 ): Promise<void> {
@@ -539,7 +539,7 @@ async function synchronizeDrakeWorkerActiveFlags(
 }
 
 async function reactivateDrakeActiveWorkers(
-  db: SupabaseClient,
+  db: SupabaseClient<any, "mysteptime", "mysteptime">,
   activeWorkers: Awaited<ReturnType<typeof fetchDrakeWorkers>>,
 ): Promise<void> {
   const activeKeys = new Set(
@@ -569,7 +569,7 @@ function optionalString(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
-async function loadActiveHistogramWorkerKeys(db: SupabaseClient): Promise<Set<string>> {
+async function loadActiveHistogramWorkerKeys(db: SupabaseClient<any, "mysteptime", "mysteptime">): Promise<Set<string>> {
   const histogramWorkerKeys = new Set<string>();
   const pageSize = 1000;
   let from = 0;

@@ -15,7 +15,7 @@ import {
 } from "./update-types";
 
 export interface RunQualificationUpdateOptions {
-  db: SupabaseClient;
+  db: SupabaseClient<any, "mysteptime", "mysteptime">;
   onProgress: QualificationProgressCallback;
   acquireLock?: boolean;
 }

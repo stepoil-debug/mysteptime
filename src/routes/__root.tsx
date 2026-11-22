@@ -3,7 +3,7 @@ import { Outlet, Link, createRootRouteWithContext, useRouter, HeadContent, Scrip
 import { useEffect, type ReactNode } from "react";
 import { MotionConfig } from "framer-motion";
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
+import { reportClientError } from "../lib/error-reporting";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ViewAsProvider } from "@/hooks/useViewAs";
 import { RequirePasswordChange } from "@/components/ChangePassword";
@@ -34,7 +34,7 @@ function ErrorComponent({ error, reset }: { error: unknown; reset: () => void })
   console.error(error);
   const router = useRouter();
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    reportClientError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -62,8 +62,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:title", content: "My Step Time" },
       { property: "og:description", content: "Gestão logística de pessoal offshore." },
       { name: "twitter:description", content: "Gestão logística de pessoal offshore." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/F49u8o4WFAhG9g3hZdF6eJaAf4Y2/social-images/social-1781785336558-ChatGPT_Image_18_de_jun._de_2026,_09_16_55.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/F49u8o4WFAhG9g3hZdF6eJaAf4Y2/social-images/social-1781785336558-ChatGPT_Image_18_de_jun._de_2026,_09_16_55.webp" },
+      { property: "og:image", content: "https://mysteptime.vercel.app/mysteptime/og-image.webp" },
+      { name: "twitter:image", content: "https://mysteptime.vercel.app/mysteptime/og-image.webp" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
     ],

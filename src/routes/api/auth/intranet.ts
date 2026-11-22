@@ -8,9 +8,9 @@ const NO_STORE = {
 };
 const failure = (status: number, error: string) => Response.json({ ok: false, error }, { status, headers: NO_STORE });
 
-// Supabase do Intranet STEP One: só a URL e a chave pública (publishable), as mesmas do front do Intranet.
-const INTRANET_SUPABASE_URL = "https://qxmxtbjxkhecqilpnhgq.supabase.co";
-const INTRANET_PUBLISHABLE_KEY = "sb_publishable_TiGdrzZ6H7TCjQ8wPaAkzA_cQxVxdvr";
+// O Mysteptime tem Supabase próprio; o ticket é consumido na RPC do Supabase da Intranet (projeto separado).
+const INTRANET_SUPABASE_URL = process.env.INTRANET_SUPABASE_URL || "https://qxmxtbjxkhecqilpnhgq.supabase.co";
+const INTRANET_PUBLISHABLE_KEY = process.env.INTRANET_SUPABASE_PUBLISHABLE_KEY || "sb_publishable_TiGdrzZ6H7TCjQ8wPaAkzA_cQxVxdvr";
 
 /**
  * This route is server-only. It never accepts an email or a user id from the
@@ -23,7 +23,10 @@ export const Route = createFileRoute("/api/auth/intranet")({
       POST: async ({ request }) => {
         const currentOrigin = new URL(request.url).origin;
         const sentOrigin = request.headers.get("origin");
-        if (!sentOrigin || sentOrigin !== currentOrigin) return failure(403, "Origem não autorizada.");
+        // Em produção o app é servido pelo proxy da Intranet (intranet.step-og.com/mysteptime),
+        // então a origem do navegador é a da Intranet, não a do host da Vercel.
+        const allowedOrigins = new Set([currentOrigin, "https://intranet.step-og.com"]);
+        if (!sentOrigin || !allowedOrigins.has(sentOrigin)) return failure(403, "Origem não autorizada.");
         const json = await request.json().catch(() => null) as { ticket?: unknown } | null;
         const ticket = typeof json?.ticket === "string" ? json.ticket.trim() : "";
         if (!/^[0-9a-f]{64}$/.test(ticket)) return failure(400, "Acesso temporário inválido.");
@@ -69,18 +72,22 @@ export const Route = createFileRoute("/api/auth/intranet")({
             matched = (data.users ?? []).find((user) => user.email?.trim().toLowerCase() === email) ?? null;
             if (matched || (data.users ?? []).length < 1000) break;
           }
-          if (!matched) return failure(403, "Usuário do Mysteptime ainda não vinculado. Procure a administração.");
+          if (!matched) {
+            // Primeiro acesso: o admin da Intranet já liberou o card (validado antes de emitir o ticket).
+            // Cria a conta sem senha (entrada só pela Intranet) com papel "pending"; a administração do
+            // Mysteptime define o papel depois (mesmo fluxo do antigo trigger handle_new_user).
+            const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
+              email,
+              email_confirm: true,
+              user_metadata: { full_name: identity.name || email, step_one_user_id: identity.step_one_user_id },
+            });
+            if (createError || !created.user) return failure(503, "Não foi possível criar o acesso ao Mysteptime.");
+            matched = { id: created.user.id, email };
+            await supabaseAdmin.from("profiles").upsert({ id: matched.id, email, full_name: identity.name || email });
+            await supabaseAdmin.from("user_roles").insert({ user_id: matched.id, role: "pending" });
+          }
           if (matched.banned_until && new Date(matched.banned_until).getTime() > Date.now()) {
             return failure(403, "Conta do Mysteptime bloqueada.");
-          }
-
-          const { data: role, error: roleError } = await supabaseAdmin
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", matched.id)
-            .maybeSingle();
-          if (roleError || !role?.role || role.role === "pending") {
-            return failure(403, "Acesso do Mysteptime ainda não aprovado.");
           }
 
           // No automatic signup or privilege assignment. Admin.generateLink

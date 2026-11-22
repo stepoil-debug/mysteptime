@@ -301,7 +301,7 @@ describe("scheduler boundaries", () => {
     expect(card).not.toContain("authenticateMyStepTimeAutomationUser");
   });
 
-  it("runtime do Lovable agenda em background durante as requisições", async () => {
+  it("servidor agenda em background durante as requisições", async () => {
     const fs = await import("node:fs/promises");
     const serverSrc = await fs.readFile("src/server.ts", "utf8");
     expect(serverSrc).toMatch(/scheduleDrakeUpdateForRequest\(ctx\)/);

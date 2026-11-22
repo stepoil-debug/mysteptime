@@ -31,7 +31,8 @@ describe("DrakeUpdateCard — UI e streaming", () => {
   });
 
   it("clique inicia fetch de streaming NDJSON", () => {
-    expect(source).toMatch(/fetch\("\/api\/integrations\/drake\/update"/);
+    // basepath /mysteptime (app servido dentro da Intranet)
+    expect(source).toMatch(/fetch\(`\$\{import\.meta\.env\.BASE_URL\}api\/integrations\/drake\/update`/);
     expect(source).toMatch(/application\/x-ndjson/);
     expect(source).toMatch(/consumeDrakeNdjsonStream/);
   });

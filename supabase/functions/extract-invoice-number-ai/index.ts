@@ -1,101 +1,65 @@
-import { serve } from "https://deno.land/std/http/server.ts";
+// Extrai o número da nota fiscal de um texto OCR por regras (sem IA externa).
+// Mesmas regras de src/lib/invoiceNumberExtraction.ts (findInvoiceNumber); manter as duas iguais.
+// Nome da função mantido por compatibilidade. Não precisa de secrets.
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
-
 const jsonHeaders = { ...corsHeaders, "Content-Type": "application/json" };
+const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: jsonHeaders });
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+function normalizeText(text: string): string {
+  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+}
 
-  try {
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+function cleanCandidate(value: string): string | null {
+  const candidate = value.trim().replace(/^[#:\-.\s]+|[#:\-.\s]+$/g, "");
+  if (!candidate) return null;
+  const compact = candidate.replace(/[^a-z0-9]/gi, "");
+  if (!/\d/.test(compact)) return null;
+  // Chave de acesso (44), CNPJ (14) e linhas longas não são número de nota.
+  if (compact.length === 44 || compact.length > 20) return null;
+  if (/^\d{2}\.?\d{3}\.?\d{3}\/\d{4}-?\d{2}$/.test(candidate)) return null;
+  return candidate;
+}
 
-    if (!lovableApiKey) {
-      return new Response(
-        JSON.stringify({ error: "LOVABLE_API_KEY não configurada" }),
-        { status: 500, headers: jsonHeaders },
-      );
-    }
-
-    const { ocrText } = await req.json();
-
-    if (typeof ocrText !== "string" || !ocrText.trim()) {
-      return new Response(
-        JSON.stringify({ error: "Texto OCR não informado" }),
-        { status: 400, headers: jsonHeaders },
-      );
-    }
-
-    const text = ocrText.slice(0, 30000);
-
-    const aiResponse = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${lovableApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash-lite",
-          temperature: 0,
-          max_tokens: 40,
-          messages: [
-            {
-              role: "system",
-              content:
-                'Extraia somente o número da nota fiscal / NF-e / NFS-e do texto OCR. NUNCA confunda com chave de acesso, CNPJ, número de boleto, linha digitável, número da fatura, número da DPS, versão do DANFSe, reserva, datas ou valores monetários. Se não houver certeza absoluta, retorne null. Nunca invente um número. Responda somente JSON no formato {"number":"123"} ou {"number":null}.',
-            },
-            { role: "user", content: text },
-          ],
-        }),
-      },
-    );
-
-    if (!aiResponse.ok) {
-      return new Response(
-        JSON.stringify({
-          error: "Falha ao consultar IA",
-          status: aiResponse.status,
-        }),
-        { status: aiResponse.status, headers: jsonHeaders },
-      );
-    }
-
-    const aiData = await aiResponse.json();
-    const content = aiData?.choices?.[0]?.message?.content;
-
-    let number: string | null = null;
-
-    if (typeof content === "string") {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-
-      if (jsonMatch) {
-        try {
-          const parsed = JSON.parse(jsonMatch[0]);
-          const rawNumber = parsed?.number;
-
-          if (typeof rawNumber === "string" && /\d/.test(rawNumber)) {
-            number = rawNumber.trim();
-          }
-        } catch {
-          number = null;
-        }
+function findInvoiceNumber(text: string): string | null {
+  const lines = text.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    const line = normalizeText(lines[i]);
+    if (/numero\s+da\s+nfs-?e/.test(line) || /numero\s+da\s+nf-?e/.test(line)) {
+      for (let offset = 1; offset <= 2; offset++) {
+        const match = lines[i + offset]?.trim().match(/^(\d{1,20})\b/);
+        const candidate = match?.[1] ? cleanCandidate(match[1]) : null;
+        if (candidate) return candidate;
       }
     }
+  }
+  const normalized = normalizeText(text);
+  const patterns: RegExp[] = [
+    /(?:numero|n[ºo.]*)\s*(?:da\s*)?nfs-?e\s*[:#-]?\s*(\d[\d./-]{0,19})/i,
+    /nfs-?e\s*(?:numero|n[ºo.]*)\s*[:#-]?\s*(\d[\d./-]{0,19})/i,
+    /(?:numero|n[ºo.]*)\s*(?:da\s+)?nota(?:\s+fiscal)?\s*[:#-]?\s*(\d[\d./-]{0,19})/i,
+    /nota\s+fiscal(?:\s+eletronica)?\s*(?:numero|n[ºo.]*)\s*[:#-]?\s*(\d[\d./-]{0,19})/i,
+    /nf-?e\s*(?:numero|n[ºo.]*)\s*[:#-]?\s*(\d[\d./-]{0,19})/i,
+  ];
+  for (const pattern of patterns) {
+    const match = normalized.match(pattern);
+    const candidate = match?.[1] ? cleanCandidate(match[1]) : null;
+    if (candidate) return candidate;
+  }
+  return null;
+}
 
-    return new Response(JSON.stringify({ number }), { headers: jsonHeaders });
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  try {
+    const { ocrText } = await req.json();
+    if (typeof ocrText !== "string" || !ocrText.trim()) return reply({ error: "Texto OCR não informado" }, 400);
+    return reply({ number: findInvoiceNumber(ocrText.slice(0, 30000)) });
   } catch {
-    return new Response(
-      JSON.stringify({ error: "Erro inesperado" }),
-      { status: 500, headers: jsonHeaders },
-    );
+    return reply({ error: "Erro inesperado" }, 500);
   }
 });

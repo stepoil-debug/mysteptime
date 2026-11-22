@@ -15,7 +15,7 @@ import { pageTitle } from "@/lib/pageTitle";
 export const Route = createFileRoute("/auth")({ head: () => pageTitle("Login"), component: AuthPage });
 
 function AuthPage() {
-  const { user, role, roleLoaded, signIn, signUp, loading } = useAuth();
+  const { user, role, roleLoaded, signIn, loading } = useAuth();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
 
@@ -101,22 +101,22 @@ function AuthPage() {
             <p className="mt-1 text-sm text-slate-400">Entre com seu e-mail corporativo.</p>
           </div>
 
-          <Tabs defaultValue="signin" className="mt-6">
-            <TabsList className="grid h-11 w-full grid-cols-2 rounded-xl bg-white/5 p-1">
-              <TabsTrigger value="signin" className="rounded-lg text-sm text-slate-400 data-[state=active]:bg-white/10 data-[state=active]:text-white">Entrar</TabsTrigger>
-              <TabsTrigger value="signup" className="rounded-lg text-sm text-slate-400 data-[state=active]:bg-white/10 data-[state=active]:text-white">Criar conta</TabsTrigger>
+          {/* O acesso é liberado pelo admin da Intranet: a entrada normal é pelo card do Mysteptime.
+              E-mail e senha ficam só para quem tem senha definida pela administração (ex.: link de preview). */}
+          <a
+            href="https://intranet.step-og.com/intranet/offshore/mysteptime"
+            className="mt-6 flex h-11 w-full items-center justify-center rounded-xl bg-sky-600 text-sm font-semibold text-white hover:bg-sky-500"
+          >
+            Entrar pela Intranet
+          </a>
+          <Tabs defaultValue="signin" className="mt-4">
+            <TabsList className="grid h-11 w-full grid-cols-1 rounded-xl bg-white/5 p-1">
+              <TabsTrigger value="signin" className="rounded-lg text-sm text-slate-400 data-[state=active]:bg-white/10 data-[state=active]:text-white">Entrar com e-mail e senha</TabsTrigger>
             </TabsList>
             <TabsContent value="signin">
               <Form busy={busy} setBusy={setBusy} onSubmit={async (email, password) => {
                 const { error } = await signIn(email, password);
                 if (error) notify.error(error);
-              }} />
-            </TabsContent>
-            <TabsContent value="signup">
-              <Form busy={busy} setBusy={setBusy} withName onSubmit={async (email, password, name) => {
-                const { error } = await signUp(email, password, name ?? email);
-                if (error) notify.error(error);
-                else notify.success("Conta criada. Aguarde liberação do acesso.");
               }} />
             </TabsContent>
           </Tabs>

@@ -37,7 +37,7 @@ describe("qualification update boundaries", () => {
       /runSingleApiReport|openDrakeSignalRSession|API_REPORT_1|API_REPORT_14/,
     );
     expect(route).toMatch(/runQualificationUpdate/);
-    expect(card).toMatch(/\/api\/integrations\/drake\/qualification-update/);
+    expect(card).toMatch(/BASE_URL\}api\/integrations\/drake\/qualification-update/);
     expect(tab).toMatch(/<QualificationUpdateCard \/>/);
     expect(tab).not.toMatch(/<DrakeUpdateCard \/>/);
   });

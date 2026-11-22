@@ -4,7 +4,7 @@ import path from "node:path";
 import type { StorageState } from "./types";
 import { env } from "../config.server";
 
-/** Sessão em memória do processo — usada em local e remote (Lovable efêmero). */
+/** Sessão em memória do processo — usada em local e remote (serverless efêmero). */
 let memorySession: StorageState | null = null;
 
 function allowFileSessionCache(): boolean {

@@ -64,9 +64,10 @@ export function getDrakeDevTriggeredBy(): string {
 }
 
 /** Cliente Supabase server-side com o fetch TLS customizado injetado. */
-export function createUserClient(accessToken: string): SupabaseClient {
+export function createUserClient(accessToken: string): SupabaseClient<any, "mysteptime", "mysteptime"> {
   const { url, key } = getSupabaseEnv();
   return createClient(url, key, {
+    db: { schema: "mysteptime" },
     global: {
       headers: { Authorization: `Bearer ${accessToken}` },
       fetch: supabaseServerFetch,
@@ -96,6 +97,7 @@ export async function signInWithPassword(
 }> {
   const { url, key } = getSupabaseEnv();
   const client = createClient(url, key, {
+    db: { schema: "mysteptime" },
     global: { fetch: supabaseServerFetch },
     auth: {
       persistSession: false,
@@ -112,11 +114,12 @@ export async function signInWithPassword(
  * sem depender de getUser/RLS quando o Supabase auth está inacessível.
  * triggered_by fica null (coluna UUID); a auditoria vai para o log.
  */
-function createServiceClient(): SupabaseClient | null {
+function createServiceClient(): SupabaseClient<any, "mysteptime", "mysteptime"> | null {
   const url = process.env.SUPABASE_URL;
   const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY ?? "").trim();
   if (!url || !serviceKey) return null;
   return createClient(url, serviceKey, {
+    db: { schema: "mysteptime" },
     global: { fetch: supabaseServerFetch },
     auth: { persistSession: false, autoRefreshToken: false, storage: undefined },
   });
@@ -139,7 +142,7 @@ type GetUserFn = (token: string) => Promise<{
  * - qualquer outro erro → APP_AUTH_VALIDATION_FAILED.
  */
 export async function resolveUserId(
-  client: Pick<SupabaseClient, "auth"> | { auth: { getUser: GetUserFn } },
+  client: Pick<SupabaseClient<any, "mysteptime", "mysteptime">, "auth"> | { auth: { getUser: GetUserFn } },
   accessToken: string,
 ): Promise<string> {
   if (isDrakeDevBypassAppAuthActive()) {
@@ -191,7 +194,7 @@ function classifyAndWrap(err: unknown): AppAuthError {
   return new AppAuthError(APP_AUTH_VALIDATION_FAILED);
 }
 
-async function assertOperator(client: SupabaseClient, userId: string): Promise<void> {
+async function assertOperator(client: SupabaseClient<any, "mysteptime", "mysteptime">, userId: string): Promise<void> {
   const { data, error } = await client
     .from("user_roles")
     .select("role")
@@ -208,7 +211,7 @@ async function assertOperator(client: SupabaseClient, userId: string): Promise<v
 }
 
 export interface AuthenticatedRequest {
-  client: SupabaseClient;
+  client: SupabaseClient<any, "mysteptime", "mysteptime">;
   userId: string;
   /** Quando true, triggered_by no banco deve ser null (não é UUID de auth.users). */
   developmentBypass: boolean;

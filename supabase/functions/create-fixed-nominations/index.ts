@@ -49,9 +49,10 @@ async function enviarEmailLogistica(
   nomination: { funcao: string; unidade: string; bsp: string; period_start: string; period_end: string | null },
   troca: string,
 ) {
+  const flowUrl = Deno.env.get("M365_FLOW_URL");
   const apiKey = Deno.env.get("RESEND_API_KEY");
   const from = Deno.env.get("RESEND_FROM");
-  if (!apiKey || !from) {
+  if (!flowUrl && (!apiKey || !from)) {
     console.warn("RESEND_API_KEY/RESEND_FROM não configurados — e-mail da equipe fixa não enviado");
     return;
   }
@@ -78,6 +79,19 @@ async function enviarEmailLogistica(
 <p>Este é um alerta automático do My Step Time referente ao andamento de uma nomeação.</p>`;
   const text = `Solicitação de nomeação criada automaticamente (equipe fixa).\nFunção: ${nomination.funcao}\nUnidade: ${nomination.unidade}\nBSP: ${nomination.bsp}\nTroca de turma: ${formatBr(troca)}\nPeríodo: ${periodo}`;
 
+  const assunto = `[Nomeações] Solicitação criada (equipe fixa) — ${nomination.funcao}`;
+
+  // Caixa noreply (fluxo do Power Automate, o mesmo da Intranet) tem prioridade quando M365_FLOW_URL existe.
+  if (flowUrl) {
+    const r = await fetch(flowUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to: emails[0], cc: emails.slice(1).join(";"), bcc: "", subject: assunto, html, text }),
+    });
+    if (!r.ok) console.warn(`Fluxo de e-mail recusou o envio (${r.status}): ${await r.text().catch(() => "")}`);
+    return;
+  }
+
   const resposta = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -85,7 +99,7 @@ async function enviarEmailLogistica(
       from,
       to: emails[0],
       ...(emails.length > 1 ? { cc: emails.slice(1) } : {}),
-      subject: `[Nomeações] Solicitação criada (equipe fixa) — ${nomination.funcao}`,
+      subject: assunto,
       html,
       text,
     }),
@@ -106,7 +120,7 @@ serve(async (req) => {
   if (!supabaseUrl || !serviceRoleKey) {
     return new Response(JSON.stringify({ error: "SUPABASE_URL/SERVICE_ROLE_KEY não configurados" }), { status: 500 });
   }
-  const supabase = createClient(supabaseUrl, serviceRoleKey);
+  const supabase = createClient(supabaseUrl, serviceRoleKey, { db: { schema: "mysteptime" } });
 
   const hoje = new Date().toISOString().slice(0, 10);
   const { data: equipes, error: errEquipes } = await supabase

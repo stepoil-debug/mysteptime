@@ -95,7 +95,7 @@ export interface QualificationSnapshot {
 
 export async function syncDrakeQualificationNeeds(
   request: DrakeHttpClient,
-  db: SupabaseClient,
+  db: SupabaseClient<any, "mysteptime", "mysteptime">,
   callbacks?: QualificationSyncCallbacks,
 ): Promise<QualificationSyncSummary> {
   await assertQualificationStorageReady(db);
@@ -165,7 +165,7 @@ export async function syncDrakeQualificationNeeds(
   return summary;
 }
 
-export async function assertQualificationStorageReady(db: SupabaseClient): Promise<void> {
+export async function assertQualificationStorageReady(db: SupabaseClient<any, "mysteptime", "mysteptime">): Promise<void> {
   const results = await Promise.all(
     QUALIFICATION_STORAGE_PROBES.map(async ([table, column]) => {
       const { error } = await db.from(table).select(column).limit(1);
@@ -277,7 +277,7 @@ function compareQualificationRow(left: QualificationRow, right: QualificationRow
 }
 
 async function upsertInBatches<T extends object>(
-  db: SupabaseClient,
+  db: SupabaseClient<any, "mysteptime", "mysteptime">,
   table: string,
   rows: T[],
   onConflict: string,
@@ -290,7 +290,7 @@ async function upsertInBatches<T extends object>(
   }
 }
 
-async function removeStaleRows(db: SupabaseClient, table: string, syncId: string): Promise<void> {
+async function removeStaleRows(db: SupabaseClient<any, "mysteptime", "mysteptime">, table: string, syncId: string): Promise<void> {
   const { error } = await db.from(table).delete().neq("sync_id", syncId);
   if (error) throw error;
 }

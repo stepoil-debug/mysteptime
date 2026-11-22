@@ -101,7 +101,7 @@ export function QualificationUpdateCard() {
       const accessToken = await getDrakeUpdateAccessToken();
       if (!accessToken) throw new Error("Sua sessão no aplicativo expirou. Entre novamente.");
 
-      const response = await fetch("/api/integrations/drake/qualification-update", {
+      const response = await fetch(`${import.meta.env.BASE_URL}api/integrations/drake/qualification-update`, {
         method: "POST",
         credentials: "include",
         signal: abort.signal,

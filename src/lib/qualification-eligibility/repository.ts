@@ -3,11 +3,11 @@ import type { Database } from "@/integrations/supabase/types";
 import type { QualificationWorker, WorkerQualification } from "./domain";
 
 type AppDb = SupabaseClient<Database>;
-type DbOption = Database["public"]["Tables"]["drake_qualification_options"]["Row"];
-type DbWorker = Database["public"]["Tables"]["drake_qualification_workers"]["Row"];
-type DbQualification = Database["public"]["Tables"]["drake_worker_qualifications"]["Row"];
+type DbOption = Database["mysteptime"]["Tables"]["drake_qualification_options"]["Row"];
+type DbWorker = Database["mysteptime"]["Tables"]["drake_qualification_workers"]["Row"];
+type DbQualification = Database["mysteptime"]["Tables"]["drake_worker_qualifications"]["Row"];
 export type QualificationSyncState =
-  Database["public"]["Tables"]["drake_qualification_sync_state"]["Row"];
+  Database["mysteptime"]["Tables"]["drake_qualification_sync_state"]["Row"];
 
 const PAGE_SIZE = 1_000;
 const WORKER_FILTER_BATCH_SIZE = 20;

@@ -35,7 +35,7 @@ serve(async (req) => {
   if (!supabaseUrl || !serviceRoleKey) {
     return new Response(JSON.stringify({ error: "SUPABASE_URL/SERVICE_ROLE_KEY não configurados" }), { status: 500 });
   }
-  const supabase = createClient(supabaseUrl, serviceRoleKey);
+  const supabase = createClient(supabaseUrl, serviceRoleKey, { db: { schema: "mysteptime" } });
 
   const targetDate = addDaysStr(todayUtcStr(), DIAS_ANTECEDENCIA);
 
@@ -82,6 +82,25 @@ serve(async (req) => {
     ...linhas,
   ].join("\n");
 
+  const assunto = `Troca de turma em ${DIAS_ANTECEDENCIA} dias — ${grupos.size} equipe(s)`;
+
+  // Caixa noreply (fluxo do Power Automate, o mesmo da Intranet) tem prioridade quando M365_FLOW_URL existe.
+  const flowUrl = Deno.env.get("M365_FLOW_URL");
+  if (flowUrl) {
+    const r = await fetch(flowUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to: ALERT_TO, cc: "", bcc: "", subject: assunto, text: corpo,
+        html: `<pre style="font-family:Arial,Helvetica,sans-serif;white-space:pre-wrap">${corpo.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]!))}</pre>`,
+      }),
+    });
+    if (!r.ok) {
+      return new Response(JSON.stringify({ error: `Fluxo de e-mail recusou (${r.status})` }), { status: 502 });
+    }
+    return new Response(JSON.stringify({ ok: true, alertas: grupos.size, via: "noreply" }), { headers: { "Content-Type": "application/json" } });
+  }
+
   const host = Deno.env.get("SMTP_HOST");
   const port = Deno.env.get("SMTP_PORT");
   const user = Deno.env.get("SMTP_USER");
@@ -96,7 +115,7 @@ serve(async (req) => {
   });
   await transporter.sendMail({
     from, to: ALERT_TO,
-    subject: `Troca de turma em ${DIAS_ANTECEDENCIA} dias — ${grupos.size} equipe(s)`,
+    subject: assunto,
     text: corpo,
   });
 
