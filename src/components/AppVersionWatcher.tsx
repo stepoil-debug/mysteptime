@@ -46,7 +46,7 @@ export function AppVersionWatcher() {
     const check = async () => {
       if (cancelled || notified.current || document.visibilityState === "hidden") return;
       try {
-        const res = await fetch(location.origin + "/", {
+        const res = await fetch(location.origin + import.meta.env.BASE_URL, {
           cache: "no-store",
           headers: { "cache-control": "no-cache" },
           credentials: "same-origin",
