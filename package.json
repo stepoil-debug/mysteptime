@@ -24,7 +24,8 @@
     "drake:scheduler:run-now": "tsx scripts/drake-scheduler-run-now.ts",
     "access-history:build-stage": "node scripts/access-history-migration/build-stage.mjs",
     "access-history:snapshot": "node scripts/access-history-migration/export-supabase-snapshot.mjs",
-    "access-history:test": "node --test scripts/access-history-migration/*.test.mjs"
+    "access-history:test": "node --test scripts/access-history-migration/*.test.mjs",
+    "db:migration": "node --env-file=.env.local scripts/db/apply-migration.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -122,6 +123,7 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
     "nitro": "3.0.260603-beta",
+    "pg": "^8.23.1",
     "postgres": "^3.4.9",
     "prettier": "^3.7.3",
     "supabase": "^2.109.0",
