@@ -3,7 +3,8 @@ import { createFileRoute } from "@tanstack/react-router";
 // no resto do app) em vez da "xlsx" normal — testei e confirmei que a "xlsx" gratuita ignora
 // cor/negrito de célula ao salvar (pedido dela, 2026-10-19: quer a aba colorida como no print).
 // O resto dos relatórios deste arquivo continua em "xlsx" normal, sem nenhuma mudança.
-import * as XLSX from "xlsx-js-style";
+import type * as XLSXTypes from "xlsx-js-style";
+import { loadXLSXStyle } from "@/lib/xlsx-lazy";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -142,7 +143,10 @@ const COLUNAS_CONSOLIDADO = [
 // relatório. Fica oculta porque é só um apoio de cálculo, não um dado em si.
 const COL_AUXILIAR_VISIVEL = "Linha visível";
 
-function construirAbaConsolidado(linhas: Record<string, unknown>[]): XLSX.WorkSheet {
+function construirAbaConsolidado(
+  XLSX: typeof XLSXTypes,
+  linhas: Record<string, unknown>[],
+): XLSXTypes.WorkSheet {
   const ws = XLSX.utils.aoa_to_sheet([
     [tituloRelatorio("Relatório Consolidado — Transporte, Hospedagem e Passagens Aéreas")],
   ]);
@@ -203,9 +207,10 @@ function modaDeStatus(valores: string[]): string {
 }
 
 function construirAbaResumoGerencial(
+  XLSX: typeof XLSXTypes,
   modulos: ResumoModulo[],
   totalLinhasConsolidado: number,
-): XLSX.WorkSheet {
+): XLSXTypes.WorkSheet {
   const totalRegistros = modulos.reduce((s, m) => s + m.nRegistros, 0);
   const totalValor = modulos.reduce((s, m) => s + m.valorTotal, 0);
 
@@ -351,11 +356,12 @@ async function generateRelatorioConsolidado(dataInicio: string, dataFim: string)
     },
   ];
 
+  const XLSX = await loadXLSXStyle();
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, construirAbaConsolidado(linhas), "Consolidado");
+  XLSX.utils.book_append_sheet(wb, construirAbaConsolidado(XLSX, linhas), "Consolidado");
   XLSX.utils.book_append_sheet(
     wb,
-    construirAbaResumoGerencial(modulos, linhas.length),
+    construirAbaResumoGerencial(XLSX, modulos, linhas.length),
     "Resumo Gerencial",
   );
   XLSX.writeFile(wb, `consolidado_transporte_hospedagem_passagens_${dataInicio}_a_${dataFim}.xlsx`);

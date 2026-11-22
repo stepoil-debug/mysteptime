@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Upload, Trash2, Pencil, Package } from "lucide-react";
 import { useRef, useState } from "react";
 import { notify } from "@/lib/notify";
-import * as XLSX from "xlsx";
+import { loadXLSX } from "@/lib/xlsx-lazy";
 import { EmptyStateRow } from "@/components/EmptyState";
 import { NewMaterialDialog, VOLUMES } from "@/components/MaterialMultiSelect";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -77,6 +77,7 @@ function MaterialsPage() {
   });
 
   const onImport = async (file: File) => {
+    const XLSX = await loadXLSX();
     setImporting(true);
     try {
       const buf = await file.arrayBuffer();

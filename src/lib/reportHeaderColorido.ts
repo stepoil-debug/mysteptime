@@ -1,4 +1,5 @@
-import * as XLSX from "xlsx-js-style";
+import type * as XLSXTypes from "xlsx-js-style";
+import { loadXLSXStyle } from "@/lib/xlsx-lazy";
 import { tituloRelatorio } from "@/lib/reportHeader";
 
 // Mesmo visual usado no Relatório Consolidado (pedido dela, 2026-10-19: faixa azul-marinho no
@@ -21,11 +22,12 @@ const ESTILO_FAIXA = {
   alignment: { vertical: "center", horizontal: "center", wrapText: true },
 };
 
-export function planilhaColoridaComCabecalho<T extends Record<string, unknown>>(
+export async function planilhaColoridaComCabecalho<T extends Record<string, unknown>>(
   linhas: T[],
   titulo: string,
   colunas?: string[],
-): XLSX.WorkSheet {
+): Promise<XLSXTypes.WorkSheet> {
+  const XLSX = await loadXLSXStyle();
   const cols = colunas ?? (linhas.length > 0 ? Object.keys(linhas[0]) : []);
   const ws = XLSX.utils.aoa_to_sheet([[tituloRelatorio(titulo)]]);
   XLSX.utils.sheet_add_json(ws, linhas, { origin: "A2", header: cols });

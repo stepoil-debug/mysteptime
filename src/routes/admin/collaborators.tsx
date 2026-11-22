@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Upload, Trash2, Pencil, RefreshCw, Users } from "lucide-react";
 import { useRef, useState } from "react";
 import { notify } from "@/lib/notify";
-import * as XLSX from "xlsx";
+import { loadXLSX } from "@/lib/xlsx-lazy";
 import { NewCollaboratorDialog } from "@/components/CollaboratorSelect";
 import { EmptyStateRow } from "@/components/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -281,6 +281,7 @@ function CollaboratorsPage() {
   });
 
   const onImport = async (file: File) => {
+    const XLSX = await loadXLSX();
     try {
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf);

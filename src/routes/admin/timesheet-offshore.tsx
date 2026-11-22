@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import * as XLSX from "xlsx";
+import { loadXLSX } from "@/lib/xlsx-lazy";
 import { notify } from "@/lib/notify";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -193,6 +193,7 @@ export async function generateRelatorioRH(
   dataFim: string = defaultEnd(),
   unidadeFiltro = "all",
 ): Promise<void> {
+  const XLSX = await loadXLSX();
   const [{ data: colaboradores }, embarques, periodosFI, todasSemanas] = await Promise.all([
     supabase.from("hist_novo_colaboradores").select("*"),
     selectAllPages<TimesheetEmbarque>((from, to) => supabase.from("timesheet_embarques").select("*").gte("data_fim_embarque", DRAKE_DATA_CUTOFF).order("id").range(from, to)),
@@ -314,6 +315,7 @@ export async function generateRelatorioTimesheetsLancados(
   dataInicio: string = defaultStart(),
   dataFim: string = defaultEnd(),
 ): Promise<void> {
+  const XLSX = await loadXLSX();
   const [{ data: colaboradores }, embarques] = await Promise.all([
     supabase.from("hist_novo_colaboradores").select("*"),
     selectAllPages<TimesheetEmbarque>((from, to) => supabase.from("timesheet_embarques").select("*").gte("data_fim_embarque", DRAKE_DATA_CUTOFF).order("id").range(from, to)),
@@ -386,6 +388,7 @@ export async function generateRelatorioMedicao(
   dataFim: string = defaultEnd(),
   unidadeFiltro = "all",
 ): Promise<void> {
+  const XLSX = await loadXLSX();
   const [{ data: colaboradores }, embarques, periodos] = await Promise.all([
     supabase.from("hist_novo_colaboradores").select("*"),
     selectAllPages<TimesheetEmbarque>((from, to) => supabase.from("timesheet_embarques").select("*").gte("data_fim_embarque", DRAKE_DATA_CUTOFF).order("id").range(from, to)),
@@ -465,6 +468,7 @@ export async function generateRelatorioFolhaRH(
   dataInicio: string = defaultStart(),
   dataFim: string = defaultEnd(),
 ): Promise<void> {
+  const XLSX = await loadXLSX();
   const [{ data: colaboradores }, embarques] = await Promise.all([
     supabase.from("hist_novo_colaboradores").select("*"),
     selectAllPages<TimesheetEmbarque>((from, to) => supabase.from("timesheet_embarques").select("*").gte("data_fim_embarque", DRAKE_DATA_CUTOFF).order("id").range(from, to)),

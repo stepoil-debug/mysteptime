@@ -1,7 +1,7 @@
 ﻿import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import * as XLSX from "xlsx";
+import { loadXLSX } from "@/lib/xlsx-lazy";
 import { supabase as supabaseTyped } from "@/integrations/supabase/client";
 import { matchesNameSearch, useOrdemComSelecionadosFixados } from "@/lib/utils";
 import { parseValorForm } from "@/lib/format";
@@ -221,8 +221,9 @@ export async function generateRelatorioHospedagem(
   dataInicio?: string,
   dataFim?: string,
 ): Promise<void> {
+  const XLSX = await loadXLSX();
   const rows = await buscarLinhasRelatorioHospedagem(dataInicio, dataFim);
-  const ws = planilhaComCabecalho(rows, "Relatório de Hospedagem");
+  const ws = await planilhaComCabecalho(rows, "Relatório de Hospedagem");
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Hospedagem");
   XLSX.writeFile(wb, `hospedagem_${new Date().toISOString().slice(0, 10)}.xlsx`);
@@ -996,7 +997,7 @@ function ImportCustosHospedagemDialog({
 
   const onFile = async (file: File) => {
     const buf = await file.arrayBuffer();
-    const linhas = parsePlanilhaCustos(buf, "Hospedagem");
+    const linhas = await parsePlanilhaCustos(buf, "Hospedagem");
     if (linhas.length === 0) {
       notify.error('Nenhuma linha encontrada na aba "Hospedagem" da planilha.');
       return;
@@ -1398,13 +1399,14 @@ function LancamentosTab({
 
   // Exporta exatamente o que está na tela — mesmas linhas/ordem de `filtradas`, já com todos
   // os filtros (período, unidade, BSP, hotel, motivo, nome) aplicados.
-  const exportarRelatorio = () => {
+  const exportarRelatorio = async () => {
+    const XLSX = await loadXLSX();
     const rows = filtradas.map((h) => hospedagemToRelatorioRow(h, hotelById));
     if (rows.length === 0) {
       notify.error("Nenhuma hospedagem pra exportar com os filtros atuais.");
       return;
     }
-    const ws = planilhaComCabecalho(rows, "Relatório de Hospedagem");
+    const ws = await planilhaComCabecalho(rows, "Relatório de Hospedagem");
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Hospedagem");
     XLSX.writeFile(wb, `hospedagem_${new Date().toISOString().slice(0, 10)}.xlsx`);
