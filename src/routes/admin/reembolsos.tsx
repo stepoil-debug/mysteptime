@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 // "xlsx-js-style" no lugar da "xlsx" normal pra exportar com cor (pedido dela, 2026-10-19/20,
 // mesmo visual do Relatório Consolidado) — é um fork com a mesma API da lib "xlsx" original.
-import * as XLSX from "xlsx-js-style";
+import { loadXLSXStyle } from "@/lib/xlsx-lazy";
 import { supabase as supabaseTyped } from "@/integrations/supabase/client";
 // reembolsos/reembolso_itens/etc. ainda não estão nos tipos gerados (mesmo padrão de
 // hospedagem.tsx/passagens-aereas.tsx) — cast local pra não bloquear o build.
@@ -146,8 +146,9 @@ export async function buscarLinhasRelatorioReembolsos(dataInicio?: string, dataF
 }
 
 export async function generateRelatorioReembolsos(dataInicio?: string, dataFim?: string): Promise<void> {
+  const XLSX = await loadXLSXStyle();
   const rows = await buscarLinhasRelatorioReembolsos(dataInicio, dataFim);
-  const ws = planilhaColoridaComCabecalho(rows, "Relatório de Reembolsos");
+  const ws = await planilhaColoridaComCabecalho(rows, "Relatório de Reembolsos");
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Reembolsos");
   XLSX.writeFile(wb, `reembolsos_${new Date().toISOString().slice(0, 10)}.xlsx`);

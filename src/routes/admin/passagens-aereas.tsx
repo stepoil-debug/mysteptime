@@ -3,7 +3,7 @@ import { AEROPORTO_OPTIONS } from "@/lib/aeroportos";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import * as XLSX from "xlsx";
+import { loadXLSX } from "@/lib/xlsx-lazy";
 import { supabase as supabaseTyped } from "@/integrations/supabase/client";
 import { matchesNameSearch } from "@/lib/utils";
 import { parseValorForm } from "@/lib/format";
@@ -211,8 +211,9 @@ export async function generateRelatorioPassagensAereas(
   dataInicio?: string,
   dataFim?: string,
 ): Promise<void> {
+  const XLSX = await loadXLSX();
   const rows = await buscarLinhasRelatorioPassagensAereas(dataInicio, dataFim);
-  const ws = planilhaComCabecalho(rows, "Relatório de Passagens Aéreas");
+  const ws = await planilhaComCabecalho(rows, "Relatório de Passagens Aéreas");
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Passagens Aéreas");
   XLSX.writeFile(wb, `passagens_aereas_${new Date().toISOString().slice(0, 10)}.xlsx`);
@@ -1671,7 +1672,7 @@ function ImportCustosPassagensDialog({
     let linhas: LinhaCustoBruta[] = [];
     let aba: string | null = null;
     for (const nome of PASSAGENS_SHEET_NAMES) {
-      const tentativa = parsePlanilhaCustos(buf, nome);
+      const tentativa = await parsePlanilhaCustos(buf, nome);
       if (tentativa.length > 0) {
         linhas = tentativa;
         aba = nome;
@@ -2429,13 +2430,14 @@ export function PassagensAereasPage({
 
   // Exporta exatamente o que está na tela — mesmas linhas/ordem de `filtradas`, já com todos
   // os filtros (unidade, BSP, motivo, status, nome) aplicados. Mesmo padrão de Hospedagem.
-  const exportarRelatorio = () => {
+  const exportarRelatorio = async () => {
+    const XLSX = await loadXLSX();
     const rows = filtradas.map((p) => passagemToRelatorioRow(p));
     if (rows.length === 0) {
       notify.error("Nenhuma passagem pra exportar com os filtros atuais.");
       return;
     }
-    const ws = planilhaComCabecalho(rows, "Relatório de Passagens Aéreas");
+    const ws = await planilhaComCabecalho(rows, "Relatório de Passagens Aéreas");
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Passagens Aéreas");
     XLSX.writeFile(wb, `passagens_aereas_${new Date().toISOString().slice(0, 10)}.xlsx`);

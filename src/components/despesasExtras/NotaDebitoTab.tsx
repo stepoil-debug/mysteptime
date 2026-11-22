@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 // "xlsx-js-style" no lugar da "xlsx" normal pra exportar com cor (mesmo padrão do resto do
 // módulo Despesas Extras e do Relatório Consolidado).
-import * as XLSX from "xlsx-js-style";
+import { loadXLSXStyle } from "@/lib/xlsx-lazy";
 import { supabase as supabaseTyped } from "@/integrations/supabase/client";
 // notas_debito/notas_debito_itens ainda não estão nos tipos gerados — cast local, mesmo padrão
 // do resto do módulo.
@@ -235,8 +235,9 @@ export async function buscarLinhasRelatorioNotasDebito(dataInicio?: string, data
 }
 
 export async function generateRelatorioNotasDebito(dataInicio?: string, dataFim?: string): Promise<void> {
+  const XLSX = await loadXLSXStyle();
   const rows = await buscarLinhasRelatorioNotasDebito(dataInicio, dataFim);
-  const ws = planilhaColoridaComCabecalho(rows, "Relatório de Notas de Débito");
+  const ws = await planilhaColoridaComCabecalho(rows, "Relatório de Notas de Débito");
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Notas de Débito");
   XLSX.writeFile(wb, `notas_debito_${new Date().toISOString().slice(0, 10)}.xlsx`);

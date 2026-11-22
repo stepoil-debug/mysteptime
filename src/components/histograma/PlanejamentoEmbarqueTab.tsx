@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 // "xlsx-js-style" no lugar da "xlsx" normal pra exportar com cor (pedido dela, 2026-10-20,
 // mesmo visual do Relatório Consolidado) — é um fork com a mesma API, serve tanto pra ler a
 // planilha importada quanto pra escrever o relatório colorido.
-import * as XLSX from "xlsx-js-style";
+import { loadXLSXStyle } from "@/lib/xlsx-lazy";
 import { supabase as supabaseTyped } from "@/integrations/supabase/client";
 // Tabela ainda não está nos tipos gerados; cast local pra não bloquear o build.
 const supabase: any = supabaseTyped;
@@ -1144,7 +1144,8 @@ function findHeaderRowIndex(rows: unknown[][]): number {
   return -1;
 }
 
-function parsePlanejamentoWorkbook(buf: ArrayBuffer): PlanejamentoImportRow[] {
+async function parsePlanejamentoWorkbook(buf: ArrayBuffer): Promise<PlanejamentoImportRow[]> {
+  const XLSX = await loadXLSXStyle();
   const wb = XLSX.read(buf, { cellDates: true });
   const ws = wb.Sheets[wb.SheetNames[0]];
   const rows: unknown[][] = XLSX.utils.sheet_to_json(ws, {
@@ -1246,7 +1247,7 @@ function ImportarPlanejamentoDialog({
     setLendoArquivo(true);
     try {
       const buf = await file.arrayBuffer();
-      const parsedRows = parsePlanejamentoWorkbook(buf);
+      const parsedRows = await parsePlanejamentoWorkbook(buf);
       const { aceitas: ok, rejeitadas: no } = validatePlanejamentoRows(parsedRows);
       setAceitas(ok);
       setRejeitadas(no);
@@ -1872,7 +1873,8 @@ export function PlanejamentoEmbarqueTab() {
     return { total: quadro.length, bloqueados, offshore: quadro.length - bloqueados };
   }, [linhas]);
 
-  const exportarPlanejamento = () => {
+  const exportarPlanejamento = async () => {
+    const XLSX = await loadXLSXStyle();
     const rows = linhas.map((r) => ({
       Matrícula: r.matricula ?? "—",
       Nome: r.nome,
@@ -1898,7 +1900,7 @@ export function PlanejamentoEmbarqueTab() {
       notify.error("Nenhum registro pra exportar com os filtros atuais.");
       return;
     }
-    const ws = planilhaColoridaComCabecalho(rows, "Relatório de Planejamento de Embarque");
+    const ws = await planilhaColoridaComCabecalho(rows, "Relatório de Planejamento de Embarque");
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Planejamento de Embarque");
     XLSX.writeFile(wb, `planejamento_embarque_${todayStr()}.xlsx`);

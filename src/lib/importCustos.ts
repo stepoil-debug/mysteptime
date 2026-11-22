@@ -1,4 +1,5 @@
-import * as XLSX from "xlsx";
+import type * as XLSXTypes from "xlsx";
+import { loadXLSX } from "@/lib/xlsx-lazy";
 
 // Parsing puro da planilha "Relatorio_Custos_Stepup_2026_por_modulo.xlsx" — reaproveitado
 // pelos importadores de Transporte e Hospedagem (mesmas 15 colunas em ambas as abas).
@@ -48,7 +49,7 @@ const COLUNAS_DATA: (keyof LinhaCustoBruta)[] = ["data", "dataFaturamento"];
 // irreconhecível pelo parser). Em vez de confiar nisso, lê a célula de data como objeto Date
 // de verdade (cellDates:true) e formata na mão, sempre em DD/MM/AAAA — determinístico,
 // independe de locale/ambiente.
-function cellToStr(v: unknown, isDateColumn: boolean): string {
+function cellToStr(XLSX: typeof XLSXTypes, v: unknown, isDateColumn: boolean): string {
   if (v instanceof Date) {
     const d = String(v.getUTCDate()).padStart(2, "0");
     const m = String(v.getUTCMonth() + 1).padStart(2, "0");
@@ -63,7 +64,8 @@ function cellToStr(v: unknown, isDateColumn: boolean): string {
   return String(v ?? "").trim();
 }
 
-export function parsePlanilhaCustos(buf: ArrayBuffer, sheetName: string): LinhaCustoBruta[] {
+export async function parsePlanilhaCustos(buf: ArrayBuffer, sheetName: string): Promise<LinhaCustoBruta[]> {
+  const XLSX = await loadXLSX();
   const wb = XLSX.read(buf, { type: "array", cellDates: true });
   const ws = wb.Sheets[sheetName];
   if (!ws) return [];
@@ -81,7 +83,7 @@ export function parsePlanilhaCustos(buf: ArrayBuffer, sheetName: string): LinhaC
       const linha = {} as LinhaCustoBruta;
       (Object.keys(COLUNAS) as (keyof LinhaCustoBruta)[]).forEach((k) => {
         const i = indices[k];
-        linha[k] = i >= 0 ? cellToStr(r[i], COLUNAS_DATA.includes(k)) : "";
+        linha[k] = i >= 0 ? cellToStr(XLSX, r[i], COLUNAS_DATA.includes(k)) : "";
       });
       return linha;
     })

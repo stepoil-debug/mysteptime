@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import * as XLSX from "xlsx";
+import { loadXLSX } from "@/lib/xlsx-lazy";
 import { supabase as supabaseTyped } from "@/integrations/supabase/client";
 // Tabela rates ainda não existe no schema gerado (types.ts) — cast local pra não bloquear
 // o build enquanto a migration não roda contra o banco remoto e o codegen não é refeito.
@@ -77,7 +77,8 @@ interface ParsedRateRow {
 
 // A planilha mestre da usuária (STEP_Rates_e_BM_Automatico, aba "_Lookup") não tem coluna de
 // BSP — o rate é por Cliente+Embarcação+Função, então BSP é lido só se existir (informativo).
-function parseRatesWorkbook(buf: ArrayBuffer): ParsedRateRow[] {
+async function parseRatesWorkbook(buf: ArrayBuffer): Promise<ParsedRateRow[]> {
+  const XLSX = await loadXLSX();
   const wb = XLSX.read(buf);
   const sheetName = wb.SheetNames.find((n) => normHeader(n) === "_lookup" || normHeader(n) === "lookup") ?? wb.SheetNames[0];
   const ws = wb.Sheets[sheetName];
@@ -247,7 +248,7 @@ function RatesPage() {
   const onImport = async (file: File) => {
     try {
       const buf = await file.arrayBuffer();
-      const parsed = parseRatesWorkbook(buf);
+      const parsed = await parseRatesWorkbook(buf);
       if (!parsed.length) { notify.error("Nenhuma linha válida encontrada na planilha."); return; }
       setImportPreview(parsed);
     } catch (e: any) {

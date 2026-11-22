@@ -1,7 +1,7 @@
 import { createFileRoute, useSearch, useNavigate } from "@tanstack/react-router";
 import { hasOperatorAccess } from "@/lib/access-roles";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import * as XLSX from "xlsx";
+import { loadXLSX } from "@/lib/xlsx-lazy";
 import { supabase as supabaseTyped } from "@/integrations/supabase/client";
 // Tabelas ainda não migradas (transport_solicitations/nominations/weld_type_config); cast local.
 const supabase: any = supabaseTyped;
@@ -408,8 +408,9 @@ export async function generateRelatorioTransporte(
   dataInicio?: string,
   dataFim?: string,
 ): Promise<void> {
+  const XLSX = await loadXLSX();
   const rows = await buscarLinhasRelatorioTransporte(dataInicio, dataFim);
-  const ws = planilhaComCabecalho(rows, "Relatório de Transporte");
+  const ws = await planilhaComCabecalho(rows, "Relatório de Transporte");
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Transporte");
   XLSX.writeFile(wb, `transporte_${todayISO()}.xlsx`);
@@ -2079,7 +2080,7 @@ function ImportCustosTransporteDialog({
 
   const onFile = async (file: File) => {
     const buf = await file.arrayBuffer();
-    const linhas = parsePlanilhaCustos(buf, "Transporte");
+    const linhas = await parsePlanilhaCustos(buf, "Transporte");
     if (linhas.length === 0) {
       notify.error('Nenhuma linha encontrada na aba "Transporte" da planilha.');
       return;
@@ -3742,9 +3743,10 @@ function DetailView({
     [filtered],
   );
 
-  const exportarFiltrado = () => {
+  const exportarFiltrado = async () => {
+    const XLSX = await loadXLSX();
     const rows = filtered.map((t) => tripToRelatorioRow(t, tagsById, collabsById, materialsById));
-    const ws = planilhaComCabecalho(rows, "Relatório de Transporte");
+    const ws = await planilhaComCabecalho(rows, "Relatório de Transporte");
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Transporte");
     const periodo = from || to ? `_${from || "inicio"}_a_${to || "hoje"}` : "";

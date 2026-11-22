@@ -2,7 +2,7 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import { useSearch } from "@tanstack/react-router";
 import { DrakePobTodayCard } from "./DrakePobTodayCard";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
-import * as XLSX from "xlsx";
+import { loadXLSX } from "@/lib/xlsx-lazy";
 import { notify } from "@/lib/notify";
 import { planilhaComCabecalho } from "@/lib/reportHeader";
 import { useAuth } from "@/hooks/useAuth";
@@ -967,6 +967,7 @@ export async function generateRelatorioEmbarques(
   dataInicio?: string,
   dataFim?: string,
 ): Promise<void> {
+  const XLSX = await loadXLSX();
   const [{ data: colaboradores, error: cErr }, periodos, timesheetEmbarques] = await Promise.all([
     supabase.from("hist_novo_colaboradores").select(HIST_COLABORADOR_SELECT),
     selectAllPages<HistNovoPeriodo>((from, to) => {
@@ -1013,7 +1014,7 @@ export async function generateRelatorioEmbarques(
       origem: p.origem ?? "—",
     };
   });
-  const ws = planilhaComCabecalho(rows, "Relatório de Embarques");
+  const ws = await planilhaComCabecalho(rows, "Relatório de Embarques");
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Embarques");
   XLSX.writeFile(wb, `embarques_${todayStr()}.xlsx`);
@@ -1028,6 +1029,7 @@ export async function generateRelatorioDisponibilidade(
   dataInicio?: string,
   dataFim?: string,
 ): Promise<void> {
+  const XLSX = await loadXLSX();
   const [{ data: colaboradores, error: cErr }, periodos] = await Promise.all([
     supabase.from("hist_novo_colaboradores").select(HIST_COLABORADOR_SELECT),
     selectAllPages<HistNovoPeriodo>((from, to) =>
@@ -1064,7 +1066,7 @@ export async function generateRelatorioDisponibilidade(
     }))
     .sort((a, b) => a.colaborador.localeCompare(b.colaborador));
 
-  const ws = planilhaComCabecalho(rows, "Relatório de Disponibilidade");
+  const ws = await planilhaComCabecalho(rows, "Relatório de Disponibilidade");
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Disponibilidade");
   XLSX.writeFile(wb, `disponibilidade_${hoje}.xlsx`);
@@ -1077,6 +1079,7 @@ export async function generateRelatorioDisponibilidade(
 // colaborador — ela confirmou que sempre existe um; só cai pro Planejamento de Embarque quando
 // ele também está com Status "Embarcado").
 export async function generateRelatorioPobUnidadeDia(): Promise<void> {
+  const XLSX = await loadXLSX();
   const hoje = todayStr();
   const inicioMes = `${hoje.slice(0, 7)}-01`;
   const [ano, mes] = hoje.slice(0, 7).split("-").map(Number);
@@ -1179,7 +1182,7 @@ export async function generateRelatorioPobUnidadeDia(): Promise<void> {
   });
   rows.push(totalRow);
 
-  const ws = planilhaComCabecalho(rows, "Relatório POB por Unidade x Dia");
+  const ws = await planilhaComCabecalho(rows, "Relatório POB por Unidade x Dia");
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "POB por Unidade x Dia");
   XLSX.writeFile(wb, `pob_unidade_dia_${hoje}.xlsx`);
@@ -1280,6 +1283,7 @@ export async function generateRelatorioHeadcount(
   dataInicio?: string,
   dataFim?: string,
 ): Promise<void> {
+  const XLSX = await loadXLSX();
   const { colaboradores, periodosByColaborador } = await fetchColaboradoresEPeriodos();
   const hoje = todayStr();
   const snap = computeHeadcountSnapshot(
@@ -1312,6 +1316,7 @@ export async function generateRelatorioHeadcount(
 export async function generateRelatorioHeadcountMultiplo(
   periodos: { inicio: string; fim: string }[],
 ): Promise<void> {
+  const XLSX = await loadXLSX();
   if (!periodos.length) throw new Error("Informe ao menos um período.");
   const { colaboradores, periodosByColaborador } = await fetchColaboradoresEPeriodos();
 
@@ -2348,7 +2353,8 @@ function LancamentosTab({
 
   // Exporta exatamente o que está na tela — mesmas linhas/ordem de filteredPeriodos, já com
   // todos os filtros (incluindo "Atualizado hoje") aplicados, não a base inteira de períodos.
-  const exportarLancamentos = () => {
+  const exportarLancamentos = async () => {
+    const XLSX = await loadXLSX();
     const rows = filteredPeriodos.map((p) => {
       const c = colaboradorById.get(p.colaborador_id);
       return {
@@ -2376,7 +2382,7 @@ function LancamentosTab({
       notify.error("Nenhum período pra exportar com os filtros atuais.");
       return;
     }
-    const ws = planilhaComCabecalho(rows, "Relatório de Lançamentos");
+    const ws = await planilhaComCabecalho(rows, "Relatório de Lançamentos");
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Lançamentos");
     XLSX.writeFile(wb, `lancamentos_${todayStr()}.xlsx`);
