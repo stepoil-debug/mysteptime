@@ -26,7 +26,10 @@ export const Route = createFileRoute("/api/auth/intranet")({
         // Em produção o app é servido pelo proxy da Intranet (intranet.step-og.com/mysteptime),
         // então a origem do navegador é a da Intranet, não a do host da Vercel.
         const allowedOrigins = new Set([currentOrigin, "https://intranet.step-og.com"]);
-        if (!sentOrigin || !allowedOrigins.has(sentOrigin)) return failure(403, "Origem não autorizada.");
+        if (!sentOrigin || !allowedOrigins.has(sentOrigin)) {
+          console.warn("[MYSTEPTIME INTRANET SSO] origem recusada", { sentOrigin, currentOrigin });
+          return failure(403, "Origem não autorizada.");
+        }
         const json = await request.json().catch(() => null) as { ticket?: unknown } | null;
         const ticket = typeof json?.ticket === "string" ? json.ticket.trim() : "";
         if (!/^[0-9a-f]{64}$/.test(ticket)) return failure(400, "Acesso temporário inválido.");
@@ -49,12 +52,18 @@ export const Route = createFileRoute("/api/auth/intranet")({
             signal: AbortSignal.timeout(12_000),
             cache: "no-store",
           });
-          if (!reply.ok) return failure(503, "A Intranet não respondeu à validação corporativa.");
+          if (!reply.ok) {
+            console.warn("[MYSTEPTIME INTRANET SSO] RPC da Intranet falhou", { status: reply.status });
+            return failure(503, "A Intranet não respondeu à validação corporativa.");
+          }
           identity = await reply.json() as BridgeIdentity | null;
         } catch {
           return failure(503, "A Intranet não respondeu à validação corporativa.");
         }
-        if (!identity) return failure(403, "O acesso temporário da Intranet é inválido ou já expirou.");
+        if (!identity) {
+          console.warn("[MYSTEPTIME INTRANET SSO] ticket recusado pela Intranet (expirado ou já usado)");
+          return failure(403, "O acesso temporário da Intranet é inválido ou já expirou.");
+        }
 
         const email = (identity?.email || "").trim().toLowerCase();
         if (!identity?.step_one_user_id || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {

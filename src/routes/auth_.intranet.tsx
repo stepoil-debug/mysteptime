@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -7,51 +7,49 @@ export const Route = createFileRoute("/auth_/intranet")({
   component: IntranetAuthPage,
 });
 
+// Uma única tentativa por carregamento da página: se o componente montar de novo (hidratação,
+// troca de rota), reaproveita a mesma promessa em vez de ler o hash já apagado e acusar
+// "ticket inválido" enquanto o login real ainda está em andamento.
+let attempt: Promise<void> | null = null;
+
+function intranetLogin(): Promise<void> {
+  if (attempt) return attempt;
+  const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const ticket = fragment.get("ticket") || "";
+  // Remove the credential from browser history immediately.
+  window.history.replaceState(window.history.state, "", window.location.pathname);
+  attempt = (async () => {
+    if (!/^[0-9a-f]{64}$/.test(ticket)) {
+      throw new Error("O acesso temporário da Intranet é inválido ou já expirou. Abra o card do Mysteptime de novo.");
+    }
+    const response = await fetch(`${import.meta.env.BASE_URL}api/auth/intranet`, {
+      method: "POST",
+      cache: "no-store",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ticket }),
+    });
+    const data = await response.json().catch(() => ({})) as { ok?: boolean; tokenHash?: string; error?: string };
+    if (!response.ok || !data.ok || !data.tokenHash) {
+      throw new Error(data.error || `Não foi possível validar o acesso corporativo (${response.status}).`);
+    }
+    // A sessão é emitida pelo Supabase Auth para o usuário real.
+    const { error: authError } = await supabase.auth.verifyOtp({ token_hash: data.tokenHash, type: "magiclink" });
+    if (authError) throw new Error("A autenticação do Mysteptime não pôde ser concluída.");
+    window.location.replace(import.meta.env.BASE_URL);
+  })();
+  return attempt;
+}
+
 function IntranetAuthPage() {
-  const started = useRef(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (started.current) return;
-    started.current = true;
-    const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-    const ticket = fragment.get("ticket") || "";
-
-    // Remove the credential from browser history immediately.
-    window.history.replaceState(window.history.state, "", window.location.pathname);
-    if (!/^[0-9a-f]{64}$/.test(ticket)) {
-      setError("O acesso temporário da Intranet é inválido ou já expirou.");
-      return;
-    }
-
-    (async () => {
-      try {
-        const response = await fetch(`${import.meta.env.BASE_URL}api/auth/intranet`, {
-          method: "POST",
-          cache: "no-store",
-          credentials: "same-origin",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ticket }),
-        });
-        const data = await response.json().catch(() => ({})) as {
-          ok?: boolean; tokenHash?: string; error?: string
-        };
-        if (!response.ok || !data.ok || !data.tokenHash) {
-          throw new Error(data.error || "Não foi possível validar o acesso corporativo.");
-        }
-
-        // A sessão é emitida pelo Supabase Auth para o usuário real.
-        // Não se tenta usar o token da Intranet como sessão do Supabase.
-        const { error: authError } = await supabase.auth.verifyOtp({
-          token_hash: data.tokenHash,
-          type: "magiclink",
-        });
-        if (authError) throw new Error("A autenticação do Mysteptime não pôde ser concluída.");
-        window.location.replace(import.meta.env.BASE_URL);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Não foi possível concluir o acesso integrado.");
-      }
-    })();
+    let alive = true;
+    intranetLogin().catch((e) => {
+      if (alive) setError(e instanceof Error ? e.message : "Não foi possível concluir o acesso integrado.");
+    });
+    return () => { alive = false; };
   }, []);
 
   return (
