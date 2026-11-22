@@ -26,6 +26,8 @@ function publicView(row: any) {
     validationStatus: (row?.validation_status ?? null) as string | null,
     validationMessage: (row?.validation_message ?? null) as string | null,
     validatedAt: (row?.validated_at ?? null) as string | null,
+    // Envio oficial pela caixa noreply (Power Automate); só existe no servidor.
+    noreply: Boolean(process.env.M365_FLOW_URL?.trim()),
   };
 }
 

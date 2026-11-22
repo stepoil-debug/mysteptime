@@ -62,6 +62,27 @@ export function EmailSettingsCard() {
 
   const validated = data?.validationStatus === "verified";
 
+  if (data?.noreply) {
+    return (
+      <Card className="animate-in fade-in slide-in-from-bottom-2 duration-500 p-5 space-y-5">
+        <div>
+          <h3 className="flex items-center gap-2 font-semibold"><Mail className="h-4 w-4" />Avisos por e-mail (caixa noreply)</h3>
+          <p className="text-sm text-muted-foreground">Os avisos saem pela caixa noreply da STEP (mesmo fluxo do Power Automate da Intranet). Não há chave para configurar aqui.</p>
+        </div>
+        {data.validationMessage && (
+          <div className={`flex items-start gap-2 rounded-md border p-3 text-sm ${validated ? "border-primary/40 text-foreground" : "border-destructive/40 text-destructive"}`}>
+            {validated ? <ShieldCheck className="mt-0.5 h-4 w-4 text-primary" /> : <AlertTriangle className="mt-0.5 h-4 w-4" />}
+            <span>{data.validationMessage}</span>
+          </div>
+        )}
+        <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+          <div><Label>Enviar e-mail de teste para</Label><Input type="email" value={testTo} onChange={(e) => setTestTo(e.target.value)} placeholder="seu.email@step-og.com" /></div>
+          <div className="flex items-end"><Button variant="outline" onClick={onTest} loading={busy === "test"} disabled={!testTo}><Send className="mr-2 h-4 w-4" />Enviar teste</Button></div>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card className="animate-in fade-in slide-in-from-bottom-2 duration-500 p-5 space-y-5">
       <div className="flex items-start justify-between gap-4">
