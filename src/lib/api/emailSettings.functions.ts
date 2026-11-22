@@ -90,6 +90,23 @@ export const sendTestEmail = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertOperator(context.supabase, context.userId);
     const row = await readRow(context.supabase);
+    // Caixa noreply (Power Automate) é o envio oficial: testa por ela sem exigir chave do Resend.
+    const { mailFlowConfigured, sendMailFlow } = await import("../mail-flow.server");
+    if (mailFlowConfigured()) {
+      await sendMailFlow({
+        to: data.to,
+        subject: "Teste de envio — My Step Time",
+        html: "<p>Olá!</p><p>Este é um e-mail de teste do <strong>My Step Time</strong>, enviado pela caixa noreply. Se você recebeu, os avisos por e-mail estão prontos para uso.</p>",
+        text: "Olá! Este é um e-mail de teste do My Step Time, enviado pela caixa noreply. Se você recebeu, os avisos por e-mail estão prontos para uso.",
+      });
+      const patch = {
+        validation_status: "verified",
+        validation_message: `E-mail de teste enviado pela caixa noreply para ${data.to}.`,
+        validated_at: new Date().toISOString(),
+      };
+      await context.supabase.from("app_email_settings").update(patch).eq("id", 1);
+      return publicView({ ...(row ?? {}), ...patch });
+    }
     if (!row?.resend_api_key_encrypted || !row.sender_email) throw new Error("Salve as configurações antes de testar.");
     const apiKey = await decryptSecret(row.resend_api_key_encrypted);
     const from = row.sender_name ? `${row.sender_name} <${row.sender_email}>` : row.sender_email;
