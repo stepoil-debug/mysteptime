@@ -35,7 +35,8 @@ select cron.schedule('mysteptime-flow-track-demandas-sync', '*/15 * * * *', $$
   select net.http_post(
     url := 'https://mysteptime.vercel.app/mysteptime/api/public/flow-track-demandas-sync',
     headers := jsonb_build_object('Content-Type','application/json',
-      'x-flow-track-sync-token','b18a4d2afd13fbe329b0355b15a6d62c63f5e4fe2071f92e93e805416f5c0384'),
+      'x-flow-track-sync-token',
+      coalesce((select decrypted_secret from vault.decrypted_secrets where name='flow_track_sync_secret' limit 1),'')),
     body := '{}'::jsonb);
 $$);
 
