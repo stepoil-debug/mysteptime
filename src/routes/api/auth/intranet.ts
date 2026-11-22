@@ -23,7 +23,10 @@ export const Route = createFileRoute("/api/auth/intranet")({
       POST: async ({ request }) => {
         const currentOrigin = new URL(request.url).origin;
         const sentOrigin = request.headers.get("origin");
-        if (!sentOrigin || sentOrigin !== currentOrigin) return failure(403, "Origem não autorizada.");
+        // Em produção o app é servido pelo proxy da Intranet (intranet.step-og.com/mysteptime),
+        // então a origem do navegador é a da Intranet, não a do host da Vercel.
+        const allowedOrigins = new Set([currentOrigin, "https://intranet.step-og.com"]);
+        if (!sentOrigin || !allowedOrigins.has(sentOrigin)) return failure(403, "Origem não autorizada.");
         const json = await request.json().catch(() => null) as { ticket?: unknown } | null;
         const ticket = typeof json?.ticket === "string" ? json.ticket.trim() : "";
         if (!/^[0-9a-f]{64}$/.test(ticket)) return failure(400, "Acesso temporário inválido.");
