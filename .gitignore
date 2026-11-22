@@ -56,3 +56,6 @@ private/access-history/
 # build da Vercel (Nitro preset vercel)
 .vercel
 .output
+
+.vercel
+.env*
