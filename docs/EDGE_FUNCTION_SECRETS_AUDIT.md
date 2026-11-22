@@ -7,7 +7,7 @@ Projeto Supabase: `knzszyxsspdjzgqkfrdt`. Auditoria somente leitura feita em 202
 | Edge Function ativa | Variaveis exigidas pelo codigo | No `.env` local |
 |---|---|---|
 | `get-bm-smartsheet-data` | `SMARTSHEET_TOKEN`, `SMARTSHEET_ID_1`, `SMARTSHEET_ID_2` | Token: presente; ambos os IDs: ausentes |
-| `extract-invoice-number-ai` | `ANTHROPIC_API_KEY` | Ausente |
+| `extract-invoice-number-ai` | nenhum (regras locais desde 22/11) | — |
 | `check-turma-alerts` | `CRON_SECRET`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | SMTP: chaves presentes, `SMTP_FROM` requer validacao; CRON_SECRET ausente |
 | `create-fixed-nominations` | `CRON_SECRET`, `RESEND_API_KEY`, `RESEND_FROM` | Ausentes |
 | `capture-planejamento-snapshot` | `CRON_SECRET` | Ausente |
