@@ -18,9 +18,9 @@ try {
   if (!src) throw new Error("Matheus ausente no export");
   const exists = await one("select count(*)::int n from auth.users where id=$1::uuid or lower(email)=lower($2)", [MATHEUS, src.email]);
   if (exists.n === 0) {
-    await db.query(`insert into auth.users (instance_id,id,aud,role,email,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
+    await db.query(`insert into auth.users (instance_id,id,aud,role,email,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at,confirmation_token,recovery_token,email_change_token_new,email_change)
       values ('00000000-0000-0000-0000-000000000000',$1,'authenticated','authenticated',$2,now(),
-        '{"provider":"email","providers":["email"]}','{}',now(),now())`, [MATHEUS, src.email]);
+        '{"provider":"email","providers":["email"]}','{}',now(),now(),'','','','')`, [MATHEUS, src.email]);
     await db.query(`insert into auth.identities (id,user_id,provider_id,provider,identity_data,created_at,updated_at,last_sign_in_at)
       values (gen_random_uuid(),$1::uuid,$1::text,'email',jsonb_build_object('sub',$1::text,'email',$2::text,'email_verified',true),now(),now(),null)`, [MATHEUS, src.email]);
   }
