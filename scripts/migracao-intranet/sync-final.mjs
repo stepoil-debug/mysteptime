@@ -186,6 +186,9 @@ async function orderedRowWrites(db, table, operations, mapping) {
   const hash = "md5(row_to_json(" + rowShape(valueColumns(table)) + ")::text)";
   const sourceTable = sourceRelation(STAGING, table.name, mapping);
   const targetTable = relation(TARGET.schema, table.name);
+  // Gatilhos de usuário (ex.: updated_at = now()) reescreveriam os valores da origem; ficam
+  // desligados só durante a cópia, na mesma transação. FKs (gatilhos internos) seguem ativas.
+  await db.query(`alter table ${targetTable} disable trigger user`);
   for (let offset = 0; offset < operations.length; offset += 200) {
     const batch = operations.slice(offset, offset + 200);
     const expected = new Map(batch.map(({ key, hash }) => [key, hash]));
@@ -209,6 +212,7 @@ async function orderedRowWrites(db, table, operations, mapping) {
     }
     console.log(JSON.stringify({ table: table.name, batch: offset / 200 + 1, rows: write.rowCount }));
   }
+  await db.query(`alter table ${targetTable} enable trigger user`);
 }
 
 async function blockers(db) {
