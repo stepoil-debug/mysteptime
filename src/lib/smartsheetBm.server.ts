@@ -3,7 +3,7 @@ import process from "node:process";
 // Server-only helper pro Smartsheet do módulo de Boletim de Medição (BM). O sufixo
 // .server.ts mantém isso fora do bundle do cliente — token nunca chega ao navegador
 // (diferente de src/lib/api/smartsheet.functions.ts, que hoje lê o token via
-// VITE_SMARTSHEET_TOKEN e vaza pro bundle — problema separado, não corrigido aqui).
+// token no servidor; corrigido em 22/11/2026).
 //
 // Credencial: SMARTSHEET_API_TOKEN (sem prefixo VITE_) configurada como secret no
 // Supabase / Vercel, lida via process.env dentro de cada handler (não no escopo
