@@ -51,4 +51,4 @@ Leia também `AGENTS.md` (regras de arquitetura) e `docs/GUIA_DESENVOLVIMENTO.md
 - Card da Intranet abre o app novo para todos (`MYSTEPTIME_NEW_APP_FOR_ALL` em `server/functions/auth-mysteptime-launch.mts` da Intranet; `false` volta ao Lovable).
 - NÃO rodar de novo `import-data.mjs`, `load-export.mjs` nem `sync-final.mjs --commit`: o banco novo é a fonte da verdade e isso sobrescreveria dados novos.
 - E-mail pela caixa noreply (Power Automate, `M365_FLOW_URL`). Não reativar SMTP Microsoft nem Resend.
-- Pendente: `FLOW_TRACK_SYNC_SECRET` na Vercel para ligar o cron do Flow Track.
+- Flow Track: `FLOW_TRACK_SYNC_SECRET` (Vercel) = Vault `flow_track_sync_secret`; cron a cada 15 min ativo desde 22/11.
