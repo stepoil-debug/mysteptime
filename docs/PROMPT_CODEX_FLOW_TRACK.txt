@@ -1,0 +1,46 @@
+Tarefa única: configurar a chave do Flow Track do Mysteptime.
+
+REGRAS OBRIGATÓRIAS
+- Nunca exiba, registre em log, salve em arquivo, coloque em commit ou repita no chat o valor da chave. Gere e cole direto nos painéis.
+- Não revogue, apague ou altere nenhuma outra variável, secret, chave ou projeto.
+- Não mexa no Supabase da Intranet (qxmxtbjxkhecqilpnhgq) nem no Lovable.
+- Se algo não bater com o descrito, PARE e me avise.
+
+PASSO 1 - GERAR A CHAVE
+No terminal, rode (copia para a área de transferência sem exibir):
+node -e "process.stdout.write(require('crypto').randomBytes(32).toString('hex'))" | clip
+Use esse MESMO valor nos passos 2 e 3. Não gere outro.
+
+PASSO 2 - VERCEL
+1. Abra https://vercel.com/douglas-6d4f/mysteptime/settings/environment-variables
+   Confira que o projeto é "mysteptime" (ID prj_EeFDYkPChLX21aKEFJSwGpwnMhw0).
+2. Crie a variável:
+   - Nome: FLOW_TRACK_SYNC_SECRET   (exatamente assim, sem VITE_)
+   - Valor: cole o da área de transferência
+   - Tipo: Sensitive
+   - Ambientes: Production e Preview
+3. Se já existir, EDITE a existente (não crie duplicada).
+
+PASSO 3 - SUPABASE VAULT
+1. Abra https://supabase.com/dashboard/project/knzszyxsspdjzgqkfrdt/settings/vault/secrets
+   Confira que o projeto é "knzszyxsspdjzgqkfrdt".
+2. Clique em "Add new secret":
+   - Name: flow_track_sync_secret   (exatamente assim, minúsculas)
+   - Secret: cole o MESMO valor do passo 2
+   - Description: Token do cron do Flow Track (igual a FLOW_TRACK_SYNC_SECRET na Vercel)
+3. Se já existir com esse nome, edite o valor.
+4. NÃO altere os secrets "cron_secret" e "drake_cron_secret".
+
+PASSO 4 - REDEPLOY DE PRODUÇÃO
+1. Abra https://vercel.com/douglas-6d4f/mysteptime/deployments
+2. No deploy mais recente marcado como "Production", menu "..." -> Redeploy -> confirme.
+3. Aguarde ficar "Ready".
+
+PASSO 5 - LIMPAR
+Copie qualquer outro texto para limpar a área de transferência.
+
+RELATÓRIO (sem nenhum valor)
+VERCEL FLOW_TRACK_SYNC_SECRET: criada | editada (Production, Preview) - Sensitive
+VAULT flow_track_sync_secret: criado | editado
+REDEPLOY PRODUÇÃO: Ready em <hora>
+PROBLEMAS: <nenhum | descrição>
