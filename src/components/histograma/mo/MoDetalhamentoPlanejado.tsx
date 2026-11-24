@@ -1,6 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ArrowRightLeft, Loader2 } from "lucide-react";
+import { AlertTriangle, ArrowRightLeft, Loader2, Pencil, Save, X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 import { notify } from "@/lib/notify";
 import { disponivelPorFuncaoNosDias } from "@/lib/mo-disponivel";
 import {
@@ -22,6 +24,7 @@ import {
   salvarDepara,
   useMoDepara,
   useMoPeriodo,
+  useMoPodeEditar,
   usePlanejadoDrakeDiario,
   type MoDepara,
 } from "@/components/histograma/mo/usePlanejadoXDisponivel";
@@ -204,13 +207,57 @@ export function DetalhamentoPlanejadoSection({
   funcoesMo: string[];
   hoje: string;
 }) {
-  const [inicio, setInicio] = useState(hoje);
-  const [nDias, setNDias] = useState(14);
-  const diasDiario = useMemo(
-    () => Array.from({ length: nDias }, (_, i) => addDiasIso(inicio || hoje, i)),
-    [inicio, nDias, hoje],
+  // Período único (Diário + Semanal). Vem pré-definido com a data mínima de embarque e a
+  // máxima de desembarque da M.O; a pessoa pode mudar De/Até livremente.
+  const { data: periodo } = useMoPeriodo();
+  const [de, setDe] = useState("");
+  const [ate, setAte] = useState("");
+  useEffect(() => {
+    if (de || ate) return;
+    if (periodo === undefined) return;
+    setDe(periodo?.data_min || hoje);
+    setAte(periodo?.data_max || addDiasIso(hoje, 30));
+  }, [periodo, de, ate, hoje]);
+  const ini = de || hoje;
+  const fim = ate && ate >= ini ? ate : addDiasIso(ini, 30);
+  const diasDiario = useMemo(() => {
+    const out: string[] = [];
+    for (let d = ini; d <= fim && out.length < 800; d = addDiasIso(d, 1)) out.push(d);
+    return out;
+  }, [ini, fim]);
+  const semanas = useMemo(
+    () => semanasAPartirDe(ini, Math.ceil(diasDiario.length / 7) + 1).filter((w) => w.inicio <= fim),
+    [ini, fim, diasDiario.length],
   );
-  const semanas = useMemo(() => semanasAPartirDe(hoje, 18), [hoje]);
+
+  // Edição: rascunho por "função|dia" -> qtd. Salvar grava em mo_planejado_ajuste, que
+  // substitui o planejado calculado em todos os gráficos/tabelas que usam a RPC.
+  const { podeEditar } = useMoPodeEditar(false);
+  const qc = useQueryClient();
+  const [editando, setEditando] = useState(false);
+  const [rascunho, setRascunho] = useState<Map<string, number>>(new Map());
+  const chaveRasc = (funcao: string, dia: string) => `${funcao}|${dia}`;
+  const salvar = useMutation({
+    mutationFn: async () => {
+      const linhasAj = Array.from(rascunho.entries()).map(([k, qtd]) => {
+        const [funcao, dia] = k.split("|");
+        return { funcao, dia, qtd };
+      });
+      if (linhasAj.length === 0) return 0;
+      const { error } = await supabase
+        .from("mo_planejado_ajuste" as never)
+        .upsert(linhasAj as never, { onConflict: "dia,funcao" });
+      if (error) throw new Error(error.message);
+      return linhasAj.length;
+    },
+    onSuccess: async (n) => {
+      setRascunho(new Map());
+      setEditando(false);
+      await qc.invalidateQueries({ queryKey: ["mo-planejado-diario"] });
+      notify.success(n ? `${n} valor(es) do planejado atualizados.` : "Nada para salvar.");
+    },
+    onError: (e) => notify.error(e instanceof Error ? e.message : "Não foi possível salvar."),
+  });
   const janela = useMemo(() => {
     const ini = [diasDiario[0], semanas[0].inicio].sort()[0];
     const fim = [diasDiario[diasDiario.length - 1], semanas[semanas.length - 1].fim].sort()[1];
@@ -219,7 +266,6 @@ export function DetalhamentoPlanejadoSection({
 
   const { data: rpc = [], isLoading, error } = usePlanejadoDrakeDiario(janela.ini, janela.fim);
   const { data: depara = [] } = useMoDepara();
-  const { data: periodo } = useMoPeriodo();
   const { data: planejamento = [] } = usePlanejamentoEmbarqueQuery();
 
   const planejado = useMemo(() => agruparPlanejado(rpc), [rpc]);
@@ -290,6 +336,51 @@ export function DetalhamentoPlanejadoSection({
       </p>
       <LegendaPxD />
 
+      <div className="flex flex-wrap items-end gap-3 rounded border bg-muted/30 p-2">
+        <div className="space-y-0.5">
+          <Label className="text-[10px] uppercase text-muted-foreground/70">Data inicial</Label>
+          <Input type="date" className="h-8 w-auto text-xs" value={de}
+            onChange={(e) => setDe(e.target.value || hoje)} />
+        </div>
+        <div className="space-y-0.5">
+          <Label className="text-[10px] uppercase text-muted-foreground/70">Data final</Label>
+          <Input type="date" className="h-8 w-auto text-xs" value={ate} min={de || undefined}
+            onChange={(e) => setAte(e.target.value)} />
+        </div>
+        {periodo?.data_min && (
+          <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => {
+            setDe(periodo.data_min || hoje);
+            setAte(periodo.data_max || addDiasIso(hoje, 30));
+          }}>
+            Período completo da M.O
+          </Button>
+        )}
+        <div className="ml-auto flex gap-2">
+          {podeEditar && !editando && (
+            <Button size="sm" onClick={() => setEditando(true)}>
+              <Pencil className="mr-1.5 h-3.5 w-3.5" /> Editar
+            </Button>
+          )}
+          {editando && (
+            <>
+              <Button size="sm" variant="outline" disabled={salvar.isPending}
+                onClick={() => { setRascunho(new Map()); setEditando(false); }}>
+                <X className="mr-1.5 h-3.5 w-3.5" /> Cancelar
+              </Button>
+              <Button size="sm" loading={salvar.isPending} onClick={() => salvar.mutate()}>
+                <Save className="mr-1.5 h-3.5 w-3.5" /> Salvar ({rascunho.size})
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+      {editando && (
+        <p className="text-[11px] text-amber-700">
+          Modo edição: digite o planejado em cada célula. No Semanal, o valor vale para os 7 dias da
+          semana. Ao salvar, o valor substitui o calculado da M.O em todo o sistema (gráficos e tabelas).
+        </p>
+      )}
+
       {error ? (
         <p className="text-xs text-destructive">
           Não foi possível calcular o planejado — o SQL 20261112000000_mo_depara_editores.sql já foi
@@ -303,36 +394,9 @@ export function DetalhamentoPlanejadoSection({
         <>
           {/* a) Acompanhamento Diário */}
           <div className="space-y-2">
-            <div className="flex flex-wrap items-end gap-3">
-              <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Acompanhamento Diário
-              </h4>
-              <div className="space-y-0.5">
-                <Label className="text-[10px] uppercase text-muted-foreground/70">
-                  Data inicial
-                </Label>
-                <Input
-                  type="date"
-                  className="h-7 w-auto text-xs"
-                  value={inicio}
-                  onChange={(e) => setInicio(e.target.value || hoje)}
-                />
-              </div>
-              <div className="space-y-0.5">
-                <Label className="text-[10px] uppercase text-muted-foreground/70">Dias</Label>
-                <select
-                  className="h-7 rounded border bg-background px-1.5 text-xs"
-                  value={nDias}
-                  onChange={(e) => setNDias(Number(e.target.value))}
-                >
-                  {[7, 14, 21, 30].map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Acompanhamento Diário
+            </h4>
             <div className="max-h-[480px] overflow-auto rounded border">
               <table className="w-max min-w-full border-separate border-spacing-1 text-xs">
                 <thead className="sticky top-0 z-20 bg-muted">
@@ -398,10 +462,22 @@ export function DetalhamentoPlanejadoSection({
                       </td>
                       {diasDiario.map((d) => (
                         <td key={d}>
-                          <CelulaPxD
-                            planejado={planejado.get(l.chave)?.porDia.get(d) ?? 0}
-                            disponivel={dispNoDia(l, d)}
-                          />
+                          {editando ? (
+                            <Input
+                              type="number" min={0}
+                              className="h-7 w-16 px-1 text-center text-xs tabular-nums"
+                              value={rascunho.get(chaveRasc(l.funcao, d)) ?? planejado.get(l.chave)?.porDia.get(d) ?? 0}
+                              onChange={(e) => {
+                                const v = Math.max(0, Math.round(Number(e.target.value) || 0));
+                                setRascunho((m) => new Map(m).set(chaveRasc(l.funcao, d), v));
+                              }}
+                            />
+                          ) : (
+                            <CelulaPxD
+                              planejado={planejado.get(l.chave)?.porDia.get(d) ?? 0}
+                              disponivel={dispNoDia(l, d)}
+                            />
+                          )}
                         </td>
                       ))}
                     </tr>
@@ -486,7 +562,23 @@ export function DetalhamentoPlanejadoSection({
                             );
                         return (
                           <td key={w.inicio}>
-                            <CelulaPxD planejado={p} disponivel={dispSemana} />
+                            {editando ? (
+                              <Input
+                                type="number" min={0}
+                                className="h-7 w-16 px-1 text-center text-xs tabular-nums"
+                                value={rascunho.get(chaveRasc(l.funcao, w.dias[0])) ?? p}
+                                onChange={(e) => {
+                                  const v = Math.max(0, Math.round(Number(e.target.value) || 0));
+                                  setRascunho((m) => {
+                                    const n = new Map(m);
+                                    w.dias.forEach((dd) => n.set(chaveRasc(l.funcao, dd), v));
+                                    return n;
+                                  });
+                                }}
+                              />
+                            ) : (
+                              <CelulaPxD planejado={p} disponivel={dispSemana} />
+                            )}
                           </td>
                         );
                       })}
