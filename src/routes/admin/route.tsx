@@ -201,8 +201,8 @@ function AdminLayout() {
       </header>
 
       <main className="w-full min-w-0 max-w-full flex-1 overflow-x-auto p-3 sm:p-4 lg:p-8">
-        {/* ≥1920px: conteúdo centralizado com no máximo 1800px, pros gráficos não esticarem. */}
-        <div className="mx-auto w-full min-w-0 max-w-[1800px]">
+        {/* Conteúdo ocupa toda a largura, alinhado ao menu do topo. */}
+        <div className="w-full min-w-0">
           <AnimatedOutlet />
         </div>
       </main>
