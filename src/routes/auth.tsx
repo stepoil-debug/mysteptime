@@ -118,6 +118,7 @@ function AuthPage() {
                 const { error } = await signIn(email, password);
                 if (error) notify.error(error);
               }} />
+              <ForgotPassword />
             </TabsContent>
           </Tabs>
         </motion.div>
@@ -189,6 +190,47 @@ function Form({ busy, setBusy, onSubmit, withName }: { busy: boolean; setBusy: (
       <Button type="submit" className="mt-2 h-12 w-full rounded-xl bg-gradient-to-r from-blue-500 to-blue-700 text-sm font-semibold uppercase tracking-widest hover:from-blue-400 hover:to-blue-600" disabled={busy}>
         {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         {withName ? "Criar conta" : "Entrar"}
+      </Button>
+    </form>
+  );
+}
+
+function ForgotPassword() {
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(false);
+  if (!open) {
+    return (
+      <button type="button" onClick={() => setOpen(true)} className="mt-3 w-full text-center text-xs text-sky-400 hover:underline">
+        Esqueci minha senha
+      </button>
+    );
+  }
+  if (sent) {
+    return <p className="mt-3 text-center text-xs text-slate-300">Se o e-mail tiver acesso ao Mysteptime, você receberá um link da caixa noreply em instantes. Confira também o lixo eletrônico.</p>;
+  }
+  return (
+    <form
+      className="mt-4 space-y-2 rounded-xl border border-white/10 p-3"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        setBusy(true);
+        try {
+          const { requestPasswordReset } = await import("@/lib/api/passwordReset.functions");
+          await requestPasswordReset({ data: { email } });
+          setSent(true);
+        } catch {
+          notify.error("Não foi possível enviar agora. Tente de novo em instantes.");
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      <Label htmlFor="reset-email" className="text-xs font-medium text-slate-400">E-mail para receber o link</Label>
+      <Input id="reset-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={AUTH_INPUT_CLASS.replace("pl-11 pr-11", "px-4")} placeholder="seu.email@step-og.com" />
+      <Button type="submit" disabled={busy} className="h-10 w-full rounded-xl bg-sky-600 hover:bg-sky-500">
+        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enviar link"}
       </Button>
     </form>
   );

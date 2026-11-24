@@ -15,6 +15,7 @@ import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as PendingRouteImport } from './routes/pending'
 import { Route as PmRouteRouteImport } from './routes/pm/route'
+import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as RhSmsRouteRouteImport } from './routes/rh-sms/route'
 import { Route as AdminApprovalsRouteImport } from './routes/admin/approvals'
 import { Route as AdminBmRouteImport } from './routes/admin/bm'
@@ -85,6 +86,11 @@ const PendingRoute = PendingRouteImport.update({
 const PmRouteRoute = PmRouteRouteImport.update({
   id: '/pm',
   path: '/pm',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
+  id: '/redefinir-senha',
+  path: '/redefinir-senha',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RhSmsRouteRoute = RhSmsRouteRouteImport.update({
@@ -312,6 +318,7 @@ export interface FileRoutesByFullPath {
   '/rh-sms': typeof RhSmsRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/pending': typeof PendingRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
   '/admin/approvals': typeof AdminApprovalsRoute
   '/admin/bm': typeof AdminBmRoute
   '/admin/collaborators': typeof AdminCollaboratorsRoute
@@ -358,6 +365,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/pending': typeof PendingRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
   '/admin/approvals': typeof AdminApprovalsRoute
   '/admin/bm': typeof AdminBmRoute
   '/admin/collaborators': typeof AdminCollaboratorsRoute
@@ -408,6 +416,7 @@ export interface FileRoutesById {
   '/rh-sms': typeof RhSmsRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/pending': typeof PendingRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
   '/admin/approvals': typeof AdminApprovalsRoute
   '/admin/bm': typeof AdminBmRoute
   '/admin/collaborators': typeof AdminCollaboratorsRoute
@@ -459,6 +468,7 @@ export interface FileRouteTypes {
     | '/rh-sms'
     | '/auth'
     | '/pending'
+    | '/redefinir-senha'
     | '/admin/approvals'
     | '/admin/bm'
     | '/admin/collaborators'
@@ -505,6 +515,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/pending'
+    | '/redefinir-senha'
     | '/admin/approvals'
     | '/admin/bm'
     | '/admin/collaborators'
@@ -554,6 +565,7 @@ export interface FileRouteTypes {
     | '/rh-sms'
     | '/auth'
     | '/pending'
+    | '/redefinir-senha'
     | '/admin/approvals'
     | '/admin/bm'
     | '/admin/collaborators'
@@ -604,6 +616,7 @@ export interface RootRouteChildren {
   RhSmsRouteRoute: typeof RhSmsRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   PendingRoute: typeof PendingRoute
+  RedefinirSenhaRoute: typeof RedefinirSenhaRoute
   AuthIntranetRoute: typeof AuthIntranetRoute
   ApiAuthIntranetRoute: typeof ApiAuthIntranetRoute
   ApiPublicFlowTrackDemandasSyncRoute: typeof ApiPublicFlowTrackDemandasSyncRoute
@@ -660,6 +673,13 @@ declare module '@tanstack/react-router' {
       path: '/pm'
       fullPath: '/pm'
       preLoaderRoute: typeof PmRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/redefinir-senha': {
+      id: '/redefinir-senha'
+      path: '/redefinir-senha'
+      fullPath: '/redefinir-senha'
+      preLoaderRoute: typeof RedefinirSenhaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rh-sms': {
@@ -1056,6 +1076,7 @@ const rootRouteChildren: RootRouteChildren = {
   RhSmsRouteRoute: RhSmsRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   PendingRoute: PendingRoute,
+  RedefinirSenhaRoute: RedefinirSenhaRoute,
   AuthIntranetRoute: AuthIntranetRoute,
   ApiAuthIntranetRoute: ApiAuthIntranetRoute,
   ApiPublicFlowTrackDemandasSyncRoute: ApiPublicFlowTrackDemandasSyncRoute,
