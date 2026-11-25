@@ -18,6 +18,12 @@ function AuthPage() {
   const { user, role, roleLoaded, signIn, loading } = useAuth();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
+  // Acesso único pela Intranet (controle só por e-mail). Senha só em preview/local, para testes.
+  const [senhaPermitida, setSenhaPermitida] = useState(false);
+  useEffect(() => {
+    const h = window.location.hostname;
+    setSenhaPermitida(h === "localhost" || h === "127.0.0.1" || (h.endsWith(".vercel.app") && h !== "mysteptime.vercel.app"));
+  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -41,7 +47,7 @@ function AuthPage() {
   // Activate ONLY after the deployed SSO exchange has passed end-to-end tests.
   // Removing the password form before the new Supabase users are restored would
   // lock out the company. This flag is disabled unless explicitly configured.
-  if (import.meta.env.VITE_MYSTEPTIME_SSO_ONLY === "true") {
+  if (!senhaPermitida) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#0e1c38] px-6 text-white">
         <section className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-8 text-center shadow-xl">
@@ -50,7 +56,7 @@ function AuthPage() {
             O acesso ao Mysteptime é realizado pela Intranet STEP One, com a identidade corporativa.
           </p>
           <a
-            href="https://intranet.step-og.com/intranet/offshore"
+            href="https://intranet.step-og.com/intranet/offshore/mysteptime"
             className="mt-7 inline-flex rounded-xl bg-blue-600 px-6 py-3 font-semibold hover:bg-blue-500"
           >
             Acessar pela Intranet

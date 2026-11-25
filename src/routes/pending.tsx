@@ -6,7 +6,7 @@ import { Clock, RefreshCw, LogOut } from "lucide-react";
 import { useEffect } from "react";
 import { pageTitle } from "@/lib/pageTitle";
 
-export const Route = createFileRoute("/pending")({ head: () => pageTitle("Aguardando Aprovação"), component: Pending });
+export const Route = createFileRoute("/pending")({ head: () => pageTitle("Aguardando liberação"), component: Pending });
 
 function Pending() {
   const { user, role, signOut, refreshRole, loading } = useAuth();
@@ -24,13 +24,18 @@ function Pending() {
         <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-warning/20 text-warning-foreground">
           <Clock className="h-6 w-6" />
         </div>
-        <h1 className="mt-4 text-xl font-semibold">Acesso em configuração</h1>
+        <h1 className="mt-4 text-xl font-semibold">Aguardando liberação dos módulos</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Seu acesso está sendo configurado. Entre em contato com a Logística.
+          Seu acesso ao Mysteptime foi criado, mas ainda não há módulos liberados para você.
         </p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Solicite ao <b>setor Offshore</b> a liberação dos módulos que você precisa usar.
+          Depois da liberação, clique em <b>Verificar</b>.
+        </p>
+        {user?.email && <p className="mt-3 text-xs text-muted-foreground">E-mail: {user.email}</p>}
         <div className="mt-6 flex justify-center gap-2">
           <Button variant="outline" size="sm" onClick={refreshRole}><RefreshCw className="mr-2 h-4 w-4" />Verificar</Button>
-          <Button variant="ghost" size="sm" onClick={async () => { await signOut(); navigate({ to: "/auth" }); }}><LogOut className="mr-2 h-4 w-4" />Sair</Button>
+          <Button variant="ghost" size="sm" onClick={async () => { await signOut(); window.location.href = "https://intranet.step-og.com/intranet/offshore"; }}><LogOut className="mr-2 h-4 w-4" />Sair</Button>
         </div>
       </Card>
     </div>
