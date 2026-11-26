@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Bar,
-  BarChart,
   CartesianGrid,
   ComposedChart,
   LabelList,
@@ -31,6 +30,10 @@ import {
 } from "@/lib/mo-planejado";
 import { todayStr } from "@/lib/histogramaNovo";
 import { selectAllPages } from "@/lib/supabasePaginate";
+import { aplicarAjusteDisponivel, disponivelPorFuncaoNosDias } from "@/lib/mo-disponivel";
+import { normFuncao, type LinhaPlanejadoRpc } from "@/lib/mo-planejado-x-disponivel";
+import { usePlanejamentoEmbarqueQuery } from "@/components/histograma/PlanejamentoEmbarqueTab";
+import { useDisponivelAjuste } from "@/components/histograma/mo/usePlanejadoXDisponivel";
 
 // Gráficos de PLANEJADO da "Apresentação 1 - Planejado" (pedido dela, 2026-11-09). Mesmos
 // cálculos em src/lib/mo-planejado.ts; aqui só desenha. Usado no fim do Dashboard (dados da
@@ -42,12 +45,33 @@ const supabase: any = supabaseTyped;
 const COR_SEMANA = "#2E8CAB";
 const COR_MEDIA = "#2F5D93";
 const COR_SOMA = "#4472C4";
+const COR_DISP = "#C00000";
 
-const semanaConfig = { total: { label: "SOMA", color: COR_SEMANA } } satisfies ChartConfig;
+const semanaConfig = {
+  total: { label: "Planejado (SOMA)", color: COR_SEMANA },
+  disponivel: { label: "Disponível (média/dia)", color: COR_DISP },
+} satisfies ChartConfig;
 const mesConfig = {
   media: { label: "Média trabalhada de funcionários", color: COR_MEDIA },
   somaDias: { label: "Soma de dias trabalhados", color: COR_SOMA },
+  disponivel: { label: "Disponível (média/dia)", color: COR_DISP },
 } satisfies ChartConfig;
+
+type SemanaComDisp = MoSemana & { disponivel: number | null };
+
+/** Média (arredondada) do disponível total nos dias de hoje em diante dentro de [ini, fim]. */
+function mediaDisp(disp: Map<string, number> | undefined, ini: string, fim: string, hoje: string) {
+  if (!disp) return null;
+  let soma = 0;
+  let n = 0;
+  disp.forEach((v, d) => {
+    if (d >= ini && d <= fim && d >= hoje) {
+      soma += v;
+      n++;
+    }
+  });
+  return n ? Math.round(soma / n) : null;
+}
 
 const ddmm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 const inteiro = (v: unknown) => {
@@ -57,14 +81,19 @@ const inteiro = (v: unknown) => {
 
 function TooltipSemana({ active, payload }: { active?: boolean; payload?: any[] }) {
   if (!active || !payload?.length) return null;
-  const s = payload[0].payload as MoSemana;
+  const s = payload[0].payload as SemanaComDisp;
   return (
     <div className="rounded-lg border bg-background px-3 py-2 text-xs shadow-md">
       <p className="font-semibold">Semana {s.rotulo}</p>
       <p className="text-muted-foreground">
         {ddmm(s.inicio)}–{ddmm(s.fim)}
       </p>
-      <p className="mt-1 font-semibold">Total: {s.total}</p>
+      <p className="mt-1 font-semibold">Planejado: {s.total}</p>
+      {s.disponivel != null && (
+        <p className="font-semibold" style={{ color: COR_DISP }}>
+          Disponível (média/dia): {s.disponivel}
+        </p>
+      )}
       {s.porFuncao.length > 0 && (
         <ul className="mt-1 max-h-48 space-y-0.5 overflow-y-auto">
           {s.porFuncao.map((f) => (
@@ -82,19 +111,30 @@ function TooltipSemana({ active, payload }: { active?: boolean; payload?: any[] 
 export function MoPlanejadoGraficos({
   diario,
   hoje = todayStr(),
+  dispPorDia,
 }: {
   diario: MoDiario[];
   hoje?: string;
+  /** Disponível total por dia (de hoje em diante). Sem ele, os gráficos não mostram a linha. */
+  dispPorDia?: Map<string, number>;
 }) {
-  const semanas = useMemo(() => calcularSemanas(diario, hoje), [diario, hoje]);
+  const semanas = useMemo<SemanaComDisp[]>(
+    () =>
+      calcularSemanas(diario, hoje).map((s) => ({
+        ...s,
+        disponivel: mediaDisp(dispPorDia, s.inicio, s.fim, hoje),
+      })),
+    [diario, hoje, dispPorDia],
+  );
   const meses = useMemo(
     () =>
       calcularMeses(diario, hoje).map((m) => ({
         ...m,
         media: Math.round(m.media),
         mediaExata: m.media,
+        disponivel: mediaDisp(dispPorDia, `${m.mes}-01`, `${m.mes}-31`, hoje),
       })),
-    [diario, hoje],
+    [diario, hoje, dispPorDia],
   );
 
   if (diario.length === 0) {
@@ -110,7 +150,7 @@ export function MoPlanejadoGraficos({
           (arredondadas)
         </p>
         <ChartContainer config={semanaConfig} className="aspect-auto h-[280px] w-full">
-          <BarChart data={semanas} margin={{ top: 20, right: 8, bottom: 4, left: 18 }}>
+          <ComposedChart data={semanas} margin={{ top: 20, right: 8, bottom: 4, left: 18 }}>
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="rotulo"
@@ -133,7 +173,17 @@ export function MoPlanejadoGraficos({
                 style={{ fontSize: 11, fontWeight: 700 }}
               />
             </Bar>
-          </BarChart>
+            {dispPorDia && (
+              <Line
+                dataKey="disponivel"
+                stroke="var(--color-disponivel)"
+                strokeWidth={2}
+                dot={{ r: 3, fill: "var(--color-disponivel)" }}
+                isAnimationActive={false}
+              />
+            )}
+            {dispPorDia && <ChartLegend verticalAlign="bottom" content={<ChartLegendContent />} />}
+          </ComposedChart>
         </ChartContainer>
       </Card>
 
@@ -173,6 +223,9 @@ export function MoPlanejadoGraficos({
                       Média trabalhada de funcionários:{" "}
                       {m.mediaExata.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
                     </p>
+                    {m.disponivel != null && (
+                      <p style={{ color: COR_DISP }}>Disponível (média/dia): {m.disponivel}</p>
+                    )}
                   </div>
                 );
               }}
@@ -201,6 +254,17 @@ export function MoPlanejadoGraficos({
                 style={{ fontSize: 11, fontWeight: 700, fill: COR_SOMA }}
               />
             </Line>
+            {dispPorDia && (
+              <Line
+                yAxisId="dir"
+                dataKey="disponivel"
+                stroke="var(--color-disponivel)"
+                strokeWidth={2}
+                strokeDasharray="5 3"
+                dot={{ r: 3, fill: "var(--color-disponivel)" }}
+                isAnimationActive={false}
+              />
+            )}
           </ComposedChart>
         </ChartContainer>
       </Card>
@@ -218,26 +282,11 @@ export function MoPlanejadoDashboardSection({
   unidades?: string[];
   bsps?: string[];
 } = {}) {
+  // Filtros do Dashboard não se aplicam (mesma base do Detalhamento – Planejado).
+  void unidades;
+  void bsps;
   const hoje = todayStr();
-  const janela = janelaGraficos(hoje);
-  const { data: diario = [], isLoading } = useQuery<MoDiario[]>({
-    queryKey: ["mo-planejado-diario", janela.inicio, janela.fim, unidades, bsps],
-    queryFn: async () => {
-      // Paginado: são ~8 meses × todas as funções (vários milhares de linhas) e o PostgREST
-      // corta em 1000 sem erro — era isso que deixava o Dashboard diferente da aba M.O.
-      const data = await selectAllPages<MoDiario>((from, to) =>
-        supabase
-          .rpc("mo_planejado_diario", {
-            p_inicio: janela.inicio,
-            p_fim: janela.fim,
-            p_unidades: unidades.length ? unidades : null,
-            p_bsps: bsps.length ? bsps : null,
-          })
-          .range(from, to),
-      );
-      return data.map((r) => ({ ...r, qtd_total: Number(r.qtd_total) }));
-    },
-  });
+  const { diario, dispPorDia, isLoading } = useBaseGraficosPlanejado(hoje);
   const { data: ultima } = useQuery<{
     atualizado_em: string;
     atualizado_por: string | null;
@@ -264,14 +313,81 @@ export function MoPlanejadoDashboardSection({
               dateStyle: "short",
               timeStyle: "short",
             })}${ultima.atualizado_por ? ` por ${ultima.atualizado_por}` : ""}.`}
-          {" Mesmos números da aba M.O (os filtros do Dashboard não se aplicam aqui)."}
+          {" Mesmos números do Detalhamento – Planejado da aba M.O (com as edições manuais); os filtros do Dashboard não se aplicam aqui."}
         </p>
       </div>
       {isLoading ? (
         <p className="py-6 text-center text-xs text-muted-foreground">Carregando planejado…</p>
       ) : (
-        <MoPlanejadoGraficos diario={diario} hoje={hoje} />
+        <MoPlanejadoGraficos diario={diario} hoje={hoje} dispPorDia={dispPorDia} />
       )}
     </section>
   );
+}
+
+/**
+ * Base dos gráficos (Dashboard e aba M.O) = a do Detalhamento – Planejado: planejado pela RPC
+ * mo_planejado_drake_diario (já com mo_planejado_ajuste) e disponível pela regra do card
+ * "M.O disponível x Dia" com os ajustes de mo_disponivel_ajuste, somado nas funções com
+ * correspondência no Drake.
+ */
+export function useBaseGraficosPlanejado(hoje: string) {
+  const janela = janelaGraficos(hoje);
+  const q = useQuery<LinhaPlanejadoRpc[]>({
+    queryKey: ["mo-planejado-diario", "drake", janela.inicio, janela.fim],
+    queryFn: () =>
+      selectAllPages<LinhaPlanejadoRpc>((from, to) =>
+        supabase
+          .rpc("mo_planejado_drake_diario", { p_inicio: janela.inicio, p_fim: janela.fim })
+          .range(from, to),
+      ),
+    retry: false,
+  });
+  const { data: planejamento } = usePlanejamentoEmbarqueQuery();
+  const { data: ajustes = [] } = useDisponivelAjuste();
+  const linhas = q.data;
+  const diario = useMemo<MoDiario[]>(
+    () =>
+      (linhas ?? []).map((r) => ({ dia: r.dia, funcao: r.funcao, qtd_total: Number(r.planejado) })),
+    [linhas],
+  );
+  const dispPorDia = useMemo(() => {
+    if (!planejamento?.length || !linhas) return undefined;
+    const funcoes = new Set(
+      linhas.filter((r) => !r.sem_correspondencia).map((r) => normFuncao(r.funcao)),
+    );
+    ajustes.forEach((a) => funcoes.add(normFuncao(a.funcao)));
+    const dias: string[] = [];
+    for (let d = hoje; d <= janela.fim && dias.length < 800; ) {
+      dias.push(d);
+      const t = new Date(`${d}T00:00:00Z`);
+      t.setUTCDate(t.getUTCDate() + 1);
+      d = t.toISOString().slice(0, 10);
+    }
+    const disp = aplicarAjusteDisponivel(
+      disponivelPorFuncaoNosDias(planejamento, dias, hoje),
+      ajustes,
+      dias,
+      hoje,
+    );
+    const total = new Map<string, number>();
+    for (const d of dias) {
+      let soma = 0;
+      funcoes.forEach((k) => {
+        soma += disp.get(k)?.porDia.get(d) ?? 0;
+      });
+      total.set(d, soma);
+    }
+    return total;
+  }, [planejamento, linhas, ajustes, hoje, janela.fim]);
+  return { diario, dispPorDia, isLoading: q.isLoading };
+}
+
+/** Gráficos com a base do Detalhamento (usado na aba M.O). */
+export function MoPlanejadoGraficosBase({ hoje }: { hoje: string }) {
+  const { diario, dispPorDia, isLoading } = useBaseGraficosPlanejado(hoje);
+  if (isLoading) {
+    return <p className="py-6 text-center text-xs text-muted-foreground">Carregando planejado…</p>;
+  }
+  return <MoPlanejadoGraficos diario={diario} hoje={hoje} dispPorDia={dispPorDia} />;
 }

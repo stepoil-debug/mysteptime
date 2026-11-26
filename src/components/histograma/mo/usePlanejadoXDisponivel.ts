@@ -97,3 +97,22 @@ export async function salvarDepara(funcaoPadrao: string, funcaoDrake: string | n
     if (error) throw error;
   }
 }
+
+export const QK_DISP_AJUSTE = ["mo-disponivel-ajuste"] as const;
+
+/** Ajustes manuais do disponível (mo_disponivel_ajuste). Vazio se a tabela ainda não existir. */
+export function useDisponivelAjuste(enabled = true) {
+  return useQuery<{ funcao: string; a_partir: string; qtd: number }[]>({
+    queryKey: QK_DISP_AJUSTE,
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("mo_disponivel_ajuste")
+        .select("funcao,a_partir,qtd")
+        .order("a_partir");
+      if (error) return [];
+      return data ?? [];
+    },
+    retry: false,
+  });
+}

@@ -27,7 +27,6 @@ import {
   ehEncerrada,
   ehOnHold,
   headcountDiario,
-  janelaGraficos,
   linhaConta,
   normalizarTexto,
   totalPorDia,
@@ -40,7 +39,7 @@ import {
   type MoLinhaImportada,
 } from "@/lib/mo-planejado-import";
 import { StringMultiCombobox } from "@/components/histograma/HistogramaOffshoreNovo";
-import { MoPlanejadoGraficos } from "@/components/histograma/mo/MoPlanejadoGraficos";
+import { MoPlanejadoGraficosBase } from "@/components/histograma/mo/MoPlanejadoGraficos";
 import {
   DeParaFuncoesSection,
   DetalhamentoPlanejadoSection,
@@ -844,11 +843,6 @@ export function MoPlanejamentoTab() {
     };
   }, [filtrados, hoje]);
 
-  const previa = useMemo(() => {
-    const j = janelaGraficos(hoje);
-    return headcountDiario(filtrados, j.inicio, j.fim);
-  }, [filtrados, hoje]);
-
   const atualizarCache = (r: MoRegistro) => {
     qc.setQueryData<MoRegistro[]>(QUERY_KEY, (old) => old?.map((x) => (x.id === r.id ? r : x)));
     qc.invalidateQueries({ queryKey: ["mo-planejado-diario"] });
@@ -1165,10 +1159,10 @@ export function MoPlanejamentoTab() {
       <div className="space-y-2">
         <h3 className="text-sm font-semibold">Prévia dos gráficos de planejado (Dashboard)</h3>
         <p className="text-xs text-muted-foreground">
-          Calculada com as linhas filtradas acima. No Dashboard aparecem exatamente estes gráficos, com
-          todas as linhas (sem filtro).
+          Mesma base do Detalhamento – Planejado (Drake + edições manuais do planejado e do disponível).
+          No Dashboard aparecem exatamente estes gráficos.
         </p>
-        <MoPlanejadoGraficos diario={previa} hoje={hoje} />
+        <MoPlanejadoGraficosBase hoje={hoje} />
       </div>
 
       {adicionando && <AdicionarEquipeDialog onClose={() => setAdicionando(false)} />}

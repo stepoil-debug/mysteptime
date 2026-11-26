@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ArrowRightLeft, Loader2, Pencil, Save, X } from "lucide-react";
+import { AlertTriangle, ArrowRightLeft, Loader2, Pencil, RotateCcw, Save, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { notify } from "@/lib/notify";
-import { disponivelPorFuncaoNosDias } from "@/lib/mo-disponivel";
+import { aplicarAjusteDisponivel, disponivelPorFuncaoNosDias } from "@/lib/mo-disponivel";
 import {
   CABECALHO_PLANILHA,
   ESTILO_PXD,
@@ -21,7 +21,9 @@ import { addDiasIso, domingoDaSemana, rotuloSemana } from "@/lib/mo-planejado";
 import { usePlanejamentoEmbarqueQuery } from "@/components/histograma/PlanejamentoEmbarqueTab";
 import {
   QK_DEPARA,
+  QK_DISP_AJUSTE,
   salvarDepara,
+  useDisponivelAjuste,
   useMoDepara,
   useMoPeriodo,
   useMoPodeEditar,
@@ -237,24 +239,40 @@ export function DetalhamentoPlanejadoSection({
   const [editando, setEditando] = useState(false);
   const [rascunho, setRascunho] = useState<Map<string, number>>(new Map());
   const chaveRasc = (funcao: string, dia: string) => `${funcao}|${dia}`;
+  // Rascunho do disponível: função -> qtd, vale de hoje em diante (mo_disponivel_ajuste).
+  const [rascDisp, setRascDisp] = useState<Map<string, number>>(new Map());
+  const { data: ajustesDisp = [] } = useDisponivelAjuste();
   const salvar = useMutation({
     mutationFn: async () => {
       const linhasAj = Array.from(rascunho.entries()).map(([k, qtd]) => {
         const [funcao, dia] = k.split("|");
         return { funcao, dia, qtd };
       });
-      if (linhasAj.length === 0) return 0;
+      const linhasDisp = Array.from(rascDisp.entries()).map(([funcao, qtd]) => ({
+        funcao,
+        a_partir: hoje,
+        qtd,
+      }));
+      if (linhasDisp.length) {
+        const { error: e2 } = await supabase
+          .from("mo_disponivel_ajuste" as never)
+          .upsert(linhasDisp as never, { onConflict: "funcao,a_partir" });
+        if (e2) throw new Error(e2.message);
+      }
+      if (linhasAj.length === 0) return linhasDisp.length;
       const { error } = await supabase
         .from("mo_planejado_ajuste" as never)
         .upsert(linhasAj as never, { onConflict: "dia,funcao" });
       if (error) throw new Error(error.message);
-      return linhasAj.length;
+      return linhasAj.length + linhasDisp.length;
     },
     onSuccess: async (n) => {
       setRascunho(new Map());
+      setRascDisp(new Map());
+      await qc.invalidateQueries({ queryKey: QK_DISP_AJUSTE });
       setEditando(false);
       await qc.invalidateQueries({ queryKey: ["mo-planejado-diario"] });
-      notify.success(n ? `${n} valor(es) do planejado atualizados.` : "Nada para salvar.");
+      notify.success(n ? `${n} valor(es) atualizados.` : "Nada para salvar.");
     },
     onError: (e) => notify.error(e instanceof Error ? e.message : "Não foi possível salvar."),
   });
@@ -295,9 +313,36 @@ export function DetalhamentoPlanejadoSection({
     return Array.from(s).sort();
   }, [diasDiario, semanas]);
   const disponivel = useMemo(
-    () => disponivelPorFuncaoNosDias(planejamento, todosDias, hoje),
-    [planejamento, todosDias, hoje],
+    () =>
+      aplicarAjusteDisponivel(
+        disponivelPorFuncaoNosDias(planejamento, todosDias, hoje),
+        ajustesDisp,
+        todosDias,
+        hoje,
+      ),
+    [planejamento, todosDias, hoje, ajustesDisp],
   );
+  const temAjusteDisp = (funcao: string) =>
+    ajustesDisp.some((a) => normFuncao(a.funcao) === normFuncao(funcao));
+  const voltarAutomatico = useMutation({
+    mutationFn: async (funcao: string) => {
+      const alvo = ajustesDisp.filter((a) => normFuncao(a.funcao) === normFuncao(funcao));
+      for (const a of alvo) {
+        const { error } = await supabase
+          .from("mo_disponivel_ajuste" as never)
+          .delete()
+          .eq("funcao" as never, a.funcao as never)
+          .eq("a_partir" as never, a.a_partir as never);
+        if (error) throw new Error(error.message);
+      }
+    },
+    onSuccess: async () => {
+      setRascDisp(new Map());
+      await qc.invalidateQueries({ queryKey: QK_DISP_AJUSTE });
+      notify.success("Disponível voltou ao cálculo automático.");
+    },
+    onError: (e) => notify.error(e instanceof Error ? e.message : "Não foi possível desfazer."),
+  });
   const dispDe = (l: { chave: string; sem: boolean }) =>
     l.sem ? undefined : disponivel.get(l.chave)?.porDia;
   const dispNoDia = (l: { chave: string; sem: boolean }, dia: string): number | null =>
@@ -364,11 +409,11 @@ export function DetalhamentoPlanejadoSection({
           {editando && (
             <>
               <Button size="sm" variant="outline" disabled={salvar.isPending}
-                onClick={() => { setRascunho(new Map()); setEditando(false); }}>
+                onClick={() => { setRascunho(new Map()); setRascDisp(new Map()); setEditando(false); }}>
                 <X className="mr-1.5 h-3.5 w-3.5" /> Cancelar
               </Button>
               <Button size="sm" loading={salvar.isPending} onClick={() => salvar.mutate()}>
-                <Save className="mr-1.5 h-3.5 w-3.5" /> Salvar ({rascunho.size})
+                <Save className="mr-1.5 h-3.5 w-3.5" /> Salvar ({rascunho.size + rascDisp.size})
               </Button>
             </>
           )}
@@ -377,7 +422,8 @@ export function DetalhamentoPlanejadoSection({
       {editando && (
         <p className="text-[11px] text-amber-700">
           Modo edição: digite o planejado em cada célula. No Semanal, o valor vale para os 7 dias da
-          semana. Ao salvar, o valor substitui o calculado da M.O em todo o sistema (gráficos e tabelas).
+          semana. Na coluna M.O Disponível, o valor vale de hoje em diante (↺ volta ao cálculo automático).
+          Ao salvar, os valores substituem os calculados em todo o sistema (gráficos e tabelas).
         </p>
       )}
 
@@ -458,7 +504,35 @@ export function DetalhamentoPlanejadoSection({
                         className="text-center font-bold tabular-nums"
                         style={{ color: CABECALHO_PLANILHA.disponivelTexto }}
                       >
-                        {l.sem ? 0 : (dispDe(l)?.get(hoje) ?? 0)}
+                        {editando && !l.sem ? (
+                          <div className="flex items-center justify-center gap-0.5">
+                            <Input
+                              type="number" min={0}
+                              className="h-7 w-16 px-1 text-center text-xs font-bold tabular-nums"
+                              value={rascDisp.get(l.funcao) ?? (dispDe(l)?.get(hoje) ?? 0)}
+                              onChange={(e) => {
+                                const v = Math.max(0, Math.round(Number(e.target.value) || 0));
+                                setRascDisp((m) => new Map(m).set(l.funcao, v));
+                              }}
+                            />
+                            {temAjusteDisp(l.funcao) && (
+                              <button
+                                type="button"
+                                title="Voltar ao cálculo automático"
+                                className="text-muted-foreground hover:text-foreground"
+                                disabled={voltarAutomatico.isPending}
+                                onClick={() => voltarAutomatico.mutate(l.funcao)}
+                              >
+                                <RotateCcw className="h-3 w-3" />
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <span title={temAjusteDisp(l.funcao) ? "Ajustado manualmente" : undefined}>
+                            {dispDe(l)?.get(hoje) ?? 0}
+                            {temAjusteDisp(l.funcao) && <sup className="ml-0.5 text-[9px]">✎</sup>}
+                          </span>
+                        )}
                       </td>
                       {diasDiario.map((d) => (
                         <td key={d}>
