@@ -212,3 +212,48 @@ export function disponivelPorFuncaoNosDias(
   });
   return out;
 }
+
+export interface AjusteDisponivel {
+  funcao: string;
+  a_partir: string;
+  qtd: number;
+}
+
+/**
+ * Aplica os ajustes manuais do disponível (tabela mo_disponivel_ajuste): para cada função, o
+ * ajuste mais recente com a_partir <= dia substitui o valor calculado. Dias antes de hoje
+ * continuam null. Não altera o mapa recebido.
+ */
+export function aplicarAjusteDisponivel(
+  disp: Map<string, { funcao: string; total: number; porDia: Map<string, number | null> }>,
+  ajustes: AjusteDisponivel[],
+  dias: string[],
+  hoje: string,
+): Map<string, { funcao: string; total: number; porDia: Map<string, number | null> }> {
+  if (!ajustes.length) return disp;
+  const chave = (s: string) =>
+    s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ").trim().toUpperCase();
+  const porFuncao = new Map<string, AjusteDisponivel[]>();
+  for (const a of ajustes) {
+    const k = chave(a.funcao);
+    if (!porFuncao.has(k)) porFuncao.set(k, []);
+    porFuncao.get(k)!.push(a);
+  }
+  const out = new Map(disp);
+  porFuncao.forEach((lista, k) => {
+    lista.sort((a, b) => b.a_partir.localeCompare(a.a_partir));
+    const base = disp.get(k);
+    const porDia = new Map<string, number | null>(base?.porDia ?? []);
+    for (const dia of dias) {
+      if (dia < hoje) {
+        if (!porDia.has(dia)) porDia.set(dia, null);
+        continue;
+      }
+      const aj = lista.find((a) => a.a_partir <= dia);
+      if (aj) porDia.set(dia, aj.qtd);
+      else if (!porDia.has(dia)) porDia.set(dia, 0);
+    }
+    out.set(k, { funcao: base?.funcao ?? lista[0].funcao, total: base?.total ?? 0, porDia });
+  });
+  return out;
+}
