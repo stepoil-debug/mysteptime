@@ -345,7 +345,7 @@ export function MoPlanejadoDashboardSection({
  */
 export function useBaseGraficosPlanejado(hoje: string, periodo?: Periodo) {
   const janela = periodo
-    ? { inicio: domingoDaSemana(periodo.de), fim: fimDoPeriodo(periodo) }
+    ? { inicio: domingoDaSemana(periodo.de), fim: fimDoPeriodo(limitar(periodo)) }
     : janelaGraficos(hoje);
   const q = useQuery<LinhaPlanejadoRpc[]>({
     queryKey: ["mo-planejado-diario", "drake", janela.inicio, janela.fim],
@@ -412,15 +412,23 @@ export interface Periodo {
   ate: string;
 }
 
-/** Nº de semanas (domingo a sábado) que cobrem o período; no máximo 60. */
-function qtdSemanas(p: Periodo) {
-  const ini = Date.parse(`${domingoDaSemana(p.de)}T00:00:00Z`);
-  const fim = Date.parse(`${p.ate}T00:00:00Z`);
-  return Math.min(60, Math.max(1, Math.floor((fim - ini) / (7 * 86400000)) + 1));
+/** A RPC aceita até 800 dias: corta o Até como as tabelas do Detalhamento. */
+function limitar(p: Periodo): Periodo {
+  const max = addDiasIso(domingoDaSemana(p.de), 760);
+  return p.ate > max ? { de: p.de, ate: max } : p;
 }
 
-/** Nº de meses que cobrem o período; no máximo 36. */
-function qtdMeses(p: Periodo) {
+/** Nº de semanas (domingo a sábado) que cobrem o período. */
+function qtdSemanas(pp: Periodo) {
+  const p = limitar(pp);
+  const ini = Date.parse(`${domingoDaSemana(p.de)}T00:00:00Z`);
+  const fim = Date.parse(`${p.ate}T00:00:00Z`);
+  return Math.min(120, Math.max(1, Math.floor((fim - ini) / (7 * 86400000)) + 1));
+}
+
+/** Nº de meses que cobrem o período. */
+function qtdMeses(pp: Periodo) {
+  const p = limitar(pp);
   const m = (s: string) => Number(s.slice(0, 4)) * 12 + Number(s.slice(5, 7)) - 1;
   return Math.min(36, Math.max(1, m(p.ate) - m(p.de) + 1));
 }
