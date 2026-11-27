@@ -1159,7 +1159,7 @@ export function MoPlanejamentoTab() {
       <div className="space-y-2">
         <h3 className="text-sm font-semibold">Prévia dos gráficos de planejado (Dashboard)</h3>
         <p className="text-xs text-muted-foreground">
-          Mesma base do Detalhamento – Planejado (Drake + edições manuais do planejado e do disponível).
+          Mesma base do Detalhamento – Planejado (Drake + edições manuais do planejado).
           No Dashboard aparecem exatamente estes gráficos.
         </p>
         <MoPlanejadoGraficosBase hoje={hoje} />
