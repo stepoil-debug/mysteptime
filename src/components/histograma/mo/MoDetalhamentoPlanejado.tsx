@@ -35,6 +35,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MoPlanejadoGraficosBase } from "@/components/histograma/mo/MoPlanejadoGraficos";
+import { MoNecessidadeBack } from "@/components/histograma/mo/MoNecessidadeBack";
 
 // Aba M.O — "De/Para de Funções" e "Detalhamento – Planejado" (pedido dela, 2026-11-12).
 // Planejado vem da RPC mo_planejado_drake_diario (servidor, já pelo De/Para); Disponível é a
@@ -682,6 +683,13 @@ export function DetalhamentoPlanejadoSection({
         </h4>
         <MoPlanejadoGraficosBase hoje={hoje} periodo={{ de: ini, ate: fim }} />
       </div>
+      <MoNecessidadeBack
+        linhas={linhas}
+        planejado={planejado}
+        semanas={semanas}
+        planejamento={planejamento}
+        hoje={hoje}
+      />
     </Card>
   );
 }
