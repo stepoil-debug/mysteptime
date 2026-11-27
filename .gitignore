@@ -59,3 +59,4 @@ private/access-history/
 
 .vercel
 .env*
+lovable-export-*/

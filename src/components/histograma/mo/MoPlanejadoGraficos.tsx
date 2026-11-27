@@ -46,6 +46,7 @@ const COR_SEMANA = "#2E8CAB";
 const COR_MEDIA = "#2F5D93";
 const COR_SOMA = "#4472C4";
 const COR_DISP = "#C00000";
+const MOSTRAR_DISP_NOS_GRAFICOS = false as boolean;
 
 const semanaConfig = {
   total: { label: "Planejado (SOMA)", color: COR_SEMANA },
@@ -286,7 +287,7 @@ export function MoPlanejadoDashboardSection({
   void unidades;
   void bsps;
   const hoje = todayStr();
-  const { diario, dispPorDia, isLoading } = useBaseGraficosPlanejado(hoje);
+  const { diario, isLoading } = useBaseGraficosPlanejado(hoje);
   const { data: ultima } = useQuery<{
     atualizado_em: string;
     atualizado_por: string | null;
@@ -319,7 +320,7 @@ export function MoPlanejadoDashboardSection({
       {isLoading ? (
         <p className="py-6 text-center text-xs text-muted-foreground">Carregando planejado…</p>
       ) : (
-        <MoPlanejadoGraficos diario={diario} hoje={hoje} dispPorDia={dispPorDia} />
+        <MoPlanejadoGraficos diario={diario} hoje={hoje} />
       )}
     </section>
   );
@@ -352,7 +353,8 @@ export function useBaseGraficosPlanejado(hoje: string) {
     [linhas],
   );
   const dispPorDia = useMemo(() => {
-    if (!planejamento?.length || !linhas) return undefined;
+    // Gráficos seguem a planilha: só planejado, sem linha de disponível.
+    if (MOSTRAR_DISP_NOS_GRAFICOS === false || !planejamento?.length || !linhas) return undefined;
     const funcoes = new Set(
       linhas.filter((r) => !r.sem_correspondencia).map((r) => normFuncao(r.funcao)),
     );
@@ -385,9 +387,9 @@ export function useBaseGraficosPlanejado(hoje: string) {
 
 /** Gráficos com a base do Detalhamento (usado na aba M.O). */
 export function MoPlanejadoGraficosBase({ hoje }: { hoje: string }) {
-  const { diario, dispPorDia, isLoading } = useBaseGraficosPlanejado(hoje);
+  const { diario, isLoading } = useBaseGraficosPlanejado(hoje);
   if (isLoading) {
     return <p className="py-6 text-center text-xs text-muted-foreground">Carregando planejado…</p>;
   }
-  return <MoPlanejadoGraficos diario={diario} hoje={hoje} dispPorDia={dispPorDia} />;
+  return <MoPlanejadoGraficos diario={diario} hoje={hoje} />;
 }
