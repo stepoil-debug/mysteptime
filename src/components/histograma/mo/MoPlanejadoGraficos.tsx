@@ -349,7 +349,7 @@ export function useBaseGraficosPlanejado(hoje: string) {
   const linhas = q.data;
   const diario = useMemo<MoDiario[]>(
     () =>
-      (linhas ?? []).map((r) => ({ dia: r.dia, funcao: r.funcao, qtd_total: Number(r.planejado) })),
+      (linhas ?? []).map((r) => ({ dia: r.dia, funcao: normFuncao(r.funcao), qtd_total: Number(r.planejado) })),
     [linhas],
   );
   const dispPorDia = useMemo(() => {
