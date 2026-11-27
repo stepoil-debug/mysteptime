@@ -22,6 +22,7 @@ const config = {
   necessidade: { label: "Necessidade", color: "#1E293B" },
 } satisfies ChartConfig;
 
+const PERIODO = "__periodo__";
 const semZero = (v: unknown) => (Number(v) ? String(v) : "");
 
 interface Props {
@@ -30,9 +31,11 @@ interface Props {
   semanas: SemanaPxD[];
   planejamento: LinhaDisponibilidade[];
   hoje: string;
+  /** Dias do filtro De/Até do Detalhamento. */
+  dias: string[];
 }
 
-export function MoNecessidadeBack({ linhas, planejado, semanas, planejamento, hoje }: Props) {
+export function MoNecessidadeBack({ linhas, planejado, semanas, planejamento, hoje, dias }: Props) {
   const futuras = useMemo(() => semanas.filter((w) => w.fim >= hoje), [semanas, hoje]);
   const pessoas = useMemo(() => {
     const dias = futuras.flatMap((w) => w.dias);
@@ -67,8 +70,26 @@ export function MoNecessidadeBack({ linhas, planejado, semanas, planejamento, ho
       }),
     [futuras, funcoes, pessoas],
   );
-  const [sel, setSel] = useState<string | null>(null);
-  const atual = porSemana.find((s) => s.rotulo === sel) ?? porSemana[0];
+  // Resumo do período inteiro do filtro (de hoje em diante): média diária no período.
+  const diasPeriodo = useMemo(() => dias.filter((d) => d >= hoje), [dias, hoje]);
+  const resumoPeriodo = useMemo(() => {
+    if (!diasPeriodo.length) return null;
+    const fs = necessidadeDaSemana(funcoes, pessoas, diasPeriodo);
+    const soma = (k: keyof NecessidadeFuncao) => fs.reduce((s, f) => s + (f[k] as number), 0);
+    const ddmm = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
+    return {
+      rotulo: PERIODO,
+      titulo: `Período do filtro (${ddmm(diasPeriodo[0])} a ${ddmm(diasPeriodo[diasPeriodo.length - 1])}, ${diasPeriodo.length} dias)`,
+      funcoes: fs,
+      faltaFixos: soma('faltaFixos'),
+      backPendente: soma('backPendente'),
+    };
+  }, [diasPeriodo, funcoes, pessoas]);
+  const [sel, setSel] = useState<string>(PERIODO);
+  const atual =
+    (sel === PERIODO ? resumoPeriodo : porSemana.find((s) => s.rotulo === sel)) ??
+    resumoPeriodo ??
+    porSemana[0];
 
   if (!porSemana.length) return null;
 
@@ -79,7 +100,7 @@ export function MoNecessidadeBack({ linhas, planejado, semanas, planejamento, ho
         <p className="text-xs text-muted-foreground">
           Por semana (média dos dias). Barra da esquerda: necessidade = apontadas a bordo + falta de
           fixos. Barra da direita: back necessário (1 por posição) = com cobertura (Disponível, Na Base
-          ou Programado livres no dia) + pendente. Clique numa semana para ver o detalhe por função.
+          ou Programado livres no dia) + pendente. O detalhe abaixo mostra, por padrão, a média diária do período do filtro De/Até (de hoje em diante); clique numa semana para ver só ela.
         </p>
       </div>
       <ChartContainer config={config} className="aspect-auto h-[320px] w-full">
@@ -130,15 +151,16 @@ export function MoNecessidadeBack({ linhas, planejado, semanas, planejamento, ho
       {atual && (
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="font-semibold">Detalhe da semana</span>
+            <span className="font-semibold">Detalhe</span>
             <select
               className="h-7 rounded border bg-background px-2 text-xs"
               value={atual.rotulo}
               onChange={(e) => setSel(e.target.value)}
             >
+              {resumoPeriodo && <option value={PERIODO}>{resumoPeriodo.titulo}</option>}
               {porSemana.map((s) => (
                 <option key={s.rotulo} value={s.rotulo}>
-                  {s.rotulo}
+                  Semana {s.rotulo}
                 </option>
               ))}
             </select>

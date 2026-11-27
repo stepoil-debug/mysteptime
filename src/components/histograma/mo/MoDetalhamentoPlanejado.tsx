@@ -397,6 +397,17 @@ export function DetalhamentoPlanejadoSection({
           <Input type="date" className="h-8 w-auto text-xs" value={ate} min={de || undefined}
             onChange={(e) => setAte(e.target.value)} />
         </div>
+        <div className="flex gap-1">
+          {[30, 60, 90, 180].map((n) => {
+            const ativo = de === hoje && ate === addDiasIso(hoje, n - 1);
+            return (
+              <Button key={n} size="sm" variant={ativo ? "default" : "outline"} className="h-8 px-2 text-xs"
+                onClick={() => { setDe(hoje); setAte(addDiasIso(hoje, n - 1)); }}>
+                {n} dias
+              </Button>
+            );
+          })}
+        </div>
         {periodo?.data_min && (
           <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => {
             setDe(periodo.data_min || hoje);
@@ -692,6 +703,7 @@ export function DetalhamentoPlanejadoSection({
         semanas={semanas}
         planejamento={planejamento}
         hoje={hoje}
+        dias={diasDiario}
       />
     </Card>
   );
