@@ -39,7 +39,6 @@ import {
   type MoLinhaImportada,
 } from "@/lib/mo-planejado-import";
 import { StringMultiCombobox } from "@/components/histograma/HistogramaOffshoreNovo";
-import { MoPlanejadoGraficosBase } from "@/components/histograma/mo/MoPlanejadoGraficos";
 import {
   DeParaFuncoesSection,
   DetalhamentoPlanejadoSection,
@@ -1156,14 +1155,6 @@ export function MoPlanejamentoTab() {
       <DeParaFuncoesSection funcoesMo={opcoes.funcao} />
       <DetalhamentoPlanejadoSection funcoesMo={opcoes.funcao} hoje={hoje} />
 
-      <div className="space-y-2">
-        <h3 className="text-sm font-semibold">Prévia dos gráficos de planejado (Dashboard)</h3>
-        <p className="text-xs text-muted-foreground">
-          Mesma base do Detalhamento – Planejado (Drake + edições manuais do planejado).
-          No Dashboard aparecem exatamente estes gráficos.
-        </p>
-        <MoPlanejadoGraficosBase hoje={hoje} />
-      </div>
 
       {adicionando && <AdicionarEquipeDialog onClose={() => setAdicionando(false)} />}
       {importacao && (

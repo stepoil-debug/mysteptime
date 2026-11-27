@@ -25,6 +25,8 @@ import {
   calcularMeses,
   calcularSemanas,
   janelaGraficos,
+  addDiasIso,
+  domingoDaSemana,
   type MoDiario,
   type MoSemana,
 } from "@/lib/mo-planejado";
@@ -113,29 +115,38 @@ export function MoPlanejadoGraficos({
   diario,
   hoje = todayStr(),
   dispPorDia,
+  periodo,
 }: {
   diario: MoDiario[];
   hoje?: string;
+  /** Período De/Até (aba M.O). Sem ele: 17 semanas da semana passada e 8 meses do atual. */
+  periodo?: Periodo;
   /** Disponível total por dia (de hoje em diante). Sem ele, os gráficos não mostram a linha. */
   dispPorDia?: Map<string, number>;
 }) {
   const semanas = useMemo<SemanaComDisp[]>(
     () =>
-      calcularSemanas(diario, hoje).map((s) => ({
+      (periodo
+        ? calcularSemanas(diario, addDiasIso(periodo.de, 7), qtdSemanas(periodo))
+        : calcularSemanas(diario, hoje)
+      ).map((s) => ({
         ...s,
         disponivel: mediaDisp(dispPorDia, s.inicio, s.fim, hoje),
       })),
-    [diario, hoje, dispPorDia],
+    [diario, hoje, dispPorDia, periodo],
   );
   const meses = useMemo(
     () =>
-      calcularMeses(diario, hoje).map((m) => ({
+      (periodo
+        ? calcularMeses(diario, periodo.de, qtdMeses(periodo))
+        : calcularMeses(diario, hoje)
+      ).map((m) => ({
         ...m,
         media: Math.round(m.media),
         mediaExata: m.media,
         disponivel: mediaDisp(dispPorDia, `${m.mes}-01`, `${m.mes}-31`, hoje),
       })),
-    [diario, hoje, dispPorDia],
+    [diario, hoje, dispPorDia, periodo],
   );
 
   if (diario.length === 0) {
@@ -147,7 +158,7 @@ export function MoPlanejadoGraficos({
       <Card className="border-dashed p-4">
         <h3 className="text-sm font-semibold">QUANTITATIVO SEMANAL DE EMBARQUE — PLANEJADO</h3>
         <p className="mb-3 text-xs text-muted-foreground">
-          17 semanas a partir da semana passada · por semana: soma das médias diárias de cada função
+          {periodo ? "Semanas do período De/Até" : "17 semanas a partir da semana passada"} · por semana: soma das médias diárias de cada função
           (arredondadas)
         </p>
         <ChartContainer config={semanaConfig} className="aspect-auto h-[280px] w-full">
@@ -191,7 +202,7 @@ export function MoPlanejadoGraficos({
       <Card className="border-dashed p-4">
         <h3 className="text-sm font-semibold">QUANTITATIVO MENSAL DE EMBARQUE — PLANEJADO</h3>
         <p className="mb-3 text-xs text-muted-foreground">
-          8 meses a partir do atual · soma de homem-dia e média diária de funcionários
+          {periodo ? "Meses do período De/Até" : "8 meses a partir do atual"} · soma de homem-dia e média diária de funcionários
         </p>
         <ChartContainer config={mesConfig} className="aspect-auto h-[280px] w-full">
           <ComposedChart data={meses} margin={{ top: 20, right: 8, bottom: 4, left: 18 }}>
@@ -332,8 +343,10 @@ export function MoPlanejadoDashboardSection({
  * "M.O disponível x Dia" com os ajustes de mo_disponivel_ajuste, somado nas funções com
  * correspondência no Drake.
  */
-export function useBaseGraficosPlanejado(hoje: string) {
-  const janela = janelaGraficos(hoje);
+export function useBaseGraficosPlanejado(hoje: string, periodo?: Periodo) {
+  const janela = periodo
+    ? { inicio: domingoDaSemana(periodo.de), fim: fimDoPeriodo(periodo) }
+    : janelaGraficos(hoje);
   const q = useQuery<LinhaPlanejadoRpc[]>({
     queryKey: ["mo-planejado-diario", "drake", janela.inicio, janela.fim],
     queryFn: () =>
@@ -386,10 +399,37 @@ export function useBaseGraficosPlanejado(hoje: string) {
 }
 
 /** Gráficos com a base do Detalhamento (usado na aba M.O). */
-export function MoPlanejadoGraficosBase({ hoje }: { hoje: string }) {
-  const { diario, isLoading } = useBaseGraficosPlanejado(hoje);
+export function MoPlanejadoGraficosBase({ hoje, periodo }: { hoje: string; periodo?: Periodo }) {
+  const { diario, isLoading } = useBaseGraficosPlanejado(hoje, periodo);
   if (isLoading) {
     return <p className="py-6 text-center text-xs text-muted-foreground">Carregando planejado…</p>;
   }
-  return <MoPlanejadoGraficos diario={diario} hoje={hoje} />;
+  return <MoPlanejadoGraficos diario={diario} hoje={hoje} periodo={periodo} />;
+}
+
+export interface Periodo {
+  de: string;
+  ate: string;
+}
+
+/** Nº de semanas (domingo a sábado) que cobrem o período; no máximo 60. */
+function qtdSemanas(p: Periodo) {
+  const ini = Date.parse(`${domingoDaSemana(p.de)}T00:00:00Z`);
+  const fim = Date.parse(`${p.ate}T00:00:00Z`);
+  return Math.min(60, Math.max(1, Math.floor((fim - ini) / (7 * 86400000)) + 1));
+}
+
+/** Nº de meses que cobrem o período; no máximo 36. */
+function qtdMeses(p: Periodo) {
+  const m = (s: string) => Number(s.slice(0, 4)) * 12 + Number(s.slice(5, 7)) - 1;
+  return Math.min(36, Math.max(1, m(p.ate) - m(p.de) + 1));
+}
+
+/** Último dia coberto pelos gráficos: fim da última semana ou do último mês do período. */
+function fimDoPeriodo(p: Periodo) {
+  const fimSemanas = addDiasIso(domingoDaSemana(p.de), qtdSemanas(p) * 7 - 1);
+  const a = Number(p.ate.slice(0, 4));
+  const mes = Number(p.ate.slice(5, 7));
+  const fimMes = new Date(Date.UTC(a, mes, 0)).toISOString().slice(0, 10);
+  return fimSemanas > fimMes ? fimSemanas : fimMes;
 }
