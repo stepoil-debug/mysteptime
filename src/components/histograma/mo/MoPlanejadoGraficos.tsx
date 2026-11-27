@@ -154,7 +154,7 @@ export function MoPlanejadoGraficos({
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className={periodo ? "grid gap-4" : "grid gap-4 lg:grid-cols-2"}>
       <Card className="border-dashed p-4">
         <h3 className="text-sm font-semibold">QUANTITATIVO SEMANAL DE EMBARQUE — PLANEJADO</h3>
         <p className="mb-3 text-xs text-muted-foreground">
