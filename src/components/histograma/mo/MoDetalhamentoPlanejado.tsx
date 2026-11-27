@@ -280,7 +280,10 @@ export function DetalhamentoPlanejadoSection({
   });
   const janela = useMemo(() => {
     const ini = [diasDiario[0], semanas[0].inicio].sort()[0];
-    const fim = [diasDiario[diasDiario.length - 1], semanas[semanas.length - 1].fim].sort()[1];
+    const fimMax = [diasDiario[diasDiario.length - 1], semanas[semanas.length - 1].fim].sort()[1];
+    // A RPC recusa janelas acima de 800 dias (devolvia vazio no "Período completo").
+    const limite = addDiasIso(ini, 800);
+    const fim = fimMax > limite ? limite : fimMax;
     return { ini, fim };
   }, [diasDiario, semanas]);
 
